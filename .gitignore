@@ -1,0 +1,75 @@
+# Witnessmark: files that must never enter history.
+# Rules for what does get committed are in MASTER_BLUEPRINT.md, sections 9 and 11.
+
+# --- Outreach and confidentiality --------------------------------------------
+# Outreach drafts are written and reviewed here, and sent by a person (section 11.1).
+drafts/
+# Third-party confidential material never enters this repository (section 11.7).
+# This rule is a backstop, not the control.
+private/
+
+# --- Secrets and local environment --------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+token
+auth-token
+
+# --- Python -------------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# --- Node ---------------------------------------------------------------------
+node_modules/
+
+# --- Rust (target builds, e.g. Omnigraph from a pinned commit) ----------------
+# Matches only directories named exactly "target"; targets/ is unaffected.
+target/
+
+# --- Build output -------------------------------------------------------------
+dist/
+build/
+
+# --- Runtime state, database files, scratch -----------------------------------
+# Published evidence under evidence/ is committed (section 9); live stores are not.
+.state/
+scratch/
+*.rdb
+*.aof
+appendonlydir/
+*.lbug
+*.lbug.*
+*.lance/
+*.omni/
+minio-data/
+
+# --- Logs ---------------------------------------------------------------------
+*.log
+
+# --- OS and editors -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

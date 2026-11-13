@@ -2,7 +2,33 @@
 
 Witnessmark checks seven concurrency and temporal invariants, I1 to I7, on graph databases and agent-memory layers. Every verdict comes with a witness: the raw, replayable record of the operations that produced it.
 
-> **Status: specification.** There is no code yet. The blueprints below are the contract the code will be built against.
+> **Status: milestone M1.** The core runner, the I1 and I2 checkers and the two baseline adapters work, and are calibrated against FalkorDB 6.0.4 and Neo4j 5.26.2. No target adapter exists yet. The blueprints below are the contract the code is built against.
+
+## Quick start
+
+You need Python 3.10 or newer, and Docker. Nothing needs installing: the core uses only the standard library.
+
+```bash
+python wm.py selftest
+```
+
+```bash
+docker compose -f baselines/docker-compose.yml up -d
+```
+
+```bash
+python wm.py env
+```
+
+```bash
+python wm.py calibrate --write evidence/M1_CALIBRATION.md
+```
+
+```bash
+docker compose -f baselines/docker-compose.yml down
+```
+
+`calibrate` runs the control matrix (master blueprint, section 7.6) and writes raw evidence under `evidence/`. `python wm.py report --calibration` rebuilds the report from that evidence alone.
 
 ## What it checks
 

@@ -93,19 +93,24 @@ The questions it answers:
                                  run.json (verdicts) ──► reporter ──► tables
 ```
 
-### 3.3 Planned layout
+### 3.3 Layout
 
 ```text
 gnomon-b2b-harness/          repository root; the project is Witnessmark
 ├── MASTER_BLUEPRINT.md      this document
 ├── README.md
 ├── LICENSE                  Apache-2.0
-├── core/                    engine-neutral code (empty until M1)
+├── wm.py                    entry point: python wm.py <command>; nothing to install
+├── baselines/
+│   └── docker-compose.yml   FalkorDB 6.0.4 and Neo4j 5.26.2, pinned by digest
+├── core/
+│   ├── witnessmark/         the engine-neutral package (standard library only)
+│   └── tests/               unit tests: python wm.py selftest
 ├── targets/
 │   ├── 01-zep-graphiti/     blueprint, then adapter, scenarios, fixtures
 │   ├── 02-cognee/
 │   └── 03-omnigraph/
-├── evidence/                committed raw evidence of published runs (planned)
+├── evidence/                committed raw evidence of published runs
 ├── drafts/                  outreach drafts; gitignored, never committed
 └── .state/                  live stores and scratch; gitignored (planned)
 ```
@@ -118,6 +123,8 @@ gnomon-b2b-harness/          repository root; the project is Witnessmark
 | `asyncio` | coroutines on one event loop | the target library is async, and the question is in-process concurrency |
 | `process` | OS processes (spawn start method), each building its own client and library instance | per-process locks or queues are part of the question |
 | `container` | clients or servers in separate containers | pauses, kills and takeovers |
+
+M1 implements `thread` mode. Each other mode lands with the first target that needs it: `asyncio` and `process` in M2 (Graphiti), `container` in M4 (Omnigraph).
 
 Nemesis actions are recorded in the history as operations whose client is `nemesis`:
 
@@ -404,7 +411,7 @@ Unknown outcomes are always reported.
 | Trials per configuration (T) | 20 |
 | τ_op / τ_trial | 60 s / 600 s |
 | Seed | recorded in every run; fixed for published runs |
-| Python | 3.12 for the core |
+| Python | 3.10 or newer for the core (M1 ran on 3.14.7) |
 
 ## 7. Baseline and oracle contracts
 
@@ -475,6 +482,25 @@ The S28 figures are a sanity band, not a result. The harness re-measures them on
 
 New entries need a public source and a minimal repro.
 
+### 7.6 The calibration matrix (M1)
+
+`python wm.py calibrate` runs every configuration below. Each run is 50 clients × 20 trials, after a sequential control. The shapes are defined in `core/witnessmark/scenarios.py`; labels carry a `WM` prefix.
+
+| Scenario | Shape | What each client sends | FalkorDB 6.0.4 | Neo4j 5.26.2 |
+|---|---|---|---|---|
+| `claim.state` | `naive` | `MATCH (t:WMTask {id: $task}) WHERE t.state = 'open' SET t.state = 'claimed', t.holder = $agent RETURN count(t) AS won` | negative | positive (KD-N1) |
+| `claim.state` | `lock_first` | The same, after `SET t._wm_lock = true REMOVE t._wm_lock WITH t` | not run | negative |
+| `claim.lease` | `naive` | `OPTIONAL MATCH` the task's `WM_HOLDS` edges, `count` them, and `CREATE` one only if there are none: the shape of GNOMON's ClaimTask guard | negative | positive (KD-N1) |
+| `claim.lease` | `lock_first` | The same, after the dummy-property lock on the task | not run | negative |
+| `counter` | `direct` | `SET c.v = c.v + 1` | negative | negative (the documented automatic lock) |
+| `counter` | `via_with` | `WITH c, c.v AS p SET c.v = p + 1` | negative | positive (KD-N1) |
+| `disjoint` | `set` | Client i sets its own property `d.pNN` on one shared node | negative | negative |
+
+**Bases.**
+
+- **FalkorDB:** GNOMON S3 [ours].
+- **Neo4j:** the Operations Manual, with one exception. `disjoint.set` is [inference]: every `SET` takes the node's write lock, and no client writes another client's property.
+
 ## 8. Deterministic model stubs
 
 Agent-memory layers call an LLM, an embedder and often a reranker. Witnessmark replaces all three.
@@ -534,6 +560,17 @@ evidence/<target>/<scenario>/<run_id>/
   "properties": {
     "schema_version": { "const": "0.1" },
     "run_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$" },
+    "batch": { "type": ["string", "null"], "description": "groups the runs of one calibration or sweep" },
+    "expectation": {
+      "type": "object",
+      "description": "the configuration's control role and its basis (section 7.6)",
+      "properties": {
+        "role": { "enum": ["negative", "positive"] },
+        "basis": { "enum": ["documented", "standard", "baseline", "issue", "inferred"] },
+        "basis_ref": { "type": "string" },
+        "known_deviation": { "type": ["string", "null"] }
+      }
+    },
     "harness": {
       "type": "object",
       "required": ["version", "commit", "dirty"],
@@ -545,12 +582,15 @@ evidence/<target>/<scenario>/<run_id>/
     },
     "target": {
       "type": "object",
-      "required": ["name", "repo", "ref", "commit"],
+      "required": ["name", "repo", "ref"],
+      "anyOf": [ { "required": ["commit"] }, { "required": ["digest"] } ],
+      "description": "a target built from source is identified by its commit; one run from an image, by its digest",
       "properties": {
         "name": { "type": "string" },
         "repo": { "type": "string", "description": "owner/name" },
-        "ref": { "type": "string", "description": "tag, branch or refs/pull/N/head" },
+        "ref": { "type": "string", "description": "tag, branch, refs/pull/N/head, or the version an image reports" },
         "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "package_version": { "type": "string" }
       }
     },
@@ -578,6 +618,7 @@ evidence/<target>/<scenario>/<run_id>/
         "cpu": { "type": "string" },
         "cores": { "type": "integer" },
         "memory_gb": { "type": "number" },
+        "python": { "type": "string" },
         "docker": { "type": "string" },
         "vm_cpus": { "type": "integer" },
         "vm_memory_gb": { "type": "number" },

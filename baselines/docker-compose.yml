@@ -1,0 +1,30 @@
+# Witnessmark baselines (master blueprint section 7).
+#
+#   docker compose -f baselines/docker-compose.yml up -d
+#   python wm.py env
+#   docker compose -f baselines/docker-compose.yml down
+#
+# Both images are pinned by digest. Ports bind to 127.0.0.1 only, nothing
+# persists between restarts, and Neo4j runs without authentication: these
+# containers are local, disposable test fixtures.
+name: witnessmark
+
+services:
+  falkordb:
+    # FalkorDB 6.0.4 (graph module 60004): the digest GNOMON pins.
+    image: falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f
+    container_name: wm-falkordb
+    ports:
+      - "127.0.0.1:16380:6379"
+
+  neo4j:
+    # Neo4j 5.26.2 Community, the version Graphiti's root docker-compose.yml pins.
+    image: neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365
+    container_name: wm-neo4j
+    ports:
+      - "127.0.0.1:17474:7474"
+    environment:
+      NEO4J_AUTH: "none"
+      NEO4J_server_memory_heap_initial__size: "512m"
+      NEO4J_server_memory_heap_max__size: "1g"
+      NEO4J_server_memory_pagecache_size: "256m"

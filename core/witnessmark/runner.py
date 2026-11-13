@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import SCHEMA_VERSION, env
 from .adapters.base import Engine, EngineError, EngineUnavailable, Session
-from .evidence import RunDir, digest, make_run_id
+from .evidence import RunDir, crash_note, digest, make_run_id
 from .history import FAIL, OK, UNKNOWN, Op
 from .scenarios import EXPECTATIONS, Expectation, Scenario, client_name
 from .timing import iso, stamp, utc_now
@@ -235,9 +235,7 @@ def run(config: RunConfig) -> dict:
     try:
         return _run_body(config, expectation, header, run_id, run_dir, component, harness)
     except Exception:
-        # A run that crashes leaves no run.json, so the reporter skips it; ERROR.md says why.
-        (run_dir.path / "ERROR.md").write_text(f"# Run {run_id} crashed\n\n```text\n{traceback.format_exc()}```\n",
-                                               encoding="utf-8", newline="\n")
+        crash_note(run_dir.path, run_id, traceback.format_exc())
         raise
 
 

@@ -2,8 +2,9 @@
 
 import datetime
 import unittest
+from pathlib import Path
 
-from witnessmark.evidence import digest, make_run_id
+from witnessmark.evidence import digest, make_run_id, redact
 from witnessmark.report import proposed_gate_ms
 from witnessmark.scenarios import Expectation
 from witnessmark.verdicts import percentile, role_control, summarize, verdict
@@ -76,6 +77,13 @@ class EvidenceIdTest(unittest.TestCase):
 
     def test_digest_ignores_key_order(self):
         self.assertEqual(digest({"a": 1, "b": 2}), digest({"b": 2, "a": 1}))
+
+    def test_redact_replaces_the_home_directory_in_every_spelling(self):
+        home = str(Path.home())
+        text = f"File {home}\\x.py; {home.replace(chr(92), '/')}/y.py; {home.replace(chr(92), chr(92) * 2)}\\\\z"
+        cleaned = redact(text)
+        self.assertNotIn(Path.home().name, cleaned)
+        self.assertEqual(cleaned.count("~"), 3)
 
 
 if __name__ == "__main__":

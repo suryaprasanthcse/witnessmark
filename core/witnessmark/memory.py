@@ -25,7 +25,7 @@ from pathlib import Path
 
 from . import SCHEMA_VERSION, env
 from .checkers import Check
-from .evidence import RunDir, digest, make_run_id
+from .evidence import RunDir, crash_note, digest, make_run_id
 from .history import FAIL, OK, UNKNOWN, Op
 from .stubs import CURRENT_OP
 from .timing import Stamp, iso, stamp, utc_now
@@ -323,6 +323,12 @@ def _header(config: MemoryRunConfig, target: MemoryTarget, scenario_id: str, inv
     }
 
 
+def _note_crash(scope: dict) -> None:
+    """Called from an except block: leave ERROR.md, redacted, in the crashed run's directory."""
+    if scope.get("run_dir") is not None:
+        crash_note(scope["run_dir"].path, scope.get("run_id", "unknown"), traceback.format_exc())
+
+
 def _finish(config: MemoryRunConfig, run_dir: RunDir, manifest: dict, history: list[Op]) -> dict:
     manifest["finished_at"] = iso(utc_now())
     run_dir.write_history(history)
@@ -492,6 +498,9 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
                                   scenario.basis_ref, raced_all=bool(valid) and raced == len(valid)),
         }
         return _finish(config, run_dir, manifest, history)
+    except Exception:
+        _note_crash(locals())
+        raise
     finally:
         await target.close()
 
@@ -560,6 +569,9 @@ async def run_cases(config: MemoryRunConfig, suite: CaseSuite) -> dict:
             "verdicts": _verdicts(suite.invariants, trials, True, "none", "issue", ""),
         }
         return _finish(config, run_dir, manifest, history)
+    except Exception:
+        _note_crash(locals())
+        raise
     finally:
         await target.close()
 
@@ -631,6 +643,9 @@ async def run_visibility(config: MemoryRunConfig, scenario: VisibilityScenario) 
             "verdicts": _verdicts(scenario.invariants, trials, True, "none", "inferred", ""),
         }
         return _finish(config, run_dir, manifest, history)
+    except Exception:
+        _note_crash(locals())
+        raise
     finally:
         await writer.close()
         await reader.close()

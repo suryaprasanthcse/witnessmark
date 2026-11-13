@@ -35,6 +35,20 @@ def make_run_id(started: datetime.datetime, header: dict) -> str:
     return f"{started.astimezone(datetime.timezone.utc):%Y%m%dT%H%M%SZ}-{short}"
 
 
+def redact(text: str) -> str:
+    """Replace the home directory with ~ in every spelling a traceback may use (master blueprint 9.5)."""
+    home = str(Path.home())
+    for spelling in {home, home.replace("\\", "/"), home.replace("\\", "\\\\")}:
+        text = text.replace(spelling, "~")
+    return text
+
+
+def crash_note(run_dir_path: Path, run_id: str, trace: str) -> None:
+    """A crashed run leaves no run.json, so the reporter skips it; ERROR.md says why."""
+    (Path(run_dir_path) / "ERROR.md").write_text(f"# Run {run_id} crashed\n\n```text\n{redact(trace)}```\n",
+                                                 encoding="utf-8", newline="\n")
+
+
 def write_json(path: Path, value) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 

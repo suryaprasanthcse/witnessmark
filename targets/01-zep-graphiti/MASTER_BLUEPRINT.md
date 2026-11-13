@@ -225,8 +225,8 @@ The tracker was checked on 2026-11-13 (read-only).
    - #1867 cannot run on FalkorDB 6.0.4 until it is rebased: index creation fails (run `20261113T175500Z-dce0eb46`).
 4. **K16, `add_triplet` group scope.** [getzep/graphiti#1795](https://github.com/getzep/graphiti/issues/1795) (open) covers this code path in an older form, where `add_triplet` reassigned the shared driver. Comment there with the v0.31.2 and main measurement and `repros/repro_triplet_group_graph.py`: the reassignment is gone, and the triplet now goes to the default graph.
 5. **K17, shared search limit.** Already fixed by the open one-line [getzep/graphiti#1594](https://github.com/getzep/graphiti/pull/1594) (`.model_copy(deep=True)` before `.limit` is set). Support it with G5's numbers rather than filing anything.
-   - **Done first:** G5 on #1594's head.
-   - **Status:** building that environment needs the maintainer's explicit approval, because it installs and runs a third-party pull request's code. That the PR clears G5 is [inference] until then.
+   - **Measured** (with the maintainer's approval to run the PR's code): on Neo4j, #1594's head keeps the shared limit at 10 after `search(num_results=1)`. It leaves 1 current version where v0.31.2 leaves 8 ([evidence/M2_PR1594.md](../../evidence/M2_PR1594.md)).
+   - **FalkorDB:** its 0.29.2 base fails index creation on FalkorDB 6.0.4, as #1867's does.
 6. **K18, the FalkorDB connection pool.** No issue was found. This is a candidate new issue, with `repros/repro_falkordb_pool.py` and the default-pool G1 run.
 7. **K19, httpx.** [getzep/graphiti#1893](https://github.com/getzep/graphiti/issues/1893) and its fix [getzep/graphiti#1894](https://github.com/getzep/graphiti/pull/1894) already cover it. Nothing to add.
 8. **G1 and G2.** These are boundary results (K15). Offer them as data on how much the documented sequential requirement matters, for example for several MCP replicas on one database, not as bugs.
@@ -262,6 +262,7 @@ The tracker was checked on 2026-11-13 (read-only).
 | G3, #1867 | Crashes at index creation on 6.0.4 | R5 fixed, MR1 holds, consistent with the code reading; still contrary to #2012 on R1, R2 and R4 | OBSERVED |
 | G4 | 10 of 10 writes seen on the first search, from the same instance and from a second one | Same | PASS |
 | G5 | `default`: 1 current version. `limit1`: 6 current versions after one `search(num_results=1)` | 1 and 8 | OBSERVED (K17); no concurrency involved |
+| G5 on [#1594](https://github.com/getzep/graphiti/pull/1594)'s head (batch `m2-pr1594-20261113T191556Z`, harness `546c210`) | Fails index creation on 6.0.4 (its 0.29.2 base) | Both cases: 1 current version; the shared limit stays 10 | PASS: the PR's one-line fix removes K17 |
 
 **Repros** (`repros/`, standard library plus graphiti-core, no API key), run on 2026-11-13 against the baselines:
 

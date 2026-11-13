@@ -1,0 +1,156 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T191558Z-f7c43b28",
+  "batch": "m2-pr1594-20261113T191556Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "546c21055bb1dca16be0a0bd7ae6f3121c120dd4",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "pr1594-c33cc3c6",
+    "package_version": "0.29.2",
+    "commit": "c33cc3c6626f64f1b880484b90176130b5bc7b9e"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.29.2",
+      "config": {
+        "build": "pr1594-c33cc3c6",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g2",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g5.shared_search_limit",
+    "invariants": [
+      "I7A"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 2,
+    "params": {
+      "cases": [
+        "default",
+        "limit1"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T19:15:58.745315Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "default",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 11,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:36b6e21d339bf4c3dff49606dda6f47ba11e66f68f5042eff756149b54471f8d",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "current versions",
+          "detail": "1 current version(s) of Alice's employer, none overlapping (shared edge-search limit after the read: 10)",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "limit1",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 11,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:36b6e21d339bf4c3dff49606dda6f47ba11e66f68f5042eff756149b54471f8d",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "current versions",
+          "detail": "1 current version(s) of Alice's employer, none overlapping (shared edge-search limit after the read: 10)",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I7A",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "current versions"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-13T19:16:01.369541Z"
+}

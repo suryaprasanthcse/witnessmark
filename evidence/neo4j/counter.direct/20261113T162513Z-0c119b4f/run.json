@@ -1,0 +1,579 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T162513Z-0c119b4f",
+  "batch": "m1-20261113T162442Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "c31758306e38ea3a8b40af98b965a31900e5e6b5",
+    "dirty": false
+  },
+  "target": {
+    "name": "neo4j",
+    "repo": "neo4j/neo4j",
+    "ref": "5.26.2 community",
+    "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "neo4j",
+      "version": "5.26.2 community",
+      "config": {
+        "api": "HTTP tx/commit",
+        "isolation": "read committed (default)"
+      },
+      "image": "neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365",
+      "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "counter.direct",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "direct",
+      "query": "MATCH (c:WMCounter {id: $counter}) SET c.v = c.v + 1 RETURN c.v AS v",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261122,
+  "started_at": "2026-11-13T16:25:13.277959Z",
+  "finished_at": "2026-11-13T16:25:19.079406Z",
+  "expectation": {
+    "role": "negative",
+    "basis": "documented",
+    "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "neo4j counter.direct: 50 clients, one at a time",
+      "expected": "50 acknowledged increments and a final value of 50",
+      "observed": "50 acknowledged; value 50",
+      "met": true
+    },
+    {
+      "kind": "negative",
+      "configuration": "neo4j counter.direct: 50 clients x 20 trials",
+      "expected": "no violation in 20 valid trials",
+      "observed": "0 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 9.801,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 8.098,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 10.067,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 9.566,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 10.425,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 8.168,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.898,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.769,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 7.351,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.371,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.383,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 10.164,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 7.654,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 9.77,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.753,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 8.153,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 9.687,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 7.403,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.353,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.993,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "lost updates"
+      },
+      "basis": "documented",
+      "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+      "witnesses": []
+    }
+  ]
+}

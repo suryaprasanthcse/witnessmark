@@ -1,0 +1,13 @@
+{
+  "k": 8,
+  "digest": "sha256:ed487964d7cc8eb1f012ee77e85d212844d9f0c01e0d02ee976d028ce57251f9",
+  "state": {
+    "tasks": [
+      {
+        "id": 1,
+        "state": "claimed",
+        "holder": "c45"
+      }
+    ]
+  }
+}

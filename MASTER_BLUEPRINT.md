@@ -379,7 +379,10 @@ A positive or overlap control shows that the runner can see a race before a clea
 A trial is valid only if every one of these holds:
 
 - The precondition digest matched.
-- Δ ≤ δ. The defaults are 5 ms for `thread` and `asyncio`, 25 ms for `process` and 50 ms for `container`. They are calibrated in M1 (section 12).
+- Δ ≤ δ.
+  - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
+  - **Other modes** keep provisional bounds until each is calibrated with its first target: 5 ms for `asyncio`, 25 ms for `process`, 50 ms for `container`.
+  - **`calibrate`** records Δ without gating on it, because its job is to set δ.
 - The SUT was healthy before and after the trial (`health()`).
 - At most 5% of operations had an unknown outcome.
 - No client raised an unhandled exception.
@@ -442,6 +445,12 @@ Unknown outcomes are always reported.
 
 The S28 figures are a sanity band, not a result. The harness re-measures them on its own host.
 
+**Re-measured in M1** [measured: `evidence/M1_CALIBRATION.md`]. With 50 clients per trial, all five shapes in section 7.6 held in 20 of 20 trials:
+
+- Both claim shapes had exactly one winner in every trial.
+- Neither counter shape lost an increment. That includes `counter.via_with`, the shape on which Neo4j loses increments.
+- No disjoint write was lost.
+
 ### 7.3 Neo4j 5.26.2
 
 **Image.** `neo4j:5.26.2` (Community), the version Graphiti's root `docker-compose.yml` pins. The digest is recorded at first pull and pinned from then on.
@@ -458,6 +467,16 @@ The S28 figures are a sanity band, not a result. The harness re-measures them on
 - A naive guarded claim is a positive control: it may admit several winners.
 - A lock-first claim is a negative control: it should admit exactly one.
 - Neither outcome is a Neo4j defect.
+
+**Measured in M1** [measured: `evidence/M1_CALIBRATION.md`]. 50 clients, 20 trials per shape:
+
+| Shape | Violating trials | Per trial |
+|---|---|---|
+| `claim.state.naive` | 20 of 20 | 4 to 13 clients told they won (median 10.5) |
+| `claim.lease.naive` | 20 of 20 | 2 to 13 winners (median 10); every winner left its own lease edge |
+| `counter.via_with` | 20 of 20 | 40 to 49 of 50 increments lost (median 46) |
+| `claim.state.lock_first`, `claim.lease.lock_first` | 0 of 20 | exactly 1 winner |
+| `counter.direct`, `disjoint.set` | 0 of 20 | nothing lost |
 
 **Semantic role.** Neo4j is the primary oracle for Cypher result semantics on static data.
 
@@ -478,7 +497,7 @@ The S28 figures are a sanity band, not a result. The harness re-measures them on
 | KD-F2 | FalkorDB 6.0.4 | `OPTIONAL MATCH … WHERE` after an aggregating `WITH` returns null | [FalkorDB/FalkorDB#3352](https://github.com/FalkorDB/FalkorDB/issues/3352) (GNOMON S25); fix proposed in [FalkorDB/FalkorDB#3521](https://github.com/FalkorDB/FalkorDB/pull/3521) | Same |
 | KD-F3 | FalkorDB 6.0.4 | `GRAPH.COPY` stalls the whole server | GNOMON S28 | An I6 baseline fact, not a correctness deviation |
 | KD-F4 | FalkorDB 6.0.4 | Dropping one index rebuilds the label's remaining index | GNOMON S27 | I4 runs during an index rebuild wait for `OPERATIONAL`, or record the plan change |
-| KD-N1 | Neo4j 5.26.2 | At read committed, guards in `WHERE` and values carried through `WITH` take no lock | Neo4j Operations Manual | Naive shapes are positive controls |
+| KD-N1 | Neo4j 5.26.2 | At read committed, guards in `WHERE` and values carried through `WITH` take no lock | Neo4j Operations Manual; measured in M1 (section 7.3) | Naive shapes are positive controls |
 
 New entries need a public source and a minimal repro.
 
@@ -884,12 +903,20 @@ Each milestone ends with a review by the maintainer, and the next one starts onl
 | M4 | Omnigraph adapter, scenarios O1 to O4 | The re-measured FalkorDB copy curve falls inside the S28 band |
 | M5 | Clean reruns, reports regenerated from evidence, drafts | Every number traces to a run_id |
 
+**Status.** M1 met its exit criterion on 2026-11-13:
+
+- batch `m1-20261113T162442Z`;
+- harness commit `c317583`, with a clean tree;
+- report in `evidence/M1_CALIBRATION.md`.
+
+All 12 sequential controls and all 9 negative controls were met, and all 3 positive controls fired.
+
 ## 13. Open questions
 
 | Question | Settled in |
 |---|---|
-| Can the 5, 25 and 50 ms release-spread bounds be met on Windows with Docker Desktop? | M1 measures |
-| Should clients run inside the Docker network rather than on the Windows host? | M1 compares both |
+| Can the release-spread bounds be met on Windows with Docker Desktop? | Answered for `thread` mode in M1: 50 threads cannot meet 5 ms (p50 7.88 ms), so δ is 40 ms (section 6.3). The other modes are measured when they land. |
+| Should clients run inside the Docker network rather than on the Windows host? | Still open: M1 ran every client on the Windows host |
 | What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | M2 |
 | When do Neo4j fulltext and vector indexes reflect a committed write? | M2 |
 | Which Neo4j release breaks ties (section 7.4)? | Pinned when first needed |

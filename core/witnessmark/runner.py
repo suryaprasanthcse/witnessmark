@@ -25,6 +25,9 @@ from .timing import iso, stamp, utc_now
 from .verdicts import role_control, verdict
 
 UNKNOWN_LIMIT = 0.05  # at most 5% of a trial's operations may have an unknown outcome (section 6.3)
+# δ for thread mode: 1.5 × the p99 release spread of the M1 calibration (section 6.3,
+# evidence/M1_CALIBRATION.md). `calibrate` records the spread without gating on it.
+THREAD_SPREAD_GATE_MS = 40.0
 
 
 @dataclass
@@ -37,7 +40,7 @@ class RunConfig:
     seed: int = 0
     timeout_s: float = 60.0
     trial_timeout_s: float = 600.0
-    spread_gate_ms: float | None = None  # None records the release spread without gating on it
+    spread_gate_ms: float | None = THREAD_SPREAD_GATE_MS  # None records the spread without gating on it
     evidence_root: Path = Path("evidence")
     repo_root: Path = Path(".")
     batch: str | None = None
@@ -184,7 +187,9 @@ def default_command(config: RunConfig) -> str:
     args = ["python", "wm.py", "run", "--engine", config.engine.name, "--scenario", config.scenario.id,
             "--shape", config.shape, "--clients", str(config.clients), "--trials", str(config.trials),
             "--seed", str(config.seed)]
-    if config.spread_gate_ms is not None:
+    if config.spread_gate_ms is None:
+        args.append("--no-spread-gate")
+    else:
         args += ["--spread-gate-ms", str(config.spread_gate_ms)]
     return shlex.join(args)
 

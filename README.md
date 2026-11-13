@@ -28,7 +28,7 @@ python wm.py calibrate --write evidence/M1_CALIBRATION.md
 docker compose -f baselines/docker-compose.yml down
 ```
 
-`calibrate` runs the control matrix (master blueprint, section 7.6) and writes raw evidence under `evidence/`. `python wm.py report --calibration` rebuilds the report from that evidence alone.
+`calibrate` runs the control matrix (master blueprint, section 7.6) and writes raw evidence under `evidence/`. `python wm.py report --calibration` rebuilds the report from that evidence alone. The committed M1 calibration is [evidence/M1_CALIBRATION.md](evidence/M1_CALIBRATION.md).
 
 ## What it checks
 

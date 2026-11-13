@@ -13,7 +13,7 @@ from pathlib import Path
 from . import __version__, env
 from .adapters import make_engine
 from .report import calibration_markdown, in_batch, latest_batch, load_runs, runs_table
-from .runner import RunConfig, run
+from .runner import THREAD_SPREAD_GATE_MS, RunConfig, run
 from .scenarios import CALIBRATION, SCENARIOS, resolve
 from .timing import utc_now
 
@@ -53,8 +53,9 @@ def cmd_env(args) -> int:
 def cmd_run(args) -> int:
     scenario = resolve(args.scenario, args.shape)
     engine = _engine(args.engine, args)
+    gate = None if args.no_spread_gate else args.spread_gate_ms
     config = RunConfig(engine=engine, scenario=scenario, shape=args.shape, clients=args.clients, trials=args.trials,
-                       seed=args.seed, timeout_s=args.timeout, spread_gate_ms=args.spread_gate_ms,
+                       seed=args.seed, timeout_s=args.timeout, spread_gate_ms=gate,
                        evidence_root=Path(args.evidence), repo_root=REPO_ROOT, batch=args.batch,
                        command=shlex.join(["python", "wm.py", *sys.argv[1:]]))
     manifest = run(config)
@@ -78,7 +79,8 @@ def cmd_calibrate(args) -> int:
         scenario = resolve(base, shape)
         seed = args.seed + index
         command = shlex.join(["python", "wm.py", "run", "--engine", engine_name, "--scenario", base, "--shape", shape,
-                              "--clients", str(args.clients), "--trials", str(args.trials), "--seed", str(seed)])
+                              "--clients", str(args.clients), "--trials", str(args.trials), "--seed", str(seed),
+                              "--no-spread-gate"])
         config = RunConfig(engine=_engine(engine_name, args), scenario=scenario, shape=shape, clients=args.clients,
                            trials=args.trials, seed=seed, timeout_s=args.timeout, spread_gate_ms=None,
                            evidence_root=Path(args.evidence), repo_root=REPO_ROOT, batch=batch, command=command)
@@ -135,8 +137,11 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--trials", type=int, default=20)
     p_run.add_argument("--seed", type=int, default=0)
     p_run.add_argument("--timeout", type=float, default=60.0, help="per-operation timeout, seconds")
-    p_run.add_argument("--spread-gate-ms", type=float, default=None,
-                       help="mark trials whose release spread exceeds this many ms as invalid")
+    p_run.add_argument("--spread-gate-ms", type=float, default=THREAD_SPREAD_GATE_MS,
+                       help="mark trials whose release spread exceeds this many ms as invalid "
+                            "(default: %(default)s, the calibrated δ for thread mode)")
+    p_run.add_argument("--no-spread-gate", action="store_true",
+                       help="record the release spread without gating on it, as calibrate does")
     p_run.add_argument("--evidence", default=str(REPO_ROOT / "evidence"))
     p_run.add_argument("--batch", default=None)
     p_run.set_defaults(func=cmd_run)

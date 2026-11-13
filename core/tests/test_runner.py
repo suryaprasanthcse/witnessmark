@@ -105,7 +105,7 @@ class MemoryClaim(ClaimState):
 class RunnerTest(unittest.TestCase):
     def run_memory(self, racy: bool, role: str, evidence: Path):
         config = RunConfig(engine=MemoryEngine(racy), scenario=MemoryClaim(), shape="naive", clients=20, trials=5,
-                           seed=7, evidence_root=evidence, repo_root=REPO_ROOT, batch="test",
+                           seed=7, spread_gate_ms=None, evidence_root=evidence, repo_root=REPO_ROOT, batch="test",
                            expectation=Expectation(role, "inferred", "test"), capture_environment=False)
         return run(config)
 

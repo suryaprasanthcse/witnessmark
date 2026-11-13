@@ -11,7 +11,7 @@ from .verdicts import percentile
 
 def load_runs(evidence_root: Path) -> list[dict]:
     runs = []
-    for path in sorted(Path(evidence_root).glob("*/*/*/run.json")):
+    for path in sorted(Path(evidence_root).rglob("run.json")):
         manifest = json.loads(path.read_text(encoding="utf-8"))
         manifest["_dir"] = path.parent.as_posix()
         runs.append(manifest)
@@ -80,6 +80,115 @@ def runs_table(runs: list[dict]) -> str:
                 run_id=run["run_id"],
             )
         )
+    return "\n".join(lines)
+
+
+def _where(run: dict) -> tuple[str, str]:
+    """(build, backend) of a memory run, from its target record and components."""
+    sut = next((c for c in run.get("components", []) if c.get("role") == "sut"), {})
+    config = sut.get("config", {})
+    backend = config.get("backend", "?")
+    if config.get("falkordb_pool") == "default":
+        backend += " (default pool)"
+    return run["target"].get("ref", "?"), backend
+
+
+def _verdict_cell(verdict: dict) -> str:
+    cell = f"{verdict['invariant']} {verdict['status']} {verdict['trials_violating']}/{verdict['trials_valid']}"
+    magnitude = verdict.get("magnitude", {})
+    if verdict["trials_violating"] and magnitude.get("max") is not None:
+        cell += f" (max {_fmt(magnitude['max'])} {magnitude.get('unit', '')})"
+    return cell
+
+
+def race_table(runs: list[dict]) -> str:
+    lines = ["| Build | Backend | Scenario | Sequential control | Overlap control | Verdicts | Run |",
+             "|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, backend = _where(run)
+        sequential = _control(run, "sequential") or {}
+        overlap = _control(run, "overlap") or {}
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | {'met' if sequential.get('met') else 'NOT met'} "
+                     f"| {overlap.get('observed', '–')} | {'; '.join(_verdict_cell(v) for v in run['verdicts'])} "
+                     f"| `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def cases_table(runs: list[dict]) -> str:
+    """One row per case-suite run; each cell names the checks that failed for that case."""
+    cases = []
+    for run in runs:
+        for trial in run["trials"]:
+            if trial.get("case") and trial["case"] not in cases:
+                cases.append(trial["case"])
+    lines = ["| Build | Backend | Suite | " + " | ".join(cases) + " | Run |",
+             "|---|---|---|" + "---|" * len(cases) + "---|"]
+    for run in runs:
+        build, backend = _where(run)
+        cells = []
+        for case in cases:
+            trial = next((t for t in run["trials"] if t.get("case") == case), None)
+            if trial is None:
+                cells.append("–")
+                continue
+            failed = sorted({c["invariant"] for c in trial["checks"] if not c["held"]})
+            cells.append("ok" if not failed else ("not valid" if not trial["valid"] else ", ".join(failed)))
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | " + " | ".join(cells)
+                     + f" | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def visibility_table(runs: list[dict]) -> str:
+    lines = ["| Build | Backend | Writes | Seen on the first search, same instance | Seen on the first search, second "
+             "instance | Longest lag (ms) | Run |", "|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, backend = _where(run)
+        same = [c for t in run["trials"] for c in t["checks"] if c["detail"].startswith("same instance")]
+        other = [c for t in run["trials"] for c in t["checks"] if c["detail"].startswith("second instance")]
+        longest = max((c["magnitude"] for c in same + other), default=None)
+        lines.append(f"| {build} | {backend} | {len(run['trials'])} | {sum(c['held'] for c in same)} of {len(same)} "
+                     f"| {sum(c['held'] for c in other)} of {len(other)} | {_fmt(longest)} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
+    if not runs:
+        return f"# {title}\n\nNo runs found for batch `{batch}`.\n"
+    races = [run for run in runs if run["scenario"]["mode"] in ("asyncio", "queue", "process")]
+    suites = [run for run in runs if run["scenario"]["mode"] == "sequential" and
+              any(t.get("case") for t in run["trials"])]
+    visibility = [run for run in runs if run["scenario"]["mode"] == "sequential" and run not in suites]
+    first = runs[0]
+    host, harness = first.get("host", {}), first.get("harness", {})
+    lines = [
+        f"# {title}: batch `{batch}`",
+        "",
+        "Regenerated from `evidence/` by `python wm.py report --memory`. Do not edit by hand.",
+        "",
+        f"- Harness commit: `{harness.get('commit')}` (dirty: {str(harness.get('dirty')).lower()})",
+        f"- Host: {host.get('os')}; {host.get('cpu')}; {host.get('cores')} logical cores; {host.get('memory_gb')} GB",
+        f"- Docker: {host.get('docker', 'unknown')}; VM limits {host.get('vm_cpus', '?')} CPUs, "
+        f"{host.get('vm_memory_gb', '?')} GB",
+        f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)",
+        "",
+    ]
+    if races:
+        sequential = sum(1 for run in races if (_control(run, "sequential") or {}).get("met"))
+        lines += ["## Races", "", race_table(races), "",
+                  f"Sequential controls met: {sequential} of {len(races)} race runs.", ""]
+        lines += ["### Release spread by mode (valid race trials)", "", "| Mode | Trials | p50 | p95 | p99 | max |",
+                  "|---|---|---|---|---|---|"]
+        for mode in ("asyncio", "queue", "process"):
+            values = spreads([run for run in races if run["scenario"]["mode"] == mode])
+            if values:
+                lines.append(f"| {mode} | {len(values)} | {_fmt(percentile(values, 50))} | "
+                             f"{_fmt(percentile(values, 95))} | {_fmt(percentile(values, 99))} | {_fmt(max(values))} |")
+        lines.append("")
+    if suites:
+        lines += ["## Known-answer suites", "", "A cell lists the checks that failed for that case; `ok` means none did.",
+                  "", cases_table(suites), ""]
+    if visibility:
+        lines += ["## Read your writes", "", visibility_table(visibility), ""]
     return "\n".join(lines)
 
 

@@ -104,6 +104,51 @@ def check_counter(ops: list[Op], value: int) -> Check:
     return Check("I2", not problems, lost, "lost updates", detail, witnesses if problems else [])
 
 
+def check_unique_keys(counts: dict[str, int], what: str, witnesses: dict[str, list[str]] | None = None,
+                      invariant: str = "I1B") -> Check:
+    """I1 Form B: every canonical key that exists exists exactly once."""
+    duplicated = {key: count for key, count in counts.items() if count > 1}
+    detail = (", ".join(f"{key} x{count}" for key, count in sorted(duplicated.items())) + f" ({what})"
+              if duplicated else f"{len(counts)} {what}, one record each")
+    found = [w for key in sorted(duplicated) for w in (witnesses or {}).get(key, [])]
+    return Check(invariant, not duplicated, max(counts.values(), default=0), "records per key", detail, found)
+
+
+def check_present(expected: list[str], present: set, what: str, invariant: str = "I2") -> Check:
+    """I2 for memory layers: everything the acknowledged writes introduced is there."""
+    missing = [item for item in expected if item not in present]
+    detail = (f"{len(missing)} of {len(expected)} {what} missing: {missing[:5]}" if missing
+              else f"all {len(expected)} {what} present")
+    return Check(invariant, not missing, len(missing), f"missing {what}", detail, missing[:20])
+
+
+def _moment(value):
+    from datetime import datetime
+
+    return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
+
+
+def check_no_overlapping_current(versions: list[dict], what: str) -> Check:
+    """I7a: no two current versions of one functional key overlap in valid time.
+
+    Each version is {"label", "valid_at", "invalid_at", "current"}; ISO timestamps, None meaning open.
+    """
+    current = [v for v in versions if v["current"]]
+    overlaps = []
+    for i, first in enumerate(current):
+        for second in current[i + 1:]:
+            start_1, end_1 = _moment(first["valid_at"]), _moment(first["invalid_at"])
+            start_2, end_2 = _moment(second["valid_at"]), _moment(second["invalid_at"])
+            before_end_2 = end_2 is None or start_1 is None or start_1 < end_2
+            before_end_1 = end_1 is None or start_2 is None or start_2 < end_1
+            if before_end_2 and before_end_1:
+                overlaps.append((first["label"], second["label"]))
+    detail = (f"{len(current)} current versions of {what}; overlapping pairs: {overlaps[:5]}" if overlaps
+              else f"{len(current)} current version(s) of {what}, none overlapping")
+    return Check("I7A", not overlaps, len(current), "current versions", detail,
+                 sorted({label for pair in overlaps for label in pair}))
+
+
 def check_disjoint(ops: list[Op], props: dict) -> Check:
     """I2 for writes to disjoint properties of one node: every acknowledged write survives."""
     missing = [op for op in _winners(ops) if props.get(op.input.get("prop")) != op.input.get("v")]

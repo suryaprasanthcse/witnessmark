@@ -12,7 +12,7 @@ from pathlib import Path
 
 from . import __version__, env
 from .adapters import make_engine
-from .report import calibration_markdown, in_batch, latest_batch, load_runs, runs_table
+from .report import calibration_markdown, in_batch, latest_batch, load_runs, memory_markdown, runs_table
 from .runner import THREAD_SPREAD_GATE_MS, RunConfig, run
 from .scenarios import CALIBRATION, SCENARIOS, resolve
 from .timing import utc_now
@@ -99,7 +99,12 @@ def cmd_report(args) -> int:
     runs = load_runs(Path(args.evidence))
     batch = args.batch or latest_batch(runs)
     selected = in_batch(runs, batch)
-    text = calibration_markdown(selected, batch) if args.calibration else runs_table(selected) + "\n"
+    if args.memory:
+        text = memory_markdown(selected, batch, args.title)
+    elif args.calibration:
+        text = calibration_markdown(selected, batch)
+    else:
+        text = runs_table(selected) + "\n"
     if args.write:
         Path(args.write).write_text(text, encoding="utf-8", newline="\n")
         print(f"wrote {args.write}")
@@ -161,6 +166,8 @@ def main(argv: list[str] | None = None) -> int:
     p_rep.add_argument("--evidence", default=str(REPO_ROOT / "evidence"))
     p_rep.add_argument("--batch", default=None, help="defaults to the latest batch")
     p_rep.add_argument("--calibration", action="store_true", help="the full calibration report")
+    p_rep.add_argument("--memory", action="store_true", help="the memory-layer report (races, suites, visibility)")
+    p_rep.add_argument("--title", default="Memory-layer runs", help="title of the memory-layer report")
     p_rep.add_argument("--write", default=None)
     p_rep.set_defaults(func=cmd_report)
 

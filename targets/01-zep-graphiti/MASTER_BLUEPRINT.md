@@ -4,258 +4,234 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Nothing has been measured. Every expectation below is [unmeasured] until a run says otherwise. |
+| Status | Specification v0.2, 2026-11-13. Implemented in M2. A finding counts only when a run in `evidence/` backs it. |
 | Project | [getzep/graphiti](https://github.com/getzep/graphiti), Apache-2.0. A Python framework that keeps a temporal knowledge graph in Neo4j, FalkorDB, Kuzu or Neptune. |
-| Line under test | graphiti-core v0.31.x. Primary pin: **v0.31.2**, tag commit `d72407dcedac911e1be9fc15b55e8c05a3efcc36` (2026-10-20), which is also the current PyPI release. Before filing anything, re-run on main: `ebef986a0b2360211b65751c111cacb4a7d790eb` (2026-11-11) or newer. |
-| Pull requests under regression | [#1867](https://github.com/getzep/graphiti/pull/1867) at head `a30934e18b9582fbea3aca742269fc2174b67f07`; [#2119](https://github.com/getzep/graphiti/pull/2119) at head `b2b727e05467346b6516e2c68e193f8142ef208b` |
+| Line under test | graphiti-core v0.31.x. Primary pin: **v0.31.2**, tag commit `d72407dcedac911e1be9fc15b55e8c05a3efcc36` (2026-10-20), which is also the current PyPI release. |
+| Other builds | main at `ebef986a0b2360211b65751c111cacb4a7d790eb` (2026-11-11); [#1867](https://github.com/getzep/graphiti/pull/1867) at head `a30934e18b9582fbea3aca742269fc2174b67f07`; [#2119](https://github.com/getzep/graphiti/pull/2119) at head `b2b727e05467346b6516e2c68e193f8142ef208b` |
 | Backends | FalkorDB 6.0.4 and Neo4j 5.26.2 (master §7) |
-| Models | Deterministic stubs (§4 below); no API keys |
+| Models | Deterministic stubs (§4); no API keys, no network calls |
+| Code | `witnessmark_graphiti/` (adapter, stubs, fixtures, scenarios), `wm_graphiti.py` (entry point), `requirements/` (frozen environments) |
 | Out of scope | Kuzu (archived upstream), Neptune, the hosted Zep service |
 
 All source links point at the v0.31.2 tag.
 
 ## 1. What is already known
 
+### 1.1 Before M2
+
 | # | Fact | Tag |
 |---|---|---|
-| K1 | The README describes the ingestion pipelines as designed for high concurrency. It sets the default concurrency low to avoid LLM rate limits, with `SEMAPHORE_LIMIT` defaulting to 10 ([README.md L255–264](https://github.com/getzep/graphiti/blob/v0.31.2/README.md#L255-L264)). | [docs] |
-| K2 | The MCP server processes one group's episodes sequentially; the code comment says this is to avoid race conditions ([graphiti_mcp_server.py L421](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/src/graphiti_mcp_server.py#L421)). The queue is an in-process `asyncio.Queue` per `group_id` ([queue_service.py L12–49](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/src/services/queue_service.py#L12-L49)). | [code] |
-| K3 | `Graphiti.add_episode` ([graphiti.py L1334](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1334)) shows no per-group guard of its own. M2 confirms this. | [inference] |
+| K1 | The README describes the ingestion pipelines as designed for high concurrency. It sets the default concurrency low to avoid LLM rate limits; `SEMAPHORE_LIMIT` defaults to 10 ([README.md L255–264](https://github.com/getzep/graphiti/blob/v0.31.2/README.md#L255-L264)). | [docs] |
+| K2 | The MCP server processes one group's episodes sequentially; the code comment says this avoids race conditions ([graphiti_mcp_server.py L421](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/src/graphiti_mcp_server.py#L421)). The queue is an in-process `asyncio.Queue` per `group_id` ([queue_service.py L12–49](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/src/services/queue_service.py#L12-L49)). | [code] |
 | K4 | A concurrency fix already exists in this code path. `_resolve_request_scope` ([graphiti.py L1304–1332](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1304-L1332)) replaced the reassignment of a shared driver. According to its docstring, that reassignment let concurrent calls for different groups persist episodes in the wrong graph (#1676). | [code] |
 | K5 | `_apply_temporal_invalidation` sets `expired_at = now` for any edge that has an `invalid_at` ([edge_operations.py L727–728](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/utils/maintenance/edge_operations.py#L727-L728)). The loop over later candidates runs only while `expired_at` is still unset (L731–743). | [code] |
-| K6 | [getzep/graphiti#2012](https://github.com/getzep/graphiti/issues/2012) (open) reports that edges with a future `invalid_at` are created already expired. A community member (Adam13y) published four known-answer cases, R1–R4. On v0.31.1 the results were R1 pass, R2 fail, R3 pass, R4 fail. On #1867 at `a30934e` only R3 passed, so R1 regresses there. Maintainers have not yet said what `expired_at` should mean when a future end of validity is known. Another commenter notes that `resolve_extracted_edge` is reached through several call sites, `add_triplet` among them. | [gh] |
-| K7 | [getzep/graphiti#1867](https://github.com/getzep/graphiti/pull/1867) (open; last updated 2026-09-10; GitHub reports merge conflicts) closes [#1865](https://github.com/getzep/graphiti/issues/1865): temporal deduplication collapses disjoint occurrences. Its CLA is signed. Its description cites a separate Neo4j datetime correction in #1866. | [gh] |
+| K6 | [getzep/graphiti#2012](https://github.com/getzep/graphiti/issues/2012) (open) reports that edges with a future `invalid_at` are created already expired. A community member (Adam13y) published known-answer cases R1–R4. On v0.31.1 the results were R1 pass, R2 fail, R3 pass, R4 fail. On #1867 at `a30934e` only R3 passed. Maintainers have not yet said what `expired_at` should mean when a future end of validity is known. | [gh] |
+| K7 | [getzep/graphiti#1867](https://github.com/getzep/graphiti/pull/1867) (open; GitHub reports merge conflicts) closes [#1865](https://github.com/getzep/graphiti/issues/1865): temporal deduplication collapses disjoint occurrences. | [gh] |
 | K8 | [getzep/graphiti#1166](https://github.com/getzep/graphiti/issues/1166) (open): node attributes have no temporal versioning. | [gh] |
-| K9 | `FalkorDriver` starts `build_indices_and_constraints` as a background task in its constructor ([falkordb_driver.py L178–184](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/driver/falkordb_driver.py#L178-L184)). Every `clone(database=…)` constructs a new driver (L334–347), so each group's driver starts its own index build. [getzep/graphiti#2119](https://github.com/getzep/graphiti/pull/2119) (open, fixes #1643) awaits that task before queries. | [code] [gh] |
-| K10 | On FalkorDB, each non-default `group_id` is a separate graph (falkordb_driver.py L334–347; the MCP server's comment at L1132). | [code] |
-| K11 | The root [docker-compose.yml](https://github.com/getzep/graphiti/blob/v0.31.2/docker-compose.yml) pins `neo4j:5.26.2` (L30) and `falkordb/falkordb:latest` (L51), and mounts the FalkorDB volume at `/data` (L56). The MCP compose file mounts the same image's volume at `/var/lib/falkordb/data` ([docker-compose-falkordb.yml L11](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/docker/docker-compose-falkordb.yml#L11)). The root file's mount may therefore not hold FalkorDB's data; G7 measures it. | [code] [inference] |
-| K12 | [getzep/graphiti#2117](https://github.com/getzep/graphiti/issues/2117) (open) reports FalkorDB data lost when the MCP containers restart. In the combined image, Redis is daemonized and then the MCP server is exec'd, so stopping the container kills Redis before it saves; the RDB schedule is the default and `appendonly` is off. The two-container setup has no AOF and no restart policy. | [gh] |
-| K13 | [getzep/graphiti#2142](https://github.com/getzep/graphiti/issues/2142) (open): a FalkorDB fulltext query fails on a lone `_` token. [getzep/graphiti#2021](https://github.com/getzep/graphiti/issues/2021) (open): FalkorDB reads return the full embedding, which the record parser then discards. | [gh] |
+| K9 | `FalkorDriver` starts `build_indices_and_constraints` as a background task in its constructor (falkordb_driver.py L178–184), and every `clone(database=…)` constructs a new driver. [getzep/graphiti#2119](https://github.com/getzep/graphiti/pull/2119) (open, fixes #1643) awaits that task before queries. | [code] [gh] |
+| K10 | On FalkorDB, each non-default `group_id` is a separate graph (falkordb_driver.py L334–347). On Neo4j every group lives in one database, as a property (the base driver's `clone` returns the same driver). | [code] |
+| K11 | The root [docker-compose.yml](https://github.com/getzep/graphiti/blob/v0.31.2/docker-compose.yml) mounts the FalkorDB volume at `/data` (L56). The MCP compose file mounts it at `/var/lib/falkordb/data` ([docker-compose-falkordb.yml L11](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/docker/docker-compose-falkordb.yml#L11)). G7 measures which one keeps data. | [code] [inference] |
+| K12 | [getzep/graphiti#2117](https://github.com/getzep/graphiti/issues/2117) (open): FalkorDB data is lost when the MCP containers restart. | [gh] |
+| K13 | [getzep/graphiti#2142](https://github.com/getzep/graphiti/issues/2142) (open): a FalkorDB fulltext query fails on a lone `_` token. [getzep/graphiti#2021](https://github.com/getzep/graphiti/issues/2021) (open): FalkorDB reads return the full embedding, which the parser then discards. | [gh] |
 | K14 | Contribution rules: file an issue first; feature pull requests need `rfc-approved`; a CLA is signed when the bot asks ([CONTRIBUTING.md](https://github.com/getzep/graphiti/blob/v0.31.2/CONTRIBUTING.md)). | [docs] |
+
+### 1.2 Learned while building M2
+
+| # | Fact | Tag |
+|---|---|---|
+| K15 | `add_episode`'s docstring asks callers to add episodes sequentially, each awaited before the next ([graphiti.py L1410–1413](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413)). Concurrent ingest into **one group** is therefore outside the documented contract. Concurrent calls for **different groups** are supported: the #1676 fix exists for them (L1427–1429). | [docs] [code] |
+| K16 | `add_triplet` reads, searches and writes through `self.driver` and `self.clients` (L2047–2171), not through the request scope that `add_episode` uses. On FalkorDB, where a group is its own graph, a triplet for group g would therefore land in the default graph. | [code], measured in G3 |
+| K17 | `Graphiti.search` sets `.limit = num_results` on the module-level `EDGE_HYBRID_SEARCH_RRF` object ([graphiti.py L1955–1958](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1955-L1958)). `add_episode`'s duplicate and contradiction searches read the same object ([edge_operations.py L532, L564](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/utils/maintenance/edge_operations.py#L532)). A read can therefore change how later writes detect contradictions. | [code], measured in G5 |
+| K18 | `FalkorDriver` builds the falkordb client with redis-py's defaults: a pool of 100 connections that raises `MaxConnectionsError` ("Too many connections") when all are busy, instead of waiting. Neo4j's driver waits for a free connection. | [code], observed in G1 |
+| K19 | graphiti-core 0.31.2 imports `httpx` (llm_client/client.py) without declaring it. With openai 3.x, which no longer depends on httpx, `import graphiti_core` fails until httpx is installed by hand. A commenter on #2012 hit the same thing. | [code] [measured: install] |
+| K20 | Graphiti sends anonymous telemetry (PostHog) unless `GRAPHITI_TELEMETRY_ENABLED` is off. The adapter switches it off before importing graphiti_core, and refuses to run if the switch did not take. | [code] |
 
 ## 2. How ingestion works, and where it can race
 
-`add_episode(name, episode_body, source_description, reference_time, source, group_id, …)` runs these steps:
+`add_episode` resolves a per-call driver for the group, retrieves previous episodes, then runs these steps:
 
-1. **Request scope.** Resolves a per-call driver for the group (L1304).
-2. **Context.** Retrieves previous episodes.
-3. **`extract_nodes`.** One model call (L1471).
-4. **`resolve_extracted_nodes`.** Searches existing candidates (fulltext and embedding similarity), then a model call deduplicates (L1480).
-5. **`extract_edges`.** One model call.
-6. **`resolve_extracted_edges`.** Searches related edges and invalidation candidates, then makes model calls to deduplicate and to detect contradictions. It also extracts dates and applies `_apply_temporal_invalidation` ([edge_operations.py L424](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/utils/maintenance/edge_operations.py#L424), L715, L834).
-7. **`add_nodes_and_edges_bulk`.** The write, inside `_process_episode_data` (L984, L1037).
+1. **`extract_nodes`.** Model call `extract_nodes.extract_message`.
+2. **`resolve_extracted_nodes`.** It looks for candidates by exact name, then by embedding similarity. If exactly one existing node has the same normalised name, it resolves deterministically. If two or more do, or a short name has no exact match, it asks the model (`dedupe_nodes.nodes`).
+3. **`extract_edges`.** Model call `extract_edges.edge`, which carries `valid_at` and `invalid_at`.
+4. **`resolve_extracted_edges`.** Two hybrid searches (BM25 and cosine), both through the shared `EDGE_HYBRID_SEARCH_RRF` config:
+   - related edges: the same endpoint pair;
+   - invalidation candidates: anywhere in the group.
 
-The other entry points are `add_episode_bulk` (L1588), `add_triplet` (L2033, which calls `resolve_extracted_edge` at L2156) and `remove_episode` (L2174).
+   Then one model call, `dedupe_edges.resolve_edge`, followed by `_apply_temporal_invalidation`.
+5. **Summaries.** Edge facts are appended to node summaries. The model (`extract_nodes.extract_summaries_batch`) is called only when a summary grows too long.
+6. **`add_nodes_and_edges_bulk`.** The write.
 
-**Race windows** (both [inference] until G1 and G2 measure them):
+`add_episode_bulk` uses one combined prompt (`extract_nodes_and_edges.extract_message`) and one batched timestamps prompt. `add_triplet` skips extraction and calls only the dedupe prompts.
 
 | Window | Steps | What can go wrong |
 |---|---|---|
-| W1, entities | 4 → 7 | Two episodes name the same new entity. Both search, both find nothing, and both create it. |
-| W2, facts | 6 → 7 | Two contradicting facts each look for invalidation candidates before the other has been written. Neither invalidates the other, so two versions stay current (I7a). |
+| W1, entities | 2 → 6 | Two episodes look for the same new entity, both find nothing, and both create it. |
+| W2, facts | 4 → 6 | Two contradicting facts each search before the other is written. Neither invalidates the other. |
 
-Neither backend's per-statement guarantees cover these windows, because the search, the model call and the write are separate statements. FalkorDB serialises writes to one graph, which orders the writes but does not re-run the search. Neo4j at read committed behaves the same way for this purpose.
+Neither backend's per-statement guarantee covers these windows, because the search, the model call and the write are separate statements.
 
 ## 3. Environment and pins
 
 | Component | Pin |
 |---|---|
-| graphiti-core | 0.31.2 wheel from PyPI. Also git installs of main at `ebef986a`, `refs/pull/1867/head` at `a30934e1` and `refs/pull/2119/head` at `b2b727e0`. |
-| Python | 3.12; the package requires ≥3.10 and <4 |
-| FalkorDB | 6.0.4 by digest (master §7.2). The Python driver version is whatever the pin resolves, and it is recorded. |
-| Neo4j | 5.26.2 Community (master §7.3) |
-| Concurrency setting | `SEMAPHORE_LIMIT` is recorded with every run; it runs at 10 (the default) and at 1 (a control) |
-| Models | In-process stubs (§4) |
+| graphiti-core | v0.31.2 from PyPI; main and #1867 from git at the commits above. Each build lives in its own venv under `.state/venvs/`; `requirements/<build>.txt` freezes every package. |
+| Extra dependency | `httpx` 0.28.1, which graphiti-core needs but does not declare (K19) |
+| Python | CPython 3.12.14 (the package requires ≥3.10 and <4) |
+| FalkorDB | 6.0.4 by digest (master §7.2). The adapter gives the falkordb client a **waiting** pool: 100 connections, like the default, but a caller waits instead of failing (K18). One G1 run uses Graphiti's own default pool, to record what that does. |
+| Neo4j | 5.26.2 Community over Bolt (port 17687), with the driver's default pool |
+| Telemetry | Off (K20) |
 
 ## 4. Stub contract
 
-| Client | Implementation |
+The stubs live in `witnessmark_graphiti/stubs.py`.
+
+**LLM.** `StubLLM` subclasses `LLMClient` and overrides `generate_response`, which Graphiti calls with `prompt_name` and `response_model`.
+
+- Each prompt has a handler. A handler reads the context Graphiti rendered into the prompt: the tagged sections such as `<CURRENT MESSAGE>`, `<ENTITIES>`, `<EXISTING FACTS>` and `<NEW FACT>`.
+- Every answer is validated against `response_model` before it is returned.
+- A prompt without a handler fails the run.
+
+| Prompts at v0.31.2 | Answer |
 |---|---|
-| LLM | A subclass of `LLMClient` that overrides `_generate_response(messages, response_model, max_tokens, model_size, *, model)` ([client.py L153–162](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/llm_client/client.py#L153-L162)). The public `generate_response` passes `group_id` and `prompt_name` (L208–219). The stub dispatches on `prompt_name` where one is given, and otherwise on the class name of `response_model`. Every answer is a dict that validates against `response_model`. |
-| Embedder | `EmbedderClient.create` and `create_batch` ([embedder/client.py L30–38](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/embedder/client.py#L30-L38)), returning deterministic vectors (master §8). |
-| Reranker | `CrossEncoderClient.rank(query, passages)`, returning `[(passage, score)]` ([cross_encoder/client.py L28](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/cross_encoder/client.py#L28)). |
+| `extract_nodes.extract_message`, `extract_text`, `extract_json` | The current episode's fixture entities. Previous episodes in the prompt are ignored. |
+| `extract_edges.edge` | The current episode's fixture facts, with their dates |
+| `extract_nodes_and_edges.extract_message` | Entities and facts for every tagged episode in the current messages (bulk path) |
+| `extract_edges.extract_timestamps`, `extract_timestamps_batch` | The fixture dates of the fact(s) named in the prompt |
+| `dedupe_nodes.nodes`, `dedupe_nodes.node` | The candidate whose canonical key matches, otherwise none |
+| `dedupe_edges.resolve_edge` | **Duplicates:** the same assertion. **Contradictions:** the same functional key with a different value. Both judged only among the facts the prompt lists. |
+| Summary prompts | An empty list or an empty string: summaries are not checked |
+| Attribute prompts | `{}`: the fixtures declare no custom types |
 
-**Ideal-model deduplication.** Answers to the deduplication and contradiction prompts are computed from the candidates shown in the prompt and the fixture's canonical keys (master §8).
+**Ideal-model policy.** The stub never errs about meaning, so every duplicate or temporal error comes from the pipeline (master §8).
 
-**Clock.** Fixtures give `valid_at` and `invalid_at` relative to a fixed "now" captured at the start of the run, as the #2012 cases do.
+**Embedder.** A hashed bag of words with 1,024 dimensions. Facts that share words get a positive cosine. For example, "Alice works at Company3" and "Alice works at Company5" score 0.75, above Graphiti's 0.6 floor.
 
-**Prompt inventory.** M2 lists every `prompt_name` used at the pin. A prompt that has no fixture fails the run.
+**Reranker.** Word overlap.
+
+**Ledger.** Every model call is recorded in the evidence: the prompt, its client, digests, and what the stub decided.
 
 ## 5. Scenarios
 
-### G1. Concurrent ingest into one group (I1 Form B, I2): the headline
+Support levels follow K15. A violation in a supported configuration is FAIL; in a configuration outside the contract it is BOUNDARY (master §5.8).
 
-- **Setup.** An empty group g and a corpus of 20 short episodes. Every episode names the same three entities, with canonical keys `alice`, `acme` and `payments`, and carries one fact found in no other episode.
-- **Modes.**
+### G1. Concurrent ingest with shared entities (I1 Form B, I2)
 
-  | Mode | How the 20 episodes run |
-  |---|---|
-  | G1a, asyncio | One Graphiti instance runs 20 `add_episode` coroutines, released together by an `asyncio.Barrier`. |
-  | G1b, process | 4 processes × 5 episodes. Each process has its own Graphiti instance and its own driver. |
-  | G1c, cross-group regression (#1676) | One instance ingests 20 episodes spread over 4 groups. Every episode must land in its own group's graph. |
-  | G1-SC, sequential control | One at a time. |
-  | G1-Q, queue control | Through a FIFO queue per group, the way the MCP server does it. Expected to match G1-SC. |
+- **G1, same group.** 20 episodes into one group. Each names Alice, Acme and Payments, repeats "Alice works at Acme", and adds one fact of its own.
+  - **Modes:**
+    - `asyncio`: one instance, 20 coroutines.
+    - `process`: 4 processes × 5 episodes; each process has its own instance and works through its share in order, like one MCP server.
+    - `queue`: one FIFO per group, as the MCP server does.
+  - **Support:** boundary (K15).
+  - **Sequential control:** 3 entities, 21 facts, the repeated fact once with 20 episodes, 20 episodes.
+- **G1c, cross group.** 10 episodes at once, one per group, so no group sees concurrency of its own.
+  - **Support:** supported (#1676).
+  - **Checks:** each group holds exactly its own episode, 3 entities and 2 facts.
+- **G1, default pool.** The same-group `asyncio` run, on FalkorDB, with Graphiti's own client pool (K18).
+- **Checks:**
+  - one entity per canonical key per group;
+  - one copy of the repeated fact;
+  - every fact of every acknowledged episode present.
 
-- **Checks.**
-  - Exactly one entity node per canonical key per group (I1 Form B).
-  - All 20 unique facts present, each exactly once (I2).
-  - Every episode linked to its entities.
-- **Contention evidence.** The overlap control (master §6.2). The stub log must show that clients' search-to-write windows (W1, W2) overlapped.
-- **Expected.**
-  - G1-SC and G1-Q: 3 entities and 20 facts.
-  - G1a and G1b: [unmeasured].
-  - G1c: PASS, because #1676 is fixed in code (K4).
-- **Expectation basis.** Deduplication is a documented feature. The MCP server itself says per-group serialisation avoids races (K2). If concurrent duplicates appear, the finding is about scope. Uniqueness then depends on per-group serialisation, which graphiti_core does not provide, and which a single MCP process provides only within itself.
+  Duplicates are witnessed by the episodes that mention each copy.
 
 ### G2. Concurrent contradicting facts (I7a)
 
-- **Setup.** 10 episodes. Each asserts `alice WORKS_AT company_i`, with distinct `valid_at` times t₁ < … < t₁₀, and all are released together.
-- **Sequential control.** A chain: each version i < 10 ends at tᵢ₊₁, and exactly one version is current.
-- **Checks.**
-  - No two current versions with overlapping valid intervals (I7a).
-  - The number of current versions.
-  - The chain is consistent.
-- **Expected.** [unmeasured].
+- **Setup.** 10 episodes give Alice ten successive employers, `valid_at` 30 days apart, released together.
+- **Support:** boundary (K15).
+- **Sequential control:** a chain with one current version, "Alice works at Company9".
 
-### G3. Bitemporal known-answer suite, end to end (I7b, I7c)
+### G3. Bitemporal known-answer suite (I7b, I7c, I2, MR1)
 
-**Two readings of `expired_at`.** The harness takes no side between them (master §5.7):
+Each case runs in its own group: setup episodes first, then the case. All six cases run through one entry point: `add_episode`, `add_episode_bulk` or `add_triplet`. G3 runs on every build and backend.
 
-- **Reading A** is the standard bitemporal model and what #2012 expects. Transaction time ends only when a fact is superseded, and a known end of validity does not set `expired_at`.
-- **Reading B** is the rule in the current code (comment at L726). An edge that arrives with any end date is already historical, so it is expired at ingest.
+**Three readings of `expired_at`.** The harness reports all three and takes no side:
+
+| Reading | `expired_at` is set when |
+|---|---|
+| **issue** | The edge is superseded, or its end of validity has already passed at ingest. This is what #2012 expects. |
+| **code** | The edge is superseded, or it arrives with any end of validity. This is v0.31.2's rule (K5). |
+| **standard** | The edge is superseded. This is master §5.7 I7b. |
 
 **Cases.**
 
-| Case | Source | Situation | Reading A expects | Reading B expects |
-|---|---|---|---|---|
-| R1 | #2012 | Future `invalid_at` (+365 d), no candidates | `expired_at` null | `expired_at` set |
-| R2 | #2012 | Future `invalid_at`, one unrelated candidate | null | set |
-| R3 | #2012 | Past `invalid_at` (−45 d), one unrelated candidate | set (control) | set |
-| R4 | #2012 | Interval −15 d to +7 d, a later contradiction at +16 d | `invalid_at` stays +7 d; `expired_at` null | `invalid_at` stays +7 d; `expired_at` set |
-| R5 | #1865 | An assignment repeated after its earlier occurrence ended | both intervals kept | both intervals kept |
-| R6 | this harness | An open-ended fact contradicted by a later one | `invalid_at` = the new `valid_at`; `expired_at` set | same |
+| Case | Source | Setup → subject | issue | code | standard |
+|---|---|---|---|---|---|
+| R1 | #2012 | none → future end (+365 d) | open | expired | open |
+| R2 | #2012 | an unrelated fact on the same pair → the same as R1 | open | expired | open |
+| R3 | #2012 | an unrelated fact → past end (−45 d) | expired | expired | open |
+| R4 | #2012 | Carol leads X from +16 d → Bob leads X −15 d to +7 d | open, end kept | expired, end kept | open, end kept |
+| R5 | #1865 | Bob leads Y −100 d to −60 d → Bob leads Y again from −10 d | both intervals kept | both | both |
+| R6 | this harness | Dana leads Z from −30 d → Erin leads Z from −5 d | Dana closed at −5 d and expired; Erin current | same | same |
 
-**Metamorphic relation MR1, context independence.** An edge's temporal fields must not depend on whether unrelated edges exist. R1 and R2 differ only by an unrelated candidate, so they must give the same `expired_at`. MR1 holds under either reading. K6 suggests v0.31.x breaks it: R1 is unexpired only because the no-candidate path returns early.
+**MR1, context independence.** R1 and R2 must agree, under any reading.
 
-**Matrix.**
-
-- **Entry points:** `add_episode`, `add_episode_bulk` and `add_triplet`. All three reach `resolve_extracted_edge` (K6).
-- **Builds:** v0.31.2, main and #1867.
-- **Backends:** FalkorDB and Neo4j. Because the backends are real, this also tests how datetimes round-trip through storage.
-
-**Relation to the published cases.** The community script calls `resolve_extracted_edge` directly, without a database. G3 reuses its case definitions, credited to Adam13y, but writes its own implementation and drives it through the public entry points.
+**Credit.** R1–R4 reuse the definitions Adam13y published in #2012. The implementation is written fresh and drives the public entry points.
 
 ### G4. Read your writes on search (I3)
 
-- **Procedure.** After `add_episode` returns, search for its unique fact at once:
-  - from the same process, using the hybrid, fulltext-only and similarity-only search recipes;
-  - from a second process.
-- **Measured.** The visibility lag λ per backend and per path.
-- **Expected.** [unmeasured].
+- **Procedure.** After each `add_episode` returns, the run searches for its fact with `Graphiti.search(query, group_ids=[g])`. It searches twice:
+  - from the writing instance;
+  - from a second instance with its own connections.
+- **Measured.** Whether the first search finds the fact; otherwise, the lag.
+- **Change from v0.1.** The second reader is a second instance, not a second process, because visibility depends on the connection, not the process.
 
-### G5. Backend parity (I4)
+### G5. A read changes later writes (I7a; new in v0.2)
 
-- **Setup.** The G1-SC corpus plus 50 more scripted episodes, ingested sequentially on both backends.
-- **Compared.**
-  - Canonical dumps: entities, facts, temporal fields (including time zones) and episodic links.
-  - A fixed suite of 30 search queries, including `_` (#2142), hyphens, quotes and non-ASCII text.
-- **Classification.** Each query is identical, rejected or silently different.
-
-### G6. Index readiness at startup (I4 while indexes build; #2119, #1643)
-
+- **Procedure.** Search once, then ingest the G2 chain one episode at a time. There is no concurrency.
 - **Cases.**
-  - **G6a, fresh.** Construct the driver and query at once. This is the race #2119 describes.
-  - **G6b, populated.** Load 20k facts, restart the container, then query. Do it once straight away, and once after `db.indexes()` reports every index `OPERATIONAL`.
-  - **G6c, many groups.** 8 groups ingest concurrently, and each clone starts its own index build (K9).
-- **Measured.**
-  - Answers, compared with a control taken after every index is operational.
-  - Errors.
-  - Task exceptions that were never retrieved.
-- **Builds.** v0.31.2 and #2119.
-- **If indexes are still building when creation returns.** If FalkorDB still reports indexes `UNDER CONSTRUCTION` after the creation call returns, record for how long (master KD-F4). That shows whether awaiting the task is enough.
+  - `default`: `num_results=10`, which is the default.
+  - `limit1`: `num_results=1`.
+- **Checks.** Each case records the shared limit after the read (K17) and checks I7a.
 
-### G7. Persistence across restarts (I2 across a restart; #2117)
+### G6–G8 (not yet implemented)
 
-- **Variants.**
-  - The root `docker-compose.yml`, with the FalkorDB volume at `/data`.
-  - `mcp_server/docker/docker-compose-falkordb.yml`, with the volume at `/var/lib/falkordb/data`.
-  - The combined image, `mcp_server/docker/docker-compose.yml`.
-- **Actions.** After ingesting K episodes, try each of:
-  - `docker compose restart`;
-  - `down` then `up`, which recreates the container and keeps the volume;
-  - `docker kill` then start.
-- **Checks.**
-  - Episodes, entities and facts survive each action.
-  - FalkorDB's persistence settings are recorded.
-- **Expectation basis.** A compose file that declares a named volume implies persistence [inference]. #2117 states the expected behaviour [gh].
+- **G6:** index readiness at startup (#2119, #1643).
+- **G7:** persistence across restarts (#2117, K11).
+- **G8:** deletion permanence.
 
-### G8. Deletion permanence (I5; lower priority)
-
-- **Procedure.** Run `remove_episode(e)` concurrently with an `add_episode` whose episode shares e's entities.
-- **Checks.** After both return:
-  - the facts unique to e are gone;
-  - the shared entities remain;
-  - the concurrent ingest has brought nothing back.
+The v0.1 designs stand. They come after M2.
 
 ## 6. Checks
 
-**Canonical dump, per group.**
+The canonical dump (`target.py: dump`) contains, per group:
 
-| Element | Fields |
-|---|---|
-| `EntityNode` | name, canonical key (from the fixture tag), labels. The uuid is not compared. |
-| `EntityEdge` | endpoints by canonical key, name, fact, `valid_at`, `invalid_at`, `expired_at`, episodes. `created_at` is used only for ordering. |
-| Episodes | `EpisodicNode` and its mention links |
+- **Entities:** name, canonical key, and the episodes that mention each node.
+- **Facts:** text, endpoint names, relation, `valid_at`, `invalid_at`, whether expired, and the number of episodes.
+- **Episodes:** the episode names.
+- **FalkorDB only:** the facts for this group that sit in the default graph instead (K16).
 
-**Predicates.**
-
-| Check | Predicate |
-|---|---|
-| I1 Form B | One node per canonical key |
-| I2 | The fixture's facts are a subset of the dump |
-| I7a | No pair of current versions of one functional key overlaps |
-| I7b, Reading A | Every expired edge has a superseding edge recorded when it expired |
-| MR1 | R1 and R2 give the same `expired_at` |
-| I4 | Dumps are equal across backends, and so are the search-suite answers |
+uuids and creation times are left out, so dumps compare across runs and backends.
 
 ## 7. Deliverables
 
-| # | Deliverable |
+| ID | Deliverable |
 |---|---|
-| D1 | Concurrency matrix: G1 (modes × backends × builds), plus G2 |
-| D2 | Temporal matrix: G3 cases × entry points × builds × backends, under Readings A and B, plus MR1 |
-| D3 | Startup and persistence tables: G6 and G7 |
-| D4 | One single-file repro per FAIL: standard library, graphiti-core, the driver and the stub, with the sequential control printed |
-| Drafts | In `drafts/`, never committed: one issue for any new concurrency finding, and comments for #2012, #2119 and #2117 |
+| D1 | Race matrix: G1 (modes × backends), G1c, the default-pool run, G2 |
+| D2 | Temporal matrix: G3 cases × entry points × builds × backends, three readings plus MR1; G5 |
+| D3 | Visibility table (G4) |
+| D4 | One single-file repro for each finding that goes upstream |
+| Drafts | In `drafts/`, never committed |
 
 ## 8. Contribution plan (non-competing)
 
-1. Before drafting anything, check the trackers again and re-run on the newest release.
-2. **#2012.** Comment with D2, framed by both readings and MR1. No pull request: the semantics are not settled, #1867 is open, and the project works issue-first.
-3. **#1867.** Report its results in the #2012 thread, where the cases were defined.
-4. **New concurrency findings (G1, G2).** Search for an existing issue. If there is none, file one with the bug template. Include:
-   - a minimal repro using the stub;
-   - results on both backends;
-   - the sequential control;
-   - the MCP queue (K2) as context.
-
-   Offer options without a pull request: document per-group serialisation, add a per-group lock in core, or key entities so that writes merge.
-5. **#2119.** A supportive comment with the G6 data.
-6. **#2117.** A comment with the G7 matrix. Mention the `/data` mount only if it was measured.
-7. **Engine root causes** go to FalkorDB's tracker (master §11.3).
-8. **CLA.** Sign it before any pull request (K14). All outreach follows master §11.
+1. **Before any draft:** search the tracker again, and re-run on the newest release.
+2. **#2012.** Comment with D2 for #2012's cases, framed by the three readings and MR1. No pull request: the semantics are open and #1867 exists.
+3. **#1865 and #1867.** R5 on v0.31.2 and on #1867, reported in those threads.
+4. **K16, `add_triplet` group scope on FalkorDB.** If no issue exists, file one with the G3 evidence and a minimal repro. It is a small, factual bug report.
+5. **K17, shared search limit.** If no issue exists, file one with the G5 repro. The fix is a copy of the config before setting its limit. Offer a pull request only if a maintainer asks.
+6. **G1 and G2.** These are boundary results (K15). Offer them as data on how much the documented sequential requirement matters, for example for several MCP replicas on one database, not as bugs.
+7. **K18 and K19.** Mention each where it fits an existing thread. Open a new issue only if none covers it.
+8. **Rules.** The CLA comes before any pull request. Outreach follows master §11.
 
 ## 9. Exit and drop rule
 
-- **G1 and G2 clean.** If both are clean in every mode, with the overlap control met, publish the clean matrix and credit the project. G3, G6 and G7 stand on their own either way.
-- **Controls fail.** If G1-SC or G1-Q fails, the run is INVALID. Fix the fixture before anything else.
+- **Controls fail.** If a race run's sequential control fails, the run is INVALID. Fix the fixture before anything else.
+- **G1 and G2 clean.** If they were clean in every mode with the overlap control met, they would be published as clean, with credit.
 
 ## 10. Open questions
 
 | Question | Settled in |
 |---|---|
-| Does `add_episode_bulk` invalidate and deduplicate across the items of one batch? | Read in M2 |
-| Is running several MCP server processes against one database a supported deployment? This decides whether multi-process results are BOUNDARY or FAIL. | Ask, or read the docs, in M2 |
-| When do Neo4j fulltext and vector indexes reflect a committed write? | Master §13 |
-| What is the full `prompt_name` inventory at the pin? | M2 |
-| How do datetimes round-trip on each backend? #1867 cites a separate Neo4j datetime fix, #1866. | G3, G5 |
+| Is running several MCP server processes against one database supported? | Ask, if G1 `process` results go upstream |
+| When do Neo4j fulltext and vector indexes reflect a committed write? | G4 on Neo4j |
+| Do main and #1867 keep the same prompt set? | The G3 runs on those builds |

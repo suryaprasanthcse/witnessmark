@@ -22,7 +22,8 @@ services:
     image: neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365
     container_name: wm-neo4j
     ports:
-      - "127.0.0.1:17474:7474"
+      - "127.0.0.1:17474:7474"  # HTTP, used by the core's adapter
+      - "127.0.0.1:17687:7687"  # Bolt, used by Graphiti's driver
     environment:
       NEO4J_AUTH: "none"
       NEO4J_server_memory_heap_initial__size: "512m"

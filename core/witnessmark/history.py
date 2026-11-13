@@ -53,6 +53,18 @@ class Op:
         if self.outcome != UNKNOWN and self.ret is None:
             raise ValueError("a definite outcome needs a return time")
 
+    @classmethod
+    def from_json(cls, record: dict) -> "Op":
+        """Rebuild an operation sent from another process."""
+
+        def stamp_of(value):
+            return Stamp(value["mono_ns"], value["wall"], value.get("domain", "host")) if value else None
+
+        return cls(record["run_id"], record["k"], record["phase"], record["op_id"], record["client"], record["kind"],
+                   record["input"], stamp_of(record["inv"]), stamp_of(record["ret"]), record["outcome"],
+                   record.get("result"), record.get("error"), record.get("token"), record.get("process"),
+                   record.get("raw"))
+
     def to_json(self) -> dict:
         record = {
             "run_id": self.run_id,

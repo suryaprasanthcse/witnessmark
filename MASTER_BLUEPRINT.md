@@ -107,13 +107,16 @@ gnomon-b2b-harness/          repository root; the project is Witnessmark
 │   ├── witnessmark/         the engine-neutral package (standard library only)
 │   └── tests/               unit tests: python wm.py selftest
 ├── targets/
-│   ├── 01-zep-graphiti/     blueprint, then adapter, scenarios, fixtures
+│   ├── 01-zep-graphiti/     blueprint; witnessmark_graphiti/ (adapter, stubs, fixtures,
+│   │                        scenarios); wm_graphiti.py; requirements/ (frozen builds)
 │   ├── 02-cognee/
 │   └── 03-omnigraph/
 ├── evidence/                committed raw evidence of published runs
 ├── drafts/                  outreach drafts; gitignored, never committed
-└── .state/                  live stores and scratch; gitignored (planned)
+└── .state/                  live stores, scratch, and one venv per target build; gitignored
 ```
+
+A target's adapter imports the target's own package, so it runs in that build's venv (for example `.state/venvs/graphiti-v0.31.2`). The core it imports still uses only the standard library.
 
 ### 3.4 Execution modes and faults
 
@@ -121,10 +124,17 @@ gnomon-b2b-harness/          repository root; the project is Witnessmark
 |---|---|---|
 | `thread` | threads in one process, one connection each | the system under test (SUT) is a server reached over the network |
 | `asyncio` | coroutines on one event loop | the target library is async, and the question is in-process concurrency |
-| `process` | OS processes (spawn start method), each building its own client and library instance | per-process locks or queues are part of the question |
+| `queue` | coroutines on one event loop, with one FIFO per group | the question is whether a per-group queue, such as Graphiti's MCP server keeps, removes the race |
+| `process` | OS processes (spawn start method), each building its own client and library instance and working through its share in order | per-process locks or queues are part of the question |
 | `container` | clients or servers in separate containers | pauses, kills and takeovers |
 
-M1 implements `thread` mode. Each other mode lands with the first target that needs it: `asyncio` and `process` in M2 (Graphiti), `container` in M4 (Omnigraph).
+**Which milestone adds each mode.**
+
+- M1: `thread`.
+- M2 (Graphiti): `asyncio`, `queue` and `process`.
+- M4 (Omnigraph): `container`.
+
+**Invocation time.** In every mode, an operation's invocation is stamped when the client calls. A request waiting in a queue is already in flight.
 
 Nemesis actions are recorded in the history as operations whose client is `nemesis`:
 
@@ -167,6 +177,13 @@ Adapters translate the core's operations into a target's API. They contain no ch
 | `search(query, group)` | The target's retrieval path | ranked results | I3, I4 |
 | `dump(group)` | Canonical entities, facts with their temporal fields, and provenance | state | all |
 | `quiesce()` | Waits until background work is done, such as queues and index builds | status | gates |
+| `drain_stub_calls()` | Hands over the stub ledger since the last call (section 8) | call records | evidence |
+
+The contract is implemented as `MemoryTarget` in `core/witnessmark/memory.py`, together with the three run shapes:
+
+- races, with a sequential control;
+- known-answer case suites;
+- visibility runs.
 
 ### 4.3 Capabilities and claims
 
@@ -330,6 +347,16 @@ I7b and I7c follow the standard bitemporal model. Some targets define their own 
 | OBSERVED | No promise and no standard applies. The behaviour is recorded without a verdict. |
 | NOT_APPLICABLE | The SUT does not offer the capability. |
 
+**Target runs.** A target run records the support level of its configuration, and that level decides what a violation is called:
+
+| Support level | Source | A violation is |
+|---|---|---|
+| supported | the documentation promises the configuration works | FAIL |
+| boundary | the documentation puts the configuration outside the contract, for example "add episodes sequentially" | BOUNDARY |
+| none | no promise applies | OBSERVED |
+
+A clean race without contention evidence is INCONCLUSIVE.
+
 Every verdict also carries an expectation basis and a reference for it. The basis is one of:
 
 - `documented`
@@ -370,7 +397,7 @@ Monotonic times are comparable only within one clock domain, such as the Windows
 | Sequential (SC) | the same operations, one at a time, from the same reset | the scenario's expected answer, exactly | INVALID: the probe or the fixture is wrong |
 | Negative (NC) | a baseline known to keep the invariant, for example FalkorDB 6.0.4 with the naive guarded claim | no violation in T trials | INVALID; any baseline finding is handled separately |
 | Positive (PC) | a configuration documented to violate it, for example Neo4j 5.26.2 at read committed with the naive guarded claim | at least one violation in T trials | clean target results are INCONCLUSIVE |
-| Overlap (OC) | in-library races with no positive control: the stub-call log (section 8) must show clients' read-decide-write windows overlapping in time | at least one overlap per trial | that trial counts as low contention |
+| Overlap (OC) | in-library races with no positive control: at least two operations in flight at once, each counted from its client's invocation to its return; the stub-call log (section 8) shows the inner windows | two or more in flight in every valid trial | a clean result is INCONCLUSIVE |
 
 A positive or overlap control shows that the runner can see a race before a clean result is reported. The positive control is probabilistic. Not observing it says something about contention, never about the baseline.
 
@@ -381,7 +408,7 @@ A trial is valid only if every one of these holds:
 - The precondition digest matched.
 - Δ ≤ δ.
   - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
-  - **Other modes** keep provisional bounds until each is calibrated with its first target: 5 ms for `asyncio`, 25 ms for `process`, 50 ms for `container`.
+  - **Other modes.** M2 records the spread in `asyncio`, `queue` and `process` without gating on it, and their δ will be set from that evidence. In `process` mode the spread is taken over each worker's first operation. `container` keeps its provisional 50 ms.
   - **`calibrate`** records Δ without gating on it, because its job is to set δ.
 - The SUT was healthy before and after the trial (`health()`).
 - At most 5% of operations had an unknown outcome.
@@ -562,6 +589,7 @@ evidence/<target>/<scenario>/<run_id>/
   REPRO.md        the command that regenerates this run
 ```
 
+- Target runs add a level for the build and backend: `evidence/<target>/<build>.<backend>/<scenario>.<mode>/<run_id>/`. An example is `evidence/graphiti/v0.31.2.falkordb/g1.same_group.asyncio/`. Their history also holds the stub ledger, as operations with phase `stub`.
 - `run_id` is `<UTC yyyymmddThhmmssZ>-<first 8 hex of the manifest's SHA-256>`.
 - Evidence of published runs is committed.
 - Database files and large dumps stay under `.state/`, which is gitignored.

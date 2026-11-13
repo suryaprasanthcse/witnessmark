@@ -1,0 +1,25 @@
+{
+  "k": 2,
+  "digest": "sha256:afc0fef1c8dd1354cbba20e616a2a54b66ec56073db894f7c0a8cfbc275da540",
+  "state": {
+    "wm_g3_r2": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Alice is on parental leave from Acme until next year",
+          "valid_at": "2026-11-03T17:46:01Z",
+          "invalid_at": "2027-11-13T17:46:01Z",
+          "expired": true
+        },
+        {
+          "fact": "Alice likes the coffee at Acme",
+          "valid_at": "2026-08-05T17:46:01Z",
+          "invalid_at": null,
+          "expired": false
+        }
+      ]
+    }
+  }
+}

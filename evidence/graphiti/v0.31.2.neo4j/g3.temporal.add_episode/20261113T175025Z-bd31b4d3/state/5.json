@@ -1,0 +1,42 @@
+{
+  "k": 5,
+  "digest": "sha256:1473a77cedea3246b14ad684d22c48e9a053eb910d089741f419dfd517ea39a7",
+  "state": {
+    "wm_g3_r5": {
+      "entities": [
+        {
+          "name": "Bob",
+          "key": "bob",
+          "mentioned_by": [
+            "G3R5C",
+            "G3R5S"
+          ]
+        },
+        {
+          "name": "Project Y",
+          "key": "project_y",
+          "mentioned_by": [
+            "G3R5C",
+            "G3R5S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Bob leads Project Y",
+          "source": "Bob",
+          "target": "Project Y",
+          "relation": "LEADS",
+          "valid_at": "2026-08-05T17:50:22Z",
+          "invalid_at": "2026-09-14T17:50:22Z",
+          "expired": false,
+          "episodes": 2
+        }
+      ],
+      "episodes": [
+        "G3R5C",
+        "G3R5S"
+      ]
+    }
+  }
+}

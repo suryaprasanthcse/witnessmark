@@ -1,0 +1,25 @@
+{
+  "k": 3,
+  "digest": "sha256:4195c7f2f1c6c8f37ab69a7e2458870035e791b6a461836c9e3cf02ade8de147",
+  "state": {
+    "wm_g3_r3": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Alice likes the coffee at Acme",
+          "valid_at": "2026-08-05T17:46:01Z",
+          "invalid_at": null,
+          "expired": false
+        },
+        {
+          "fact": "Alice worked at Acme until last month",
+          "valid_at": "2025-10-09T17:46:01Z",
+          "invalid_at": "2026-09-29T17:46:01Z",
+          "expired": true
+        }
+      ]
+    }
+  }
+}

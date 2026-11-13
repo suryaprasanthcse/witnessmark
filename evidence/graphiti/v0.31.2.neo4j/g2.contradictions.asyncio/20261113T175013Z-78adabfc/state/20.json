@@ -1,0 +1,264 @@
+{
+  "k": 20,
+  "digest": "sha256:e05d05e82daca00c2880c482ac9d3752c421dcc9a119aac0ddf8b9a577c4faca",
+  "state": {
+    "wm_g2": {
+      "entities": [
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E00"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E01"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E02"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E03"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E04"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E05"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E06"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E07"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E08"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G2E09"
+          ]
+        },
+        {
+          "name": "Company0",
+          "key": "company0",
+          "mentioned_by": [
+            "G2E00"
+          ]
+        },
+        {
+          "name": "Company1",
+          "key": "company1",
+          "mentioned_by": [
+            "G2E01"
+          ]
+        },
+        {
+          "name": "Company2",
+          "key": "company2",
+          "mentioned_by": [
+            "G2E02"
+          ]
+        },
+        {
+          "name": "Company3",
+          "key": "company3",
+          "mentioned_by": [
+            "G2E03"
+          ]
+        },
+        {
+          "name": "Company4",
+          "key": "company4",
+          "mentioned_by": [
+            "G2E04"
+          ]
+        },
+        {
+          "name": "Company5",
+          "key": "company5",
+          "mentioned_by": [
+            "G2E05"
+          ]
+        },
+        {
+          "name": "Company6",
+          "key": "company6",
+          "mentioned_by": [
+            "G2E06"
+          ]
+        },
+        {
+          "name": "Company7",
+          "key": "company7",
+          "mentioned_by": [
+            "G2E07"
+          ]
+        },
+        {
+          "name": "Company8",
+          "key": "company8",
+          "mentioned_by": [
+            "G2E08"
+          ]
+        },
+        {
+          "name": "Company9",
+          "key": "company9",
+          "mentioned_by": [
+            "G2E09"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice works at Company0",
+          "source": "Alice",
+          "target": "Company0",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company1",
+          "source": "Alice",
+          "target": "Company1",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-01-31T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company2",
+          "source": "Alice",
+          "target": "Company2",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-03-02T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company3",
+          "source": "Alice",
+          "target": "Company3",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-04-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company4",
+          "source": "Alice",
+          "target": "Company4",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-05-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company5",
+          "source": "Alice",
+          "target": "Company5",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-05-31T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company6",
+          "source": "Alice",
+          "target": "Company6",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-06-30T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company7",
+          "source": "Alice",
+          "target": "Company7",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-07-30T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company8",
+          "source": "Alice",
+          "target": "Company8",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-08-29T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Company9",
+          "source": "Alice",
+          "target": "Company9",
+          "relation": "WORKS_AT",
+          "valid_at": "2026-09-28T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G2E00",
+        "G2E01",
+        "G2E02",
+        "G2E03",
+        "G2E04",
+        "G2E05",
+        "G2E06",
+        "G2E07",
+        "G2E08",
+        "G2E09"
+      ]
+    }
+  }
+}

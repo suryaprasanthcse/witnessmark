@@ -1,0 +1,19 @@
+{
+  "k": 5,
+  "digest": "sha256:d60c9f7e2fa53045c4b4b2cc6b460f1e9dad4d1ee321d54fb455f6f20b3e7879",
+  "state": {
+    "wm_g3_r5": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Bob leads Project Y",
+          "valid_at": "2026-08-05T17:46:01Z",
+          "invalid_at": "2026-09-14T17:46:01Z",
+          "expired": false
+        }
+      ]
+    }
+  }
+}

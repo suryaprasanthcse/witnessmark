@@ -1,0 +1,485 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T175135Z-95f29d0b",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "pr1867-a30934e1",
+    "package_version": "0.30.2",
+    "commit": "a30934e18b9582fbea3aca742269fc2174b67f07"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.30.2",
+      "config": {
+        "build": "pr1867-a30934e1",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g3",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g3.temporal.add_triplet",
+    "invariants": [
+      "I7.issue",
+      "I7.code",
+      "I7.standard",
+      "I7C",
+      "I2",
+      "MR1"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 6,
+    "params": {
+      "cases": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:51:35.772873Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "R1",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:590fb0b74a1b6e2035cb039e0d1b70a1b0c83f554bd9c172937c06062e2f5231",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I7.issue",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R1: expired=True, the issue reading expects False",
+          "witnesses": [
+            "R1"
+          ]
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R1: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R1: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R1"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "R2",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a17c8a04e7aa0380d872a267c5b60be1a973b3119b01be8727bfae600bc6799c",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I7.issue",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the issue reading expects False",
+          "witnesses": [
+            "R2"
+          ]
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R2"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "case": "R3",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d28d01a5add0f3c325140ca942ba93687fc9eb66ce36c915c1bbecbbd2f5167a",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I7.issue",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the issue reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R3"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "case": "R4",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:bdd501d7f56eaed5d7a0b2ce7998d0f09f9915aa44beaaee0a67fe54a7d14062",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I7.issue",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the issue reading expects False",
+          "witnesses": [
+            "R4"
+          ]
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R4"
+          ]
+        },
+        {
+          "invariant": "I7C",
+          "held": true,
+          "magnitude": 0,
+          "unit": "extended intervals",
+          "detail": "R4: invalid_at 2026-11-20T17:51:33Z (fixture end 2026-11-20T17:51:33Z)",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "case": "R5",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1f9d7741a2e8a33319c8849f42a89ee7b515683720ed141635912cbbf7b89081",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost occurrences",
+          "detail": "R5: 2 edge(s) for 'Bob leads Project Y', valid_at ['2026-08-05T17:51:33Z', '2026-11-03T17:51:33Z']; the second occurrence starts 2026-11-03T17:51:33Z",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "case": "R6",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:024000f23cfc0cbc150ba2a7ec220e433790a3a136125061f04b272d19cef30f",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I7.issue",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:51:33Z; Erin expired=False",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:51:33Z; Erin expired=False",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:51:33Z; Erin expired=False",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "case": "suite",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 0,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:8ac2fc039300aa593ccbad4c49ee3817506db32e83dc5a37a864556a126ebe73",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "MR1",
+          "held": true,
+          "magnitude": 0,
+          "unit": "disagreements",
+          "detail": "R1 expired=True, R2 expired=True: an unrelated fact did not change the result",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I7.issue",
+      "status": "OBSERVED",
+      "trials_violating": 3,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 1,
+        "max": 1,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R1",
+        "R2",
+        "R4"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7.code",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7.standard",
+      "status": "OBSERVED",
+      "trials_violating": 4,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 1,
+        "max": 1,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7C",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "extended intervals"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "lost occurrences"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "MR1",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "disagreements"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-13T17:51:37.705191Z"
+}

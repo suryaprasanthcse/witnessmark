@@ -1,0 +1,59 @@
+{
+  "k": 6,
+  "digest": "sha256:69302ddf3cf87c85dc4f82ff0f63a6e8f3a733488571fb68e92414ec61eb2d5d",
+  "state": {
+    "wm_g3_r6": {
+      "entities": [
+        {
+          "name": "Dana",
+          "key": "dana",
+          "mentioned_by": [
+            "G3R6S"
+          ]
+        },
+        {
+          "name": "Erin",
+          "key": "erin",
+          "mentioned_by": [
+            "G3R6C"
+          ]
+        },
+        {
+          "name": "Project Z",
+          "key": "project_z",
+          "mentioned_by": [
+            "G3R6C",
+            "G3R6S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Dana leads Project Z",
+          "source": "Dana",
+          "target": "Project Z",
+          "relation": "LEADS",
+          "valid_at": "2026-10-14T17:45:45Z",
+          "invalid_at": "2026-11-08T17:45:45Z",
+          "expired": true,
+          "episodes": 1
+        },
+        {
+          "fact": "Erin leads Project Z",
+          "source": "Erin",
+          "target": "Project Z",
+          "relation": "LEADS",
+          "valid_at": "2026-11-08T17:45:45Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G3R6C",
+        "G3R6S"
+      ],
+      "facts_in_default_graph": []
+    }
+  }
+}

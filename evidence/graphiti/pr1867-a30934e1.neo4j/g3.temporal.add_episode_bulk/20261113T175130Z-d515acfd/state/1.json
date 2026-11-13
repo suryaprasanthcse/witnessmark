@@ -1,0 +1,39 @@
+{
+  "k": 1,
+  "digest": "sha256:5398aa7fa97a2bf22bead3c7e2e8602b51af859edf07d85789b27eac867b73de",
+  "state": {
+    "wm_g3_r1": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G3R1C"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G3R1C"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice is on parental leave from Acme until next year",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "ON_LEAVE_FROM",
+          "valid_at": "2026-11-03T17:51:28Z",
+          "invalid_at": "2027-11-13T17:51:28Z",
+          "expired": true,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G3R1C"
+      ]
+    }
+  }
+}

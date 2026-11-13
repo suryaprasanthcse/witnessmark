@@ -1,0 +1,156 @@
+{
+  "k": 0,
+  "digest": "sha256:dd7128827a8596a0706fa9ad02c55031ba93cbd4e3b0d5c1812bcf302f9ca629",
+  "state": {
+    "wm_g4": {
+      "entities": [
+        {
+          "name": "Deployments",
+          "key": "deployments",
+          "mentioned_by": [
+            "G4E00",
+            "G4E01",
+            "G4E02",
+            "G4E03",
+            "G4E04",
+            "G4E05",
+            "G4E06",
+            "G4E07",
+            "G4E08",
+            "G4E09"
+          ]
+        },
+        {
+          "name": "Frank",
+          "key": "frank",
+          "mentioned_by": [
+            "G4E00",
+            "G4E01",
+            "G4E02",
+            "G4E03",
+            "G4E04",
+            "G4E05",
+            "G4E06",
+            "G4E07",
+            "G4E08",
+            "G4E09"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Frank logged deployment 00",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 01",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 02",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 03",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 04",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 05",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 06",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 07",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 08",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T08:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Frank logged deployment 09",
+          "source": "Frank",
+          "target": "Deployments",
+          "relation": "LOGGED",
+          "valid_at": "2026-01-01T09:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G4E00",
+        "G4E01",
+        "G4E02",
+        "G4E03",
+        "G4E04",
+        "G4E05",
+        "G4E06",
+        "G4E07",
+        "G4E08",
+        "G4E09"
+      ]
+    }
+  }
+}

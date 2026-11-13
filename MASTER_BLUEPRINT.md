@@ -408,7 +408,13 @@ A trial is valid only if every one of these holds:
 - The precondition digest matched.
 - Δ ≤ δ.
   - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
-  - **Other modes.** M2 records the spread in `asyncio`, `queue` and `process` without gating on it, and their δ will be set from that evidence. In `process` mode the spread is taken over each worker's first operation. `container` keeps its provisional 50 ms.
+  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. The gates apply to memory runs once they are wired in, in M3. `container` keeps its provisional 50 ms.
+
+    | Mode | Trials | p50 | p99 | δ |
+    |---|---|---|---|---|
+    | `asyncio` | 120 | 6.08 ms | 61.27 ms | 92 ms. The library's own synchronous start-up runs coroutine by coroutine, which is why the spread is wide. |
+    | `queue` | 40 | 0.86 ms | 1.65 ms | 3 ms |
+    | `process` | 40 | 0.12 ms | 0.26 ms | 1 ms |
   - **`calibrate`** records Δ without gating on it, because its job is to set δ.
 - The SUT was healthy before and after the trial (`health()`).
 - At most 5% of operations had an unknown outcome.
@@ -938,6 +944,14 @@ Each milestone ends with a review by the maintainer, and the next one starts onl
 - report in `evidence/M1_CALIBRATION.md`.
 
 All 12 sequential controls and all 9 negative controls were met, and all 3 positive controls fired.
+
+**Status, M2.** M2 met its exit criterion on 2026-11-13:
+
+- batch `m2-20261113T174128Z`, harness commit `526e98f`;
+- report in `evidence/M2_GRAPHITI.md`;
+- results in the Graphiti blueprint, §11.
+
+The sequential control reproduced the fixture graph in all 11 race runs, on FalkorDB and on Neo4j. G6–G8 are deferred.
 
 ## 13. Open questions
 

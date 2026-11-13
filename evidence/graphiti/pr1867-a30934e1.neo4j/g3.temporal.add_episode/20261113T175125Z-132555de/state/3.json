@@ -1,0 +1,52 @@
+{
+  "k": 3,
+  "digest": "sha256:c47baf13db3c5b7326f8316500ff9597452b17db5325870ce7cca72e3c89e6a0",
+  "state": {
+    "wm_g3_r3": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G3R3C",
+            "G3R3S"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G3R3C",
+            "G3R3S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice likes the coffee at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "LIKES_COFFEE_AT",
+          "valid_at": "2026-08-05T17:51:23Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice worked at Acme until last month",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKED_AT",
+          "valid_at": "2025-10-09T17:51:23Z",
+          "invalid_at": "2026-09-29T17:51:23Z",
+          "expired": true,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G3R3C",
+        "G3R3S"
+      ]
+    }
+  }
+}

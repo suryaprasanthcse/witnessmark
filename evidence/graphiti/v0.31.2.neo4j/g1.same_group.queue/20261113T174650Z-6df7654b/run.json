@@ -1,0 +1,1114 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T174650Z-6df7654b",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g1",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g1.same_group.queue",
+    "invariants": [
+      "I1B",
+      "I2"
+    ],
+    "mode": "queue",
+    "clients": 20,
+    "trials": 20,
+    "params": {
+      "support": "boundary",
+      "op_timeout_s": 300.0,
+      "processes": null
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:46:50.755545Z",
+  "expectation": {
+    "role": "target",
+    "support": "boundary",
+    "basis": "documented",
+    "basis_ref": "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "g1.same_group.queue: 20 clients, one at a time",
+      "expected": "3 entities (one per key), 21 facts (the repeated one once, with 20 episodes), 20 episodes, nothing expired",
+      "observed": "entities {'acme': 1, 'alice': 1, 'payments': 1}; 21 facts; repeated fact x1 with 20 episodes; 20 episodes",
+      "met": true
+    },
+    {
+      "kind": "overlap",
+      "configuration": "g1.same_group.queue: 20 clients x 20 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "20 of 20 valid trials had two or more in flight",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.037,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.02,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.647,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.048,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.099,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.124,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.066,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.124,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.064,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.147,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.061,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.076,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.066,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.396,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.553,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.166,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.028,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.044,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.031,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:9a05691e8d186c5d79591f6e598ba05cb1a2c96989dbe703cde70f9000096e2c",
+      "release_spread_ms": 1.062,
+      "max_in_flight": 20,
+      "outcomes": {
+        "ok": 20,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4f620eb6a556679a983f63610add2caf4bfa6d10ed75e13ebec1823c9284f9e7",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "3 entities in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "1 copies of the repeated fact in wm_g1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing facts in wm_g1",
+          "detail": "all 21 facts in wm_g1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_g1",
+          "detail": "all 3 entities in wm_g1 present",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1B",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "records per key"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "missing facts in wm_g1"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413",
+      "witnesses": [],
+      "note": "support: boundary"
+    }
+  ],
+  "finished_at": "2026-11-13T17:47:51.934422Z"
+}

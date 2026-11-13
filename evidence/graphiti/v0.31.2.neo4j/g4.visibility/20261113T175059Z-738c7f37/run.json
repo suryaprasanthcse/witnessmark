@@ -1,0 +1,435 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T175059Z-738c7f37",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g4",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g4.visibility",
+    "invariants": [
+      "I3"
+    ],
+    "mode": "sequential",
+    "clients": 2,
+    "trials": 10,
+    "params": {
+      "poll_interval_s": 0.01,
+      "poll_budget_s": 5.0,
+      "readers": [
+        "the writing instance",
+        "a second instance with its own connections"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:50:59.913596Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "inferred",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "second instance: seen on the first search",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I3",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 10,
+      "magnitude": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0,
+        "unit": "ms"
+      },
+      "basis": "inferred",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-13T17:51:02.013380Z"
+}

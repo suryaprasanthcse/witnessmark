@@ -1,0 +1,506 @@
+{
+  "k": 15,
+  "digest": "sha256:84f8c22fbd07206c0bc97c557d08c48b2ba2b27be7cd1b045f48e29b53958b28",
+  "state": {
+    "wm_g1c_00": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 00",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E00"
+      ]
+    },
+    "wm_g1c_01": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 01",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E01"
+      ]
+    },
+    "wm_g1c_02": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 02",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E02"
+      ]
+    },
+    "wm_g1c_03": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 03",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E03"
+      ]
+    },
+    "wm_g1c_04": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 04",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E04"
+      ]
+    },
+    "wm_g1c_05": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 05",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E05"
+      ]
+    },
+    "wm_g1c_06": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 06",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E06"
+      ]
+    },
+    "wm_g1c_07": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 07",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E07"
+      ]
+    },
+    "wm_g1c_08": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 08",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T08:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E08"
+      ]
+    },
+    "wm_g1c_09": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 09",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T09:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E09"
+      ]
+    }
+  }
+}

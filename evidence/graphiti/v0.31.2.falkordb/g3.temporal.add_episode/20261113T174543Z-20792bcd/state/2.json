@@ -1,0 +1,53 @@
+{
+  "k": 2,
+  "digest": "sha256:edff08273f64a4fc6b6b578bc1bff561a60b931bd4e59226d3c69270b4bc8694",
+  "state": {
+    "wm_g3_r2": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G3R2C",
+            "G3R2S"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G3R2C",
+            "G3R2S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice is on parental leave from Acme until next year",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "ON_LEAVE_FROM",
+          "valid_at": "2026-11-03T17:45:41Z",
+          "invalid_at": "2027-11-13T17:45:41Z",
+          "expired": true,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice likes the coffee at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "LIKES_COFFEE_AT",
+          "valid_at": "2026-08-05T17:45:41Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G3R2C",
+        "G3R2S"
+      ],
+      "facts_in_default_graph": []
+    }
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T174608Z-dfdbbb5d",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "falkordb",
+        "telemetry": "off",
+        "falkordb_pool": "blocking",
+        "driver": "1.8.2"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "FalkorDB 6.0.4 (graph module 60004)"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g2",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g5.shared_search_limit",
+    "invariants": [
+      "I7A"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 2,
+    "params": {
+      "cases": [
+        "default",
+        "limit1"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:46:08.208167Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "default",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 11,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c411a17b8a95a927d02a7cc2f94812af58f48ae32d4523a6914ac3f39e924c1d",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "current versions",
+          "detail": "1 current version(s) of Alice's employer, none overlapping (shared edge-search limit after the read: 10)",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "limit1",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 11,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:13bbf10c6b5f3ac504d820fa5f382c332814a81c787329d50b2bad88c000f80a",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 6,
+          "unit": "current versions",
+          "detail": "6 current versions of Alice's employer; overlapping pairs: [('Alice works at Company2', 'Alice works at Company5'), ('Alice works at Company2', 'Alice works at Company6'), ('Alice works at Company2', 'Alice works at Company7'), ('Alice works at Company2', 'Alice works at Company8'), ('Alice works at Company2', 'Alice works at Company9')] (shared edge-search limit after the read: 1)",
+          "witnesses": [
+            "Alice works at Company2",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I7A",
+      "status": "OBSERVED",
+      "trials_violating": 1,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 1,
+        "median": 3.5,
+        "max": 6,
+        "unit": "current versions"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "Alice works at Company2",
+        "Alice works at Company5",
+        "Alice works at Company6",
+        "Alice works at Company7",
+        "Alice works at Company8",
+        "Alice works at Company9"
+      ],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-13T17:46:09.857142Z"
+}

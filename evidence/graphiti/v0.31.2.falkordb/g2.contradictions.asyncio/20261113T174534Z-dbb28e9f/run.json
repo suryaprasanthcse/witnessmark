@@ -1,0 +1,868 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T174534Z-dbb28e9f",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "falkordb",
+        "telemetry": "off",
+        "falkordb_pool": "blocking",
+        "driver": "1.8.2"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "FalkorDB 6.0.4 (graph module 60004)"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g2",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g2.contradictions.asyncio",
+    "invariants": [
+      "I7A"
+    ],
+    "mode": "asyncio",
+    "clients": 10,
+    "trials": 20,
+    "params": {
+      "support": "boundary",
+      "op_timeout_s": 300.0,
+      "processes": null
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:45:34.130784Z",
+  "expectation": {
+    "role": "target",
+    "support": "boundary",
+    "basis": "documented",
+    "basis_ref": "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "g2.contradictions.asyncio: 10 clients, one at a time",
+      "expected": "10 versions; only 'Alice works at Company9' current; every other version closed",
+      "observed": "10 versions; current: ['Alice works at Company9']",
+      "met": true
+    },
+    {
+      "kind": "overlap",
+      "configuration": "g2.contradictions.asyncio: 10 clients x 20 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "20 of 20 valid trials had two or more in flight",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 13.533,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.455,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.895,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.456,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.337,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.441,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.152,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.853,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.912,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.72,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.371,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.592,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.034,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.399,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.163,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.97,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.51,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.71,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 3.372,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:40d26b7866932e7916dd25fd6dd256535c97686ac86e1e61f1064103b00fbb26",
+      "release_spread_ms": 2.404,
+      "max_in_flight": 10,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:562e0ec15929337cc15e1153a704904aaff3210a233b84a97052f72fb97ab0c5",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I7A",
+          "held": false,
+          "magnitude": 10,
+          "unit": "current versions",
+          "detail": "10 current versions of Alice's employer; overlapping pairs: [('Alice works at Company0', 'Alice works at Company1'), ('Alice works at Company0', 'Alice works at Company2'), ('Alice works at Company0', 'Alice works at Company3'), ('Alice works at Company0', 'Alice works at Company4'), ('Alice works at Company0', 'Alice works at Company5')]",
+          "witnesses": [
+            "Alice works at Company0",
+            "Alice works at Company1",
+            "Alice works at Company2",
+            "Alice works at Company3",
+            "Alice works at Company4",
+            "Alice works at Company5",
+            "Alice works at Company6",
+            "Alice works at Company7",
+            "Alice works at Company8",
+            "Alice works at Company9"
+          ]
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I7A",
+      "status": "BOUNDARY",
+      "trials_violating": 20,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 10,
+        "median": 10.0,
+        "max": 10,
+        "unit": "current versions"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1410-L1413",
+      "witnesses": [
+        "Alice works at Company0",
+        "Alice works at Company1",
+        "Alice works at Company2",
+        "Alice works at Company3",
+        "Alice works at Company4",
+        "Alice works at Company5",
+        "Alice works at Company6",
+        "Alice works at Company7",
+        "Alice works at Company8",
+        "Alice works at Company9",
+        "Alice works at Company0",
+        "Alice works at Company1",
+        "Alice works at Company2",
+        "Alice works at Company3",
+        "Alice works at Company4",
+        "Alice works at Company5",
+        "Alice works at Company6",
+        "Alice works at Company7",
+        "Alice works at Company8",
+        "Alice works at Company9",
+        "Alice works at Company0",
+        "Alice works at Company1",
+        "Alice works at Company2",
+        "Alice works at Company3",
+        "Alice works at Company4",
+        "Alice works at Company5",
+        "Alice works at Company6",
+        "Alice works at Company7",
+        "Alice works at Company8",
+        "Alice works at Company9"
+      ],
+      "note": "support: boundary"
+    }
+  ],
+  "finished_at": "2026-11-13T17:45:41.063006Z"
+}

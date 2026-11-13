@@ -1,0 +1,19 @@
+{
+  "k": 1,
+  "digest": "sha256:b01f3c19a2f467a3b1238646d0779dfee450b0024b4216f4ba57d0ecf6fddca3",
+  "state": {
+    "wm_g3_r1": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Alice is on parental leave from Acme until next year",
+          "valid_at": "2026-11-03T17:46:01Z",
+          "invalid_at": "2027-11-13T17:46:01Z",
+          "expired": false
+        }
+      ]
+    }
+  }
+}

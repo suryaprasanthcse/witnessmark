@@ -1,0 +1,58 @@
+{
+  "k": 4,
+  "digest": "sha256:6a78c75821142439856ab85686adfb172508067799883a1793b6f4393b7b3a63",
+  "state": {
+    "wm_g3_r4": {
+      "entities": [
+        {
+          "name": "Bob",
+          "key": "bob",
+          "mentioned_by": [
+            "G3R4C"
+          ]
+        },
+        {
+          "name": "Carol",
+          "key": "carol",
+          "mentioned_by": [
+            "G3R4S"
+          ]
+        },
+        {
+          "name": "Project X",
+          "key": "project_x",
+          "mentioned_by": [
+            "G3R4C",
+            "G3R4S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Bob leads Project X",
+          "source": "Bob",
+          "target": "Project X",
+          "relation": "LEADS",
+          "valid_at": "2026-10-29T17:50:32Z",
+          "invalid_at": "2026-11-20T17:50:32Z",
+          "expired": true,
+          "episodes": 1
+        },
+        {
+          "fact": "Carol leads Project X",
+          "source": "Carol",
+          "target": "Project X",
+          "relation": "LEADS",
+          "valid_at": "2026-11-29T17:50:32Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G3R4C",
+        "G3R4S"
+      ]
+    }
+  }
+}

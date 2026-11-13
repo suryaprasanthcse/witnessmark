@@ -1,0 +1,25 @@
+{
+  "k": 4,
+  "digest": "sha256:3b5b2bba94596b53cfebe769ccff8b49c3d245fde13a4add213907b21a279418",
+  "state": {
+    "wm_g3_r4": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Bob leads Project X",
+          "valid_at": "2026-10-29T17:45:57Z",
+          "invalid_at": "2026-11-20T17:45:57Z",
+          "expired": true
+        },
+        {
+          "fact": "Carol leads Project X",
+          "valid_at": "2026-11-29T17:45:57Z",
+          "invalid_at": null,
+          "expired": false
+        }
+      ]
+    }
+  }
+}

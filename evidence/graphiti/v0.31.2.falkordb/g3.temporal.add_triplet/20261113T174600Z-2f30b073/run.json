@@ -1,0 +1,555 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261113T174600Z-2f30b073",
+  "batch": "m2-20261113T174128Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "526e98fbe59f602b33d6e84588e91159eafbd7af",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "falkordb",
+        "telemetry": "off",
+        "falkordb_pool": "blocking",
+        "driver": "1.8.2"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "FalkorDB 6.0.4 (graph module 60004)"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g3",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g3.temporal.add_triplet",
+    "invariants": [
+      "I7.issue",
+      "I7.code",
+      "I7.standard",
+      "I7C",
+      "I2",
+      "MR1"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 6,
+    "params": {
+      "cases": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-13T17:46:00.333291Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "R1",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:0a370055a4487aaf14610cd5e7b0317b0e3006854fe7919664b6074d5a5c2644",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 1,
+          "unit": "facts outside the group's graph",
+          "detail": "1 fact(s) for wm_g3_r1 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R1"
+          ]
+        },
+        {
+          "invariant": "I7.issue",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R1: expired=False, the issue reading expects False",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.code",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R1: expired=False, the code reading expects True",
+          "witnesses": [
+            "R1"
+          ]
+        },
+        {
+          "invariant": "I7.standard",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R1: expired=False, the standard reading expects False",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "R2",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:24f41df2f74a080e4edcb2a0212e362c668b2678f21dd4007e809241057134c8",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "facts outside the group's graph",
+          "detail": "2 fact(s) for wm_g3_r2 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R2"
+          ]
+        },
+        {
+          "invariant": "I7.issue",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the issue reading expects False",
+          "witnesses": [
+            "R2"
+          ]
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R2: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R2"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "case": "R3",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:7b8e1400e1f3af78885f940a99cb91aa974c7d848149c72e5aa6a4d6f237a4bf",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "facts outside the group's graph",
+          "detail": "2 fact(s) for wm_g3_r3 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R3"
+          ]
+        },
+        {
+          "invariant": "I7.issue",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the issue reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R3: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R3"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "case": "R4",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5b76d8f946c2720e441eb21298d943119d5dc8bb2cca8917a57e5049153ebb19",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "facts outside the group's graph",
+          "detail": "2 fact(s) for wm_g3_r4 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R4"
+          ]
+        },
+        {
+          "invariant": "I7.issue",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the issue reading expects False",
+          "witnesses": [
+            "R4"
+          ]
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the code reading expects True",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": false,
+          "magnitude": 1,
+          "unit": "mismatches",
+          "detail": "R4: expired=True, the standard reading expects False",
+          "witnesses": [
+            "R4"
+          ]
+        },
+        {
+          "invariant": "I7C",
+          "held": true,
+          "magnitude": 0,
+          "unit": "extended intervals",
+          "detail": "R4: invalid_at 2026-11-20T17:45:57Z (fixture end 2026-11-20T17:45:57Z)",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "case": "R5",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5b52ac47b8ca1ca6f565a0f66fcc3dadbaee4b476d49ebdb3dc8765fcc2d2406",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 1,
+          "unit": "facts outside the group's graph",
+          "detail": "1 fact(s) for wm_g3_r5 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R5"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 1,
+          "unit": "lost occurrences",
+          "detail": "R5: 1 edge(s) for 'Bob leads Project Y', valid_at ['2026-08-05T17:45:57Z']; the second occurrence starts 2026-11-03T17:45:57Z",
+          "witnesses": [
+            "R5"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "case": "R6",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d0a7552496a53d371bd08d738da9166934b70798e46d73b223bb78b160495f6e",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "facts outside the group's graph",
+          "detail": "2 fact(s) for wm_g3_r6 were written to the default graph, not the group's graph",
+          "witnesses": [
+            "R6"
+          ]
+        },
+        {
+          "invariant": "I7.issue",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:45:57Z; Erin expired=False",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.code",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:45:57Z; Erin expired=False",
+          "witnesses": []
+        },
+        {
+          "invariant": "I7.standard",
+          "held": true,
+          "magnitude": 0,
+          "unit": "mismatches",
+          "detail": "R6: Dana expired=True, invalid_at=2026-11-08T17:45:57Z; Erin expired=False",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "case": "suite",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 0,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5e3a55add0092a4bdbe054c7ea2ecd8fd4c261c8911e02d0068819b7b47a77cf",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "MR1",
+          "held": false,
+          "magnitude": 1,
+          "unit": "disagreements",
+          "detail": "R1 expired=False, R2 expired=True: an unrelated fact changed the result",
+          "witnesses": [
+            "R1",
+            "R2"
+          ]
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I7.issue",
+      "status": "OBSERVED",
+      "trials_violating": 2,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 1,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R2",
+        "R4"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7.code",
+      "status": "OBSERVED",
+      "trials_violating": 1,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 1,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R1"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7.standard",
+      "status": "OBSERVED",
+      "trials_violating": 3,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 1,
+        "max": 1,
+        "unit": "mismatches"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I7C",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "extended intervals"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I2",
+      "status": "OBSERVED",
+      "trials_violating": 6,
+      "trials_valid": 6,
+      "magnitude": {
+        "min": 1,
+        "median": 2.0,
+        "max": 2,
+        "unit": "facts outside the group's graph"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "MR1",
+      "status": "OBSERVED",
+      "trials_violating": 1,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 1,
+        "median": 1,
+        "max": 1,
+        "unit": "disagreements"
+      },
+      "basis": "issue",
+      "basis_ref": "",
+      "witnesses": [
+        "R1",
+        "R2"
+      ],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-13T17:46:01.419564Z"
+}

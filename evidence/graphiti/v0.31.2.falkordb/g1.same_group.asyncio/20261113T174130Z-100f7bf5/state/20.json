@@ -1,0 +1,855 @@
+{
+  "k": 20,
+  "digest": "sha256:c27a7d29e1b34fc8f59a1a664e6cfc6a70b25c17365885d5228c6560db7b99e6",
+  "state": {
+    "wm_g1": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E10"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E11"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E12"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E13"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E14"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E15"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E16"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E17"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E18"
+          ]
+        },
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G1E19"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E10"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E11"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E12"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E13"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E14"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E15"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E16"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E17"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E18"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G1E19"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E00"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E01"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E02"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E03"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E04"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E05"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E06"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E07"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E08"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E09"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E10"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E11"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E12"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E13"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E14"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E15"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E16"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E17"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E18"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G1E19"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice reviewed payments change 00",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 01",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 02",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 03",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 04",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 05",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 06",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 07",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 08",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T08:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 09",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T09:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 10",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T10:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 11",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T11:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 12",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T12:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 13",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T13:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 14",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T14:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 15",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T15:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 16",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T16:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 17",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T17:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 18",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T18:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice reviewed payments change 19",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "REVIEWED",
+          "valid_at": "2026-01-01T19:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G1E00",
+        "G1E01",
+        "G1E02",
+        "G1E03",
+        "G1E04",
+        "G1E05",
+        "G1E06",
+        "G1E07",
+        "G1E08",
+        "G1E09",
+        "G1E10",
+        "G1E11",
+        "G1E12",
+        "G1E13",
+        "G1E14",
+        "G1E15",
+        "G1E16",
+        "G1E17",
+        "G1E18",
+        "G1E19"
+      ],
+      "facts_in_default_graph": []
+    }
+  }
+}

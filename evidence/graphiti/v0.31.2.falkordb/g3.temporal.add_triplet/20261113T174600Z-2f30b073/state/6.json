@@ -1,0 +1,25 @@
+{
+  "k": 6,
+  "digest": "sha256:c3d87f588ab7220b97c3587fc1b1a65ef47c5ebb4dbe011e8f117067638eae17",
+  "state": {
+    "wm_g3_r6": {
+      "entities": [],
+      "facts": [],
+      "episodes": [],
+      "facts_in_default_graph": [
+        {
+          "fact": "Dana leads Project Z",
+          "valid_at": "2026-10-14T17:45:57Z",
+          "invalid_at": "2026-11-08T17:45:57Z",
+          "expired": true
+        },
+        {
+          "fact": "Erin leads Project Z",
+          "valid_at": "2026-11-08T17:45:57Z",
+          "invalid_at": null,
+          "expired": false
+        }
+      ]
+    }
+  }
+}

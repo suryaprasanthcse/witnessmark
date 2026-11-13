@@ -2,7 +2,12 @@
 
 Witnessmark checks seven concurrency and temporal invariants, I1 to I7, on graph databases and agent-memory layers. Every verdict comes with a witness: the raw, replayable record of the operations that produced it.
 
-> **Status: milestone M1.** The core runner, the I1 and I2 checkers and the two baseline adapters work, and are calibrated against FalkorDB 6.0.4 and Neo4j 5.26.2. No target adapter exists yet. The blueprints below are the contract the code is built against.
+> **Status: milestone M2.**
+> - M1 calibrated the core runner and the two baseline adapters against FalkorDB 6.0.4 and Neo4j 5.26.2.
+> - M2 adds the memory-layer runner and the Graphiti adapter. Results: [evidence/M2_GRAPHITI.md](evidence/M2_GRAPHITI.md), and the Graphiti blueprint's §11.
+> - The Cognee and Omnigraph adapters come next.
+>
+> The blueprints below are the contract the code is built against.
 
 ## Quick start
 

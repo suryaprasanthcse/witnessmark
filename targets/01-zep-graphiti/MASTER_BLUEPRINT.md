@@ -4,7 +4,7 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.2, 2026-11-13. Implemented in M2. A finding counts only when a run in `evidence/` backs it. |
+| Status | Specification v0.2, 2026-11-13. Implemented in M2. Results are in §11 and [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md). A finding counts only when a run in `evidence/` backs it. |
 | Project | [getzep/graphiti](https://github.com/getzep/graphiti), Apache-2.0. A Python framework that keeps a temporal knowledge graph in Neo4j, FalkorDB, Kuzu or Neptune. |
 | Line under test | graphiti-core v0.31.x. Primary pin: **v0.31.2**, tag commit `d72407dcedac911e1be9fc15b55e8c05a3efcc36` (2026-10-20), which is also the current PyPI release. |
 | Other builds | main at `ebef986a0b2360211b65751c111cacb4a7d790eb` (2026-11-11); [#1867](https://github.com/getzep/graphiti/pull/1867) at head `a30934e18b9582fbea3aca742269fc2174b67f07`; [#2119](https://github.com/getzep/graphiti/pull/2119) at head `b2b727e05467346b6516e2c68e193f8142ef208b` |
@@ -214,14 +214,23 @@ uuids and creation times are left out, so dumps compare across runs and backends
 
 ## 8. Contribution plan (non-competing)
 
+The tracker was checked on 2026-11-13 (read-only).
+
 1. **Before any draft:** search the tracker again, and re-run on the newest release.
 2. **#2012.** Comment with D2 for #2012's cases, framed by the three readings and MR1. No pull request: the semantics are open and #1867 exists.
-3. **#1865 and #1867.** R5 on v0.31.2 and on #1867, reported in those threads.
-4. **K16, `add_triplet` group scope on FalkorDB.** If no issue exists, file one with the G3 evidence and a minimal repro. It is a small, factual bug report.
-5. **K17, shared search limit.** If no issue exists, file one with the G5 repro. The fix is a copy of the config before setting its limit. Offer a pull request only if a maintainer asks.
-6. **G1 and G2.** These are boundary results (K15). Offer them as data on how much the documented sequential requirement matters, for example for several MCP replicas on one database, not as bugs.
-7. **K18 and K19.** Mention each where it fits an existing thread. Open a new issue only if none covers it.
-8. **Rules.** The CLA comes before any pull request. Outreach follows master §11.
+3. **#1865 and #1867.** Report, in those threads:
+   - R5 on v0.31.2 and main: the second occurrence is lost.
+   - R5 on #1867: fixed, and MR1 holds.
+   - #1867 still differs from #2012's reading on R1, R2 and R4.
+   - #1867 cannot run on FalkorDB 6.0.4 until it is rebased: index creation fails (run `20261113T175500Z-dce0eb46`).
+4. **K16, `add_triplet` group scope.** [getzep/graphiti#1795](https://github.com/getzep/graphiti/issues/1795) (open) covers this code path in an older form, where `add_triplet` reassigned the shared driver. Comment there with the v0.31.2 and main measurement and `repros/repro_triplet_group_graph.py`: the reassignment is gone, and the triplet now goes to the default graph.
+5. **K17, shared search limit.** Already fixed by the open one-line [getzep/graphiti#1594](https://github.com/getzep/graphiti/pull/1594) (`.model_copy(deep=True)` before `.limit` is set). Support it with G5's numbers rather than filing anything.
+   - **Done first:** G5 on #1594's head.
+   - **Status:** building that environment needs the maintainer's explicit approval, because it installs and runs a third-party pull request's code. That the PR clears G5 is [inference] until then.
+6. **K18, the FalkorDB connection pool.** No issue was found. This is a candidate new issue, with `repros/repro_falkordb_pool.py` and the default-pool G1 run.
+7. **K19, httpx.** [getzep/graphiti#1893](https://github.com/getzep/graphiti/issues/1893) and its fix [getzep/graphiti#1894](https://github.com/getzep/graphiti/pull/1894) already cover it. Nothing to add.
+8. **G1 and G2.** These are boundary results (K15). Offer them as data on how much the documented sequential requirement matters, for example for several MCP replicas on one database, not as bugs.
+9. **Rules.** The CLA comes before any pull request. Outreach follows master §11.
 
 ## 9. Exit and drop rule
 
@@ -234,4 +243,31 @@ uuids and creation times are left out, so dumps compare across runs and backends
 |---|---|
 | Is running several MCP server processes against one database supported? | Ask, if G1 `process` results go upstream |
 | When do Neo4j fulltext and vector indexes reflect a committed write? | G4 on Neo4j |
-| Do main and #1867 keep the same prompt set? | The G3 runs on those builds |
+| Do main and #1867 keep the same prompt set? | Answered in M2: yes. The stubs ran unchanged on both. |
+
+## 11. Results (M2)
+
+**Provenance.** Batch `m2-20261113T174128Z`, harness commit `526e98f` (clean tree), 20 trials per race. Every number below is [measured] and comes from [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md), which is regenerated from the runs named there. Every race's sequential control was met on both backends. That is M2's exit criterion: the fixture graph comes out exactly as specified when nothing races.
+
+| Scenario | FalkorDB 6.0.4 | Neo4j 5.26.2 | Verdict |
+|---|---|---|---|
+| G1, one group, `asyncio` | Every episode created its own copy of each entity and of the repeated fact, in 20 of 20 trials (20 copies per key). Nothing lost. | Same | BOUNDARY (K15) |
+| G1, one group, `process` (4 workers × 5) | Duplicates in 20 of 20 trials: median 4 copies per key, about one per worker; at most 16 | Same; at most 8 | BOUNDARY |
+| G1, one group, `queue` | 0 of 20 | 0 of 20 | PASS: a per-group queue removes the race within one process |
+| G1c, ten groups, one episode each | 0 of 20 | 0 of 20 | PASS: the #1676 fix holds |
+| G1 with Graphiti's own FalkorDB pool | 117 of 400 calls (3 to 6 per trial) failed with `MaxConnectionsError`, so every trial was invalid | n/a | OBSERVED (K18) |
+| G2, ten employers at once | All 10 versions stayed current, in 20 of 20 trials | Same | BOUNDARY |
+| G3, v0.31.2 and main, all three entry points | R1 open (contrary to the code's own rule); R2 and R4 expired (contrary to #2012); R3 expired; R5 lost its second occurrence; R6 correct; MR1 broken | Same | OBSERVED |
+| G3, `add_triplet` | Every case's facts were written to the default graph, not the group's graph (6 of 6) | Placed correctly | OBSERVED (K16) |
+| G3, #1867 | Crashes at index creation on 6.0.4 | R5 fixed, MR1 holds, consistent with the code reading; still contrary to #2012 on R1, R2 and R4 | OBSERVED |
+| G4 | 10 of 10 writes seen on the first search, from the same instance and from a second one | Same | PASS |
+| G5 | `default`: 1 current version. `limit1`: 6 current versions after one `search(num_results=1)` | 1 and 8 | OBSERVED (K17); no concurrency involved |
+
+**Repros** (`repros/`, standard library plus graphiti-core, no API key), run on 2026-11-13 against the baselines:
+
+| Repro | Expected | Observed |
+|---|---|---|
+| `add_triplet` on FalkorDB | 1 edge in the group's graph, 0 in the default graph | 0 in the group's graph, 1 in the default graph |
+| One `search(num_results=1)` | the shared limit stays 10 | it moves from 10 to 1, on both backends |
+| 60 concurrent searches, FalkorDB | 60 ok | 18 ok, 42 `MaxConnectionsError` |
+| 60 concurrent searches, Neo4j | 60 ok | 60 ok |

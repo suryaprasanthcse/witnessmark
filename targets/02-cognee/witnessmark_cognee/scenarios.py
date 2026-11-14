@@ -128,6 +128,18 @@ def store_checks(corpus: Corpus, tags: list[str], state: dict, where: str) -> li
     return checks
 
 
+def _shared_store(states: dict, groups: list[str]) -> dict | None:
+    """With access control off (rows R2 and R3) every dataset reads one graph, so each dump is the whole store.
+    Returns one state whose relational rows are every dataset's, or None when the datasets have stores of their own."""
+    dumps = [states[g] for g in groups if g in states]
+    graphs = [d.get("graph") for d in dumps]
+    if len(dumps) < 2 or not (graphs[0] or {}).get("nodes") or any(g != graphs[0] for g in graphs[1:]):
+        return None
+    merged = dict(dumps[0])
+    merged["relational"] = [row for d in dumps for row in d.get("relational", [])]
+    return merged
+
+
 def exact_graph(corpus: Corpus, tags: list[str], state: dict, absent: list[str] = ()) -> list[str]:
     """Differences from the fixture graph: the sequential control must show none."""
     problems = []
@@ -254,19 +266,30 @@ class C1Disjoint(C1OneDataset):
 
     def check(self, ops, states):
         checks = []
-        for group in self.groups():
-            mine = [op for op in ops if op.input["group"] == group]
-            _added, covered = self.acknowledged(mine)
-            checks += store_checks(self.corpus, covered, states[group], group)
+        shared = _shared_store(states, self.groups())
+        if shared is not None:  # one store: judge it once, against every worker's acknowledged documents
+            covered = sorted({t for g in self.groups()
+                              for t in self.acknowledged([op for op in ops if op.input["group"] == g])[1]})
+            checks += store_checks(self.corpus, covered, shared, "the shared store")
+        else:
+            for group in self.groups():
+                mine = [op for op in ops if op.input["group"] == group]
+                _added, covered = self.acknowledged(mine)
+                checks += store_checks(self.corpus, covered, states[group], group)
         checks.append(error_check(ops))
         return checks
 
     def sequential_expected(self, ops, states):
         problems = []
-        for share, group in zip(self.slices(), self.groups()):
-            problems += [f"{group}: {p}" for p in exact_graph(self.corpus, share, states[group])]
+        shared = _shared_store(states, self.groups())
+        if shared is not None:
+            everything = [tag for share in self.slices() for tag in share]
+            problems += [f"the shared store: {p}" for p in exact_graph(self.corpus, everything, shared)]
+        else:
+            for share, group in zip(self.slices(), self.groups()):
+                problems += [f"{group}: {p}" for p in exact_graph(self.corpus, share, states[group])]
         problems += _errors(ops)
-        return (not problems, "each dataset holds exactly its own slice's fixture graph",
+        return (not problems, "each dataset holds exactly its own slice's fixture graph (one shared store: every slice's)",
                 "; ".join(problems) or "as expected")
 
 
@@ -305,7 +328,8 @@ class C2Writers(RaceScenario):
                 (self.C, {"entry": "delete", "tags": self.tags[self.C]})]
 
     def check(self, ops, states):
-        store = states[self.A]
+        store = dict(states[self.A])
+        store["relational"] = [row for g in (self.A, self.B) for row in states[g]["relational"]]
         acknowledged = sorted({t for op in ops if op.outcome == OK and op.input.get("entry") == "add_cognify"
                                for t in op.input["tags"]})
         checks = store_checks(self.corpus, acknowledged, store, "the shared store")

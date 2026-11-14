@@ -60,7 +60,9 @@ async def _graph_data(engine) -> tuple[list, list]:
     adapter's get_graph_data asks for everything in one query, so on that store it silently returns at most
     10,000 nodes and 10,000 edges (target blueprint C28). The dump pages through the same queries instead.
     """
-    if type(engine).__name__ != "FalkorDBAdapter":
+    # cognee 1.6.1 hands out a _GraphEngineHandle that forwards attribute access to the adapter, so the class name
+    # says nothing; the row's provider does.
+    if os.environ.get("GRAPH_DATABASE_PROVIDER") != "falkor":
         return await engine.get_graph_data()
     page, nodes, edges = 5000, [], []
     skip = 0

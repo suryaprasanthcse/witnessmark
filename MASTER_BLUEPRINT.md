@@ -178,12 +178,15 @@ Adapters translate the core's operations into a target's API. They contain no ch
 | `dump(group)` | Canonical entities, facts with their temporal fields, and provenance | state | all |
 | `quiesce()` | Waits until background work is done, such as queues and index builds | status | gates |
 | `drain_stub_calls()` | Hands over the stub ledger since the last call (section 8) | call records | evidence |
+| `release()` | Lets go of anything worker processes need, such as an embedded store's exclusive file lock. The runner calls it before every `process`-mode trial, after reset and setup; the next call that needs the store opens it again. Added in M3 for Cognee's Ladybug store. | – | `process` mode |
 
 The contract is implemented as `MemoryTarget` in `core/witnessmark/memory.py`, together with the three run shapes:
 
 - races, with a sequential control;
 - known-answer case suites;
 - visibility runs.
+
+Case suites and races both declare a support level, basis and reference (section 5.8). Before M3 a case suite always reported `none` / `issue`; that remains the default.
 
 ### 4.3 Capabilities and claims
 
@@ -408,7 +411,7 @@ A trial is valid only if every one of these holds:
 - The precondition digest matched.
 - Δ ≤ δ.
   - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
-  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. The gates apply to memory runs once they are wired in, in M3. `container` keeps its provisional 50 ms.
+  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). `container` keeps its provisional 50 ms.
 
     | Mode | Trials | p50 | p99 | δ |
     |---|---|---|---|---|
@@ -577,7 +580,7 @@ The stub never makes a semantic mistake. Any duplicate or temporal error therefo
 **Transport.** One of two forms:
 
 - in-process, implementing the target's client interface;
-- an OpenAI-compatible HTTP endpoint, serving chat completions with JSON output plus embeddings, and shared by all worker processes.
+- an OpenAI-compatible HTTP endpoint, serving chat completions with JSON output plus embeddings, and shared by all worker processes. Built in M3 as `core/witnessmark/stub_server.py`. It uses the standard library only and binds to loopback only. It validates every answer against the JSON schema the request carries, answers an unknown prompt with HTTP 400, and keeps the ledger in the process that serves it. The target supplies the fixture handler.
 
 **Logged.** Every stub call becomes a history operation of kind `llm`, `embed` or `rerank`, carrying digests of the request and the response. The same log serves as the overlap control for in-library races (section 6.2).
 

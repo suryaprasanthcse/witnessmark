@@ -151,13 +151,134 @@ def visibility_table(runs: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# Columns of a target's invariants table (target blueprints, section 3): (heading, invariant, unit filter).
+INVARIANT_COLUMNS = (
+    ("Duplicate entities (I1B)", "I1B", "records per key"),
+    ("Duplicate vector ids (I1B)", "I1B", "rows per vector id"),
+    ("Artefacts in one store only (I4)", "I4", None),
+    ("Lost acknowledged items (I2)", "I2", None),
+    ("Deletion permanence (I5)", "I5", None),
+)
+
+
+def _column_cell(run: dict, invariant: str, unit: str | None) -> str:
+    """k of T over valid trials that carry the check; "–" when the run has none."""
+    carrying = violating = 0
+    for trial in run.get("trials", []):
+        if not trial.get("valid"):
+            continue
+        mine = [c for c in trial.get("checks", []) if c["invariant"] == invariant
+                and (unit is None or c.get("unit") == unit)]
+        if mine:
+            carrying += 1
+            violating += any(not c["held"] for c in mine)
+    return f"{violating}/{carrying}" if carrying else "–"
+
+
+def _ladder_cells(run: dict) -> tuple[str, str]:
+    ladder = run.get("ladder")
+    if not ladder:
+        return "–", "–"
+    crash = ladder.get("crash")
+    ceiling = f"crash at {crash['documents_committed']} ({crash['kind']})" if crash \
+        else f"none up to {ladder.get('documents')}"
+    reopen = ladder.get("reopen") or {}
+    parts = []
+    for mode in ("read_only", "read_write"):
+        value = reopen.get(mode)
+        if isinstance(value, dict):
+            parts.append(f"{mode.replace('_', '-')} {'yes' if value.get('opened') else 'no'}")
+        elif value:
+            parts.append(f"{mode.replace('_', '-')} {value}")
+    return ceiling, "; ".join(parts) or "–"
+
+
+def invariants_table(runs: list[dict]) -> str:
+    """One row per run: each cell is k of T valid trials with a violation; the run id is in the last column."""
+    heads = [h for h, _, _ in INVARIANT_COLUMNS] + ["Crash ceiling (documents)", "Store reopens after the run"]
+    lines = ["| Build | Backend | Scenario | Valid trials | " + " | ".join(heads) + " | Run |",
+             "|---|---|---|---|" + "---|" * len(heads) + "---|"]
+    for run in runs:
+        build, backend = _where(run)
+        trials = run.get("trials", [])
+        cells = [_column_cell(run, inv, unit) for _, inv, unit in INVARIANT_COLUMNS] + list(_ladder_cells(run))
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | "
+                     f"{sum(1 for t in trials if t.get('valid'))}/{len(trials)} | " + " | ".join(cells)
+                     + f" | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def extra_checks_table(runs: list[dict]) -> str | None:
+    """Checks outside a run's invariants (error classes, writer conflicts, crashes), over all trials."""
+    lines = ["| Backend | Scenario | Check | Trials where it did not hold | Details (first trials) | Run |",
+             "|---|---|---|---|---|---|"]
+    found = False
+    for run in runs:
+        _, backend = _where(run)
+        own = set(run["scenario"].get("invariants", []))
+        labels: dict[str, list] = {}
+        for trial in run.get("trials", []):
+            for check in trial.get("checks", []):
+                if check["invariant"] not in own:
+                    labels.setdefault(check["invariant"], []).append(check)
+        for label, checks in sorted(labels.items()):
+            found = True
+            failed = [c for c in checks if not c["held"]]
+            details = sorted({c["detail"][:90] for c in failed})[:3]
+            lines.append(f"| {backend} | {run['scenario']['id']} | {label} | {len(failed)} of {len(checks)} | "
+                         f"{'; '.join(details).replace('|', '/') or '–'} | `{run['run_id']}` |")
+    return "\n".join(lines) if found else None
+
+
+def invalid_table(runs: list[dict]) -> str | None:
+    lines = ["| Backend | Scenario | Invalid trials | Reasons (distinct, first three) | Run |", "|---|---|---|---|---|"]
+    found = False
+    for run in runs:
+        bad = [t for t in run.get("trials", []) if not t.get("valid")]
+        if not bad:
+            continue
+        found = True
+        _, backend = _where(run)
+        reasons = sorted({(t.get("invalid_reason") or "?")[:110] for t in bad})[:3]
+        lines.append(f"| {backend} | {run['scenario']['id']} | {len(bad)} of {len(run['trials'])} | "
+                     f"{'; '.join(reasons).replace('|', '/')} | `{run['run_id']}` |")
+    return "\n".join(lines) if found else None
+
+
+def ladder_table(run: dict) -> str:
+    build, backend = _where(run)
+    lines = [f"**{build} {backend}**, run `{run['run_id']}`", "",
+             "| Rung | Documents | Elapsed (s) | Batch p50 / max (s) | Peak memory, helper / workers (MB) | "
+             "Graph store (MB) | Nodes | Entities | Stub calls (LLM / embed) | Crash |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
+    for trial in run.get("trials", []):
+        seconds, peak = trial.get("batch_seconds", {}), trial.get("resident_mb_peak", {})
+        graph, store, stub, crash = trial.get("graph") or {}, trial.get("store") or {}, trial.get("stub_calls") or {}, \
+            trial.get("crash")
+        lines.append(
+            f"| {trial.get('rung')} | {trial.get('documents')} | {_fmt(trial.get('elapsed_s'))} | "
+            f"{_fmt(seconds.get('median'))} / {_fmt(seconds.get('max'))} | {_fmt(peak.get('helper'))} / "
+            f"{_fmt(peak.get('children'))} | {_fmt(round(store.get('graph_bytes', 0) / 2**20, 1))} | "
+            f"{_fmt(graph.get('nodes'))} | {_fmt(graph.get('entities'))} | {stub.get('llm', 0)} / "
+            f"{stub.get('embed', 0)} | "
+            f"{(crash['kind'] + ' after ' + str(crash['documents_committed'])) if crash else 'no'} |")
+    reopen = (run.get("ladder") or {}).get("reopen") or {}
+    lines += ["", "Reopened afterwards in a fresh process: " + "; ".join(
+        f"{mode}: " + (("opened, " + str(v.get("nodes")) + " nodes") if isinstance(v, dict) and v.get("opened")
+                       else (v.get("error", "?")[:160] if isinstance(v, dict) else str(v)))
+        for mode, v in reopen.items() if mode != "store")]
+    return "\n".join(lines)
+
+
 def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     if not runs:
         return f"# {title}\n\nNo runs found for batch `{batch}`.\n"
     races = [run for run in runs if run["scenario"]["mode"] in ("asyncio", "queue", "process")]
     suites = [run for run in runs if run["scenario"]["mode"] == "sequential" and
               any(t.get("case") for t in run["trials"])]
-    visibility = [run for run in runs if run["scenario"]["mode"] == "sequential" and run not in suites]
+    ladders = [run for run in runs if run.get("ladder")]
+    visibility = [run for run in runs if run["scenario"]["mode"] == "sequential" and run not in suites
+                  and run not in ladders]
     first = runs[0]
     host, harness = first.get("host", {}), first.get("harness", {})
     lines = [
@@ -189,6 +310,21 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
                   "", cases_table(suites), ""]
     if visibility:
         lines += ["## Read your writes", "", visibility_table(visibility), ""]
+    if ladders:
+        lines += ["## Scale ladder", ""]
+        for run in ladders:
+            lines += [ladder_table(run), ""]
+    if any(run["target"].get("name") == "cognee" for run in runs):
+        lines += ["## Invariants by backend", "",
+                  "Each cell: valid trials with a violation / valid trials that carry the check. "
+                  "Trials a gate made invalid are counted in the next table, not here.", "",
+                  invariants_table([run for run in runs if run in races or run in suites or run in ladders]), ""]
+    extra = extra_checks_table(runs)
+    if extra:
+        lines += ["## Checks outside the invariants", "", extra, ""]
+    invalid = invalid_table(runs)
+    if invalid and any(run["target"].get("name") == "cognee" for run in runs):
+        lines += ["## Invalid trials", "", invalid, ""]
     return "\n".join(lines)
 
 

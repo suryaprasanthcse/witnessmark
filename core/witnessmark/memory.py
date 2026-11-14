@@ -33,6 +33,9 @@ from .verdicts import summarize
 
 MODES = ("asyncio", "queue", "process")
 
+# Validity gate δ on the release spread, per mode (master blueprint section 6.3): 1.5 x the p99 measured in M2.
+SPREAD_GATE_MS = {"asyncio": 92.0, "queue": 3.0, "process": 1.0}
+
 
 class MemoryTarget(ABC):
     """The memory-layer adapter contract (master blueprint section 4.2)."""
@@ -72,6 +75,13 @@ class MemoryTarget(ABC):
     async def quiesce(self) -> None:
         """Wait for background work the library started."""
 
+    async def release(self) -> None:
+        """Let go of anything worker processes need, such as an embedded store's file lock.
+
+        Called before every process-mode race, after reset and setup. The next call
+        that needs the store opens it again.
+        """
+
     def drain_stub_calls(self) -> list[dict]:
         return []
 
@@ -94,6 +104,11 @@ class RaceScenario(ABC):
     support: str = "supported"  # supported | boundary | none: what the target says about this concurrency
     basis: str = "documented"
     basis_ref: str = ""
+    spread_gate: bool = True  # False when the scenario staggers its clients on purpose (a declared offset sweep)
+
+    def params(self) -> dict:
+        """Scenario parameters recorded in run.json, e.g. a declared sweep."""
+        return {}
 
     @abstractmethod
     def clients(self) -> list[tuple[str, dict]]:
@@ -123,6 +138,9 @@ class Case:
 class CaseSuite(ABC):
     id: str
     invariants: tuple[str, ...]
+    support: str = "none"  # supported | boundary | none, as for races
+    basis: str = "issue"
+    basis_ref: str = ""
 
     @abstractmethod
     def cases(self) -> list[Case]: ...
@@ -172,7 +190,9 @@ async def _ingest(target: MemoryTarget, run_id: str, k: int, phase: str, client:
                   timeout_s: float, queue: asyncio.Lock | None = None) -> Op:
     op_id = f"{k}-{client}-0"
     token = CURRENT_OP.set({"client": client, "op_id": op_id})
-    recorded = {"group": group, "tag": item.get("tag"), "entry": item.get("entry", "add_episode")}
+    recorded = {"group": group, "tag": item.get("tag"), "entry": item.get("entry", "add_episode"),
+                **{key: value for key, value in item.items() if key not in ("tag", "entry", "kind")}}
+    kind = item.get("kind", "ingest")
     inv = stamp()  # the client's invocation: a request waiting in a queue is already in flight
     try:
         if queue is None:
@@ -181,14 +201,14 @@ async def _ingest(target: MemoryTarget, run_id: str, k: int, phase: str, client:
             async with queue:
                 result = await asyncio.wait_for(target.ingest(item, group), timeout_s)
     except asyncio.TimeoutError:
-        return Op(run_id, k, phase, op_id, client, "ingest", recorded, inv, None, UNKNOWN, None,
+        return Op(run_id, k, phase, op_id, client, kind, recorded, inv, None, UNKNOWN, None,
                   {"type": "unavailable.timeout", "message": f"no answer in {timeout_s} s"}, process=str(os.getpid()))
     except Exception as exc:  # noqa: BLE001 - a library error may leave partial writes, so the outcome is unknown
-        return Op(run_id, k, phase, op_id, client, "ingest", recorded, inv, None, UNKNOWN, None,
+        return Op(run_id, k, phase, op_id, client, kind, recorded, inv, None, UNKNOWN, None,
                   {"type": f"target.{type(exc).__name__}", "message": str(exc)[:500]}, process=str(os.getpid()))
     finally:
         CURRENT_OP.reset(token)
-    return Op(run_id, k, phase, op_id, client, "ingest", recorded, inv, stamp(), OK, result, process=str(os.getpid()))
+    return Op(run_id, k, phase, op_id, client, kind, recorded, inv, stamp(), OK, result, process=str(os.getpid()))
 
 
 def _as_stamp(value) -> Stamp:
@@ -198,12 +218,19 @@ def _as_stamp(value) -> Stamp:
 def _stub_ops(calls: list[dict], run_id: str, k: int, start: int = 0) -> list[Op]:
     ops = []
     for n, call in enumerate(calls, start):
-        ops.append(Op(run_id, k, "stub", f"{k}-stub-{n:04d}", call.get("client") or "setup", "llm",
+        ops.append(Op(run_id, k, "stub", f"{k}-stub-{n:04d}", call.get("client") or "setup", call.get("kind", "llm"),
                       {"prompt": call["prompt"], "request_sha256": call["request_sha256"], "for": call.get("op_id")},
                       _as_stamp(call["inv"]), _as_stamp(call["ret"]), OK,
                       {"decision": call["decision"], "response_sha256": call["response_sha256"]},
                       process=call.get("process")))
     return ops
+
+
+def stub_errors(stub_ops: list[Op]) -> list[str]:
+    """Stub calls the stub could not answer from its fixture (master blueprint section 8: it fails loudly)."""
+    return [op.result["decision"]["error"] for op in stub_ops
+            if isinstance(op.result, dict) and isinstance(op.result.get("decision"), dict)
+            and op.result["decision"].get("error")]
 
 
 def release_spread_ms(ops: list[Op], mode: str) -> float:
@@ -415,7 +442,9 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
         clients = scenario.clients()
         scenario_id = f"{scenario.id}.{config.mode}"
         params = {"support": scenario.support, "op_timeout_s": config.op_timeout_s,
-                  "processes": config.processes if config.mode == "process" else None}
+                  "processes": config.processes if config.mode == "process" else None,
+                  "spread_gate_ms": SPREAD_GATE_MS[config.mode] if scenario.spread_gate else None,
+                  **scenario.params()}
         header = _header(config, target, scenario_id, scenario.invariants, config.mode, len(clients), config.trials,
                          started, params)
         run_id = make_run_id(started, header)
@@ -423,7 +452,9 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
         history: list[Op] = []
 
         # Sequential control (k = 0): the same items, one at a time, from the same starting state.
-        expected_digest = digest(await _reset_and_setup(target, scenario))
+        expected_pre = await _reset_and_setup(target, scenario)
+        expected_digest = digest(expected_pre)
+        run_dir.write_state("pre-0", expected_pre)
         setup_calls = _stub_ops(target.drain_stub_calls(), run_id, 0)
         control_ops = [await _ingest(target, run_id, 0, "control", f"c{index:02d}", group, item, config.op_timeout_s)
                        for index, (group, item) in enumerate(clients)]
@@ -432,7 +463,11 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
         run_dir.write_state(0, control_states)
         sequential_met, sequential_expected, sequential_observed = scenario.sequential_expected(
             control_ops, control_states)
-        history += setup_calls + control_ops + _stub_ops(target.drain_stub_calls(), run_id, 0, len(setup_calls))
+        control_stub = _stub_ops(target.drain_stub_calls(), run_id, 0, len(setup_calls))
+        if stub_errors(setup_calls + control_stub):
+            sequential_met = False
+            sequential_observed += f"; the stub could not answer: {stub_errors(setup_calls + control_stub)[:3]}"
+        history += setup_calls + control_ops + control_stub
 
         trials = []
         for k in range(1, config.trials + 1):
@@ -440,9 +475,15 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
             target.drain_stub_calls()
             faults: list[str] = []
             if config.mode == "process":
+                await target.release()
                 ops, stub_ops, faults = await asyncio.to_thread(
                     _race_in_processes, config.spec, clients, config.processes, run_id, k, config.op_timeout_s,
                     config.trial_timeout_s)
+                # A stub shared over HTTP keeps its ledger in this process: take it too.
+                stub_ops = sorted(stub_ops + _stub_ops(target.drain_stub_calls(), run_id, k, len(stub_ops)),
+                                  key=lambda op: op.inv.mono_ns)
+                stub_ops = [Op(o.run_id, o.k, o.phase, f"{k}-stub-{n:04d}", o.client, o.kind, o.input, o.inv, o.ret,
+                               o.outcome, o.result, process=o.process) for n, o in enumerate(stub_ops)]
             else:
                 ops = await _race_in_loop(target, scenario, config.mode, run_id, k, config.op_timeout_s,
                                           config.trial_timeout_s)
@@ -454,16 +495,24 @@ async def run_race(config: MemoryRunConfig, scenario: RaceScenario) -> dict:
             reasons = list(faults)
             if digest(pre) != expected_digest:
                 reasons.append("the precondition digest did not match")
+                run_dir.write_state(f"pre-{k}", pre)  # kept so the mismatch can be explained
             unknown = sum(1 for op in ops if op.outcome == UNKNOWN)
             if ops and unknown > 0.05 * len(ops):
                 reasons.append(f"{unknown} of {len(ops)} operations had an unknown outcome")
             if len(ops) != len(clients):
                 reasons.append(f"{len(clients) - len(ops)} client(s) recorded no operation")
+            spread = release_spread_ms(ops, config.mode)
+            if scenario.spread_gate and spread > SPREAD_GATE_MS[config.mode]:
+                reasons.append(f"release spread {spread} ms exceeds the {config.mode} gate "
+                               f"{SPREAD_GATE_MS[config.mode]} ms")
+            if stub_errors(stub_ops):
+                reasons.append(f"the stub could not answer {len(stub_errors(stub_ops))} call(s): "
+                               f"{stub_errors(stub_ops)[0]}")
             trial = {
                 "k": k,
                 "valid": not reasons,
                 "precondition_digest": digest(pre),
-                "release_spread_ms": release_spread_ms(ops, config.mode),
+                "release_spread_ms": spread,
                 "max_in_flight": max_in_flight(ops),
                 "outcomes": {o: sum(1 for op in ops if op.outcome == o) for o in (OK, FAIL, UNKNOWN)},
                 "quiesce_ms": 0.0,
@@ -562,11 +611,11 @@ async def run_cases(config: MemoryRunConfig, suite: CaseSuite) -> dict:
             "run_id": run_id,
             "batch": config.batch,
             **header,
-            "expectation": {"role": "target", "support": "none", "basis": "issue", "basis_ref": "",
-                            "known_deviation": None},
+            "expectation": {"role": "target", "support": suite.support, "basis": suite.basis,
+                            "basis_ref": suite.basis_ref, "known_deviation": None},
             "controls": [],
             "trials": trials,
-            "verdicts": _verdicts(suite.invariants, trials, True, "none", "issue", ""),
+            "verdicts": _verdicts(suite.invariants, trials, True, suite.support, suite.basis, suite.basis_ref),
         }
         return _finish(config, run_dir, manifest, history)
     except Exception:
@@ -580,12 +629,20 @@ async def run_cases(config: MemoryRunConfig, suite: CaseSuite) -> dict:
 
 
 async def _poll(target: MemoryTarget, query: str, group: str, fact: str, since_ns: int, interval_s: float,
-                budget_s: float) -> tuple[bool, float | None, int]:
-    """(found on the first search, lag in ms or None if never seen, searches made)."""
+                budget_s: float, errors: list | None = None) -> tuple[bool, float | None, int]:
+    """(found on the first search, lag in ms or None if never seen, searches made).
+
+    A search that raises counts as not finding the write; its error is appended to ``errors``.
+    """
     attempts = 0
     while True:
         attempts += 1
-        found = fact in await target.search(query, group)
+        try:
+            found = fact in await target.search(query, group)
+        except Exception as exc:  # noqa: BLE001 - a reader that cannot read is the measurement
+            found = False
+            if errors is not None:
+                errors.append(f"{type(exc).__name__}: {str(exc)[:160]}")
         lag_ms = (stamp().mono_ns - since_ns) / 1e6
         if found:
             return attempts == 1, (0.0 if attempts == 1 else lag_ms), attempts
@@ -616,11 +673,13 @@ async def run_visibility(config: MemoryRunConfig, scenario: VisibilityScenario) 
             checks = []
             if op.outcome == OK:
                 for label, target in (("same instance", writer), ("second instance", reader)):
+                    errors: list[str] = []
                     first, lag, attempts = await _poll(target, query, group, fact, op.ret.mono_ns,
-                                                       config.poll_interval_s, config.poll_budget_s)
+                                                       config.poll_interval_s, config.poll_budget_s, errors)
+                    raised = f"; {len(errors)} search(es) raised, last: {errors[-1]}" if errors else ""
                     checks.append(Check(
                         "I3", first, lag if lag is not None else config.poll_budget_s * 1000, "ms",
-                        f"{label}: {'seen on the first search' if first else f'seen after {lag:.1f} ms and {attempts} searches' if lag is not None else 'never seen within the budget'}",
+                        f"{label}: {'seen on the first search' if first else f'seen after {lag:.1f} ms and {attempts} searches' if lag is not None else 'never seen within the budget'}{raised}",
                         [] if first else [op.op_id]))
             history += _stub_ops(writer.drain_stub_calls(), run_id, k)
             trials.append({

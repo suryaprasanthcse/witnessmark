@@ -4,7 +4,8 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Nothing has been measured, so every expectation below is [unmeasured] until a run says otherwise. |
+| Status | Specification v0.2, 2026-11-14. Implemented in M3: `witnessmark_cognee/` (adapter, helper process, stub handlers, fixtures, scenarios C0–C6, the C4 ladder), `wm_cognee.py` (entry point), `requirements/` (frozen builds). §1.2 records what was read at the pin; results are in §12 once the batch has run. A finding counts only when a run in `evidence/` backs it. |
+| Code | Run with the build's venv Python: `.state/venvs/cognee-v1.6.8/Scripts/python targets/02-cognee/wm_cognee.py {race,cases,visibility,ladder} --row R1 …`. Row R3 runs in `.state/venvs/cognee-v1.6.1-falkor` with `--build v1.6.1`. |
 | Project | [topoteretes/cognee](https://github.com/topoteretes/cognee), Apache-2.0. A memory engine that ingests data, builds a knowledge graph with an LLM (`cognify`), and serves graph and vector retrieval. |
 | Line under test | v1.6.x. The primary pin is **v1.6.8**, tag commit `069f3cc119bdf5628be054bb915992b2fc78cfc5` (2026-11-12), which is also the current PyPI release. Before anything is filed, the scenario is re-run on the `dev` branch, where development happens. |
 | Pull requests under regression | [#5253](https://github.com/topoteretes/cognee/pull/5253) (serialise local LanceDB writes across processes), [#4167](https://github.com/topoteretes/cognee/pull/4167) (lock datasets across workers), [#6571](https://github.com/topoteretes/cognee/pull/6571) (regression test for #6559). Each head commit is recorded when it is pulled. |
@@ -27,6 +28,32 @@ Every source link points at the v1.6.8 tag.
 | C7 | [#4167](https://github.com/topoteretes/cognee/pull/4167) (open, last updated 2026-09-21). The per-dataset pipeline lock is an `asyncio.Lock` that exists only within one process. The PR adds PostgreSQL advisory locks, and file locks for SQLite and Turso. | [gh] |
 | C8 | The FalkorDB adapter is the community package `cognee-community-hybrid-adapter-falkor` 0.4.1, which stores both graph and vectors in FalkorDB. It requires `falkordb>=1.0.9,<2.0.0` and pins `cognee==1.6.1` ([topoteretes/cognee-community, packages/hybrid/falkordb](https://github.com/topoteretes/cognee-community/tree/main/packages/hybrid/falkordb)). | [code] |
 | C9 | Contribution rules: bugs are reported as issues; pull requests target `dev`; every commit needs a DCO sign-off ([CONTRIBUTING.md L151, L183](https://github.com/topoteretes/cognee/blob/v1.6.8/CONTRIBUTING.md)). | [docs] |
+
+**Re-checked on 2026-11-14 (read-only, `gh api` and PyPI).** v1.6.8 is still the latest release, at tag commit `069f3cc`; the PyPI wheel's `cognee/` tree equals the tag's, line for line. #5254, #6559 and #6170 are open. #5253 (head `599ae011`), #4167 (head `87301c70`) and #6571 (head `9455c4c7`) are open and unmerged.
+
+**Correction to C8.** On PyPI the newest `cognee-community-hybrid-adapter-falkor` is **0.4.0**, which pins `cognee==1.4.2` and `litellm==1.89.2`. Version 0.4.1, which pins `cognee==1.6.1` and `litellm==1.96.2`, exists only in the repository: `packages/hybrid/falkordb/pyproject.toml` at cognee-community `ff1324ec7586de8299e4a21fc777c021476af3f4`. Row R3 installs 0.4.1 from git at that commit [gh] [measured: install].
+
+### 1.2 Read at the pin in M3
+
+Paths are relative to the repository root, at `069f3cc` unless a line says otherwise.
+
+| # | Fact | Tag |
+|---|---|---|
+| C10 | `GRAPH_DATABASE_PROVIDER="kuzu"` (the `.env.template` value, L223) selects **Ladybug**: `create_graph_engine` sends `"ladybug"` and `"kuzu"` to `LadybugAdapter` (`cognee/infrastructure/databases/graph/get_graph_engine.py` L446–465). It also keeps a legacy `cognee_graph_kuzu` file name when one exists (`graph/config.py` L95–103). | [code] |
+| C11 | LanceDB also runs in a **subprocess worker by default**: `vector_db_subprocess_enabled: bool = True` (`vector/config.py` L37; `create_vector_engine.py` L294). With the graph worker (C1) a default Cognee process starts two database worker processes. | [code] |
+| C12 | **Backend access control is on by default** when the graph and vector handlers support it, which Ladybug and LanceDB do (`cognee/context_global_variables.py` L98–107). Each dataset then has its own `.lbug` file and its own `.lance.db` directory under `databases/<user id>/` [measured: smoke, store layout]. #5254's shape, datasets sharing one LanceDB store, therefore needs `ENABLE_BACKEND_ACCESS_CONTROL=false` at v1.6.8. | [code] |
+| C13 | Neo4j's default dataset handler creates one database per dataset with `CREATE DATABASE`, which Neo4j Community cannot do (`graph/neo4j_driver/Neo4jDatasetDatabaseHandler.py` L35). The community FalkorDB adapter registers its own handlers (`falkor_graph_local`, `falkor_vector_local`), which the default derivation does not pick. Rows R2 and R3 therefore run with access control off. | [code] |
+| C14 | `LanceDBAdapter.VECTOR_DB_LOCK` is a `LoopAgnosticLock` per adapter instance (`LanceDBAdapter.py` L224). At v1.6.8 `delete_data_points` **does** take it, per batch of ids (L1724–1749); the lock is still process-local. `create_data_points` deduplicates ids within one call and upserts with `merge_insert("id")` under the lock (L572–656). | [code] |
+| C15 | The structured-output default is `litellm_native` (`infrastructure/llm/config.py` L107). For a model litellm does not list as schema-capable it takes the JSON-object path: `response_format={"type": "json_object"}` with the Pydantic schema in a fenced block in the system prompt, plus up to three self-correcting retries (`structured_output_framework/litellm_native/native_adapter.py` L316–386, routing L388–475). The stub's model name is not listed, so that is the path the runs exercise. | [code], confirmed in every run's ledger |
+| C16 | The default cognify makes **one model call per chunk**: `KnowledgeGraph` extraction. Summaries are built from the extraction (`summary_method="from_extraction"`, `modules/cognify/config.py` L22). Before the first pipeline Cognee runs a connection test that asks for the literal string `"test"` (`infrastructure/llm/utils.py` L175–190), plus an embedding test. | [code] |
+| C17 | `cognify(data_per_batch=20)` is the default (`api/v1/cognify/cognify.py` L150): up to 20 data items of one call are processed concurrently in one process. C0 measures what that does to the vector store. | [code] |
+| C18 | `remember` runs `add`, then `cognify`, then `improve` when `self_improvement=True`, its default (`api/v1/remember/remember.py` L1092, L1275, L1333). The harness drives `add` and `cognify` directly, as the issue repros do; `improve`'s stages need model prompts the fixture does not script. | [code] |
+| C19 | **#6559's window is closed in-process at v1.6.8.** `infrastructure/files/stored_file_claims.py` keeps a file that an operation stored, and has not yet committed a row for, from removal. `remove_data_file_if_unreferenced` (`infrastructure/databases/relational/sqlalchemy/SqlAlchemyAdapter.py` L460–475) honours these claims. The module says so itself: "Process-local, like the dataset lock: two processes sharing one data root are not covered." `ingest_data` still writes the stored file (L447) well before its row commits (L649). | [code] |
+| C20 | `datasets.delete_data` takes "the same per-dataset lock as pipeline runs" (`api/v1/datasets/datasets.py` L525–527; `infrastructure/locks/dataset_lock.py` L111). It returns a receipt with `deleted_nodes`, `deleted_edges` and a verified `data_remaining` (L490–506). The receipt is the extent of what it documents about derived artefacts. | [code] [docs] |
+| C21 | **Support levels** come from Cognee's own words. The in-repo performance guide says: "Open-source cognee scales **vertically, in one process** … More workers or replicas against the same data are not coordinated" (`.agents/skills/cognee-performance/SKILL.md` L118–125). The API server is started with `gunicorn -w 1` (`entrypoint.sh` L57–62). The same guide describes processing several datasets at once in one process, capped by `DATASET_QUEUE_MAX_CONCURRENT` (L104–116). So: multi-process scenarios are **boundary**; concurrency across datasets in one process is **supported**; C6 is **none**. No document promises that several workers can share one dataset. | [docs] |
+| C22 | Telemetry: `send_telemetry` returns at once when `TELEMETRY_DISABLED` is set (`shared/utils.py` L575). The same switch defaults dlt's own telemetry off (`tasks/ingestion/dlt_utils.py` L166). The adapter sets it before `import cognee`, and `envsetup.assert_telemetry_off` refuses to run unless the switch is set and `send_telemetry` still reads it. | [code] |
+| C23 | **No network.** Every Cognee process the harness starts installs a socket guard: any connection or DNS lookup that is not loopback raises. In the first probe the guard caught tiktoken fetching `cl100k_base` from `openaipublic.blob.core.windows.net`. litellm bundles that file, but the Windows wheel (litellm 1.109.1 and 1.96.2) ships it with CRLF line endings, so tiktoken's hash check fails, it deletes the file and downloads a fresh copy. The harness keeps an LF copy whose SHA-256 matches tiktoken's expected value (`223921b7…`), and points `TIKTOKEN_CACHE_DIR` and `CUSTOM_TIKTOKEN_CACHE_DIR` at it. The guard does not reach the Ladybug and LanceDB worker processes, which do only local file I/O. | [code] [measured: probe] |
+| C24 | **The FalkorDB hybrid adapter ignores the vector port.** cognee 1.6.1 passes `vector_db_port` to a registered community vector adapter (`infrastructure/databases/vector/create_vector_engine.py` L176–185 @ `eb90d03`). `FalkorDBAdapter.__init__` reads only `graph_database_port` and falls back to 6379 (`falkor_adapter.py` L87–106 @ cognee-community `ff1324ec`). So with FalkorDB on any other port, the graph instance connects and the vector instance gets "connection refused" [measured: smoke]. For R3 the harness re-registers the adapter behind a shim that copies `vector_db_port` into `graph_database_port` and changes nothing else; every run records `falkor_vector_port_shim: true`. This is a candidate finding for `topoteretes/cognee-community`. | [code] [measured] |
 
 ## 2. How the pipeline works, and where it can race
 
@@ -56,19 +83,23 @@ Every source link points at the v1.6.8 tag.
 
 | Row | Graph | Vector | Relational | Why |
 |---|---|---|---|---|
-| R1 | Ladybug 0.22.3, subprocess worker on | LanceDB 0.39.x | SQLite | the v1.6.8 default |
+| R1 | Ladybug 0.22.3, subprocess worker on | LanceDB 0.39.0, subprocess worker on (C11) | SQLite | the v1.6.8 default; access control at its default (on, C12) |
 | R1i | Ladybug 0.22.3, `GRAPH_DATABASE_SUBPROCESS_ENABLED=false` | LanceDB | SQLite | in-process mode, as in #6170 |
-| R2 | Neo4j 5.26.2 | LanceDB | SQLite | changes only the graph store |
-| R3 | FalkorDB 6.0.4 (community hybrid adapter) | FalkorDB | SQLite | changes the graph and vector stores together. The adapter pins cognee 1.6.1, so this row runs on 1.6.1, unless an override of that pin installs cleanly on 1.6.8; whichever version runs is recorded. |
-| R4 | Ladybug | LanceDB | PostgreSQL | needed to test #4167's advisory-lock path |
+| R2 | Neo4j 5.26.2 over Bolt 127.0.0.1:17687 | LanceDB | SQLite | changes only the graph store; access control off (C13) |
+| R3 | FalkorDB 6.0.4 via cognee-community-hybrid-adapter-falkor 0.4.1 (git `ff1324ec`) | FalkorDB, on the graph nodes | SQLite | changes the graph and vector stores together; **cognee 1.6.1** (tag `eb90d03`), ladybug 0.19.0, lancedb 0.41.0, litellm 1.96.2, the versions the adapter's pins resolve to; access control off (C13) |
+| R4 | Ladybug | LanceDB | PostgreSQL | **deferred**: M3 adds no Postgres service (master §7). #4167's advisory-lock path also needs its PR head, which is pending approval (§11). |
+
+**Access control.** `--access-control off` sets `ENABLE_BACKEND_ACCESS_CONTROL=false`; the evidence directory then ends in `-acoff`. C2 always runs that way, because only then do datasets share a store (C12).
+
+**R3 on 1.6.8.** Whether the adapter installs on 1.6.8 is not tested: overriding its `cognee==1.6.1` pin would be a build nobody publishes. It stays an open question (§10).
 
 ### The invariants table
 
-C1 to C6 in §5 fill this table: one row per matrix row, one cell per check, each cell holding k of T plus its run_id.
+The reporter builds this table from evidence ("Invariants by backend" in `evidence/M3_COGNEE.md`). It has one row per run, and each cell is k of T valid trials with a violation; the run id is in the last column. Trials that a validity gate made invalid, and what their operations raised, are in the report's next two tables.
 
 | Row | Duplicate entities (I1 Form B) | Duplicate vector IDs (I1 Form B) | Orphan edges and dangling vectors (I4 across stores) | Lost acknowledged items (I2) | Deletion permanence (I5) | Crash ceiling (documents) | Store reopens after a crash |
 |---|---|---|---|---|---|---|---|
-| R1 … R4 | | | | | | | |
+| R1 … R3 | see §12 | | | | | | |
 
 ## 4. Stub contract
 
@@ -78,11 +109,56 @@ C1 to C6 in §5 fill this table: one row per matrix row, one cell per check, eac
   - Embeddings: `EMBEDDING_PROVIDER`, `EMBEDDING_ENDPOINT`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS`.
 
   #6170's reporter ran this way against an OpenAI-compatible endpoint.
-- **Structured output.** The stub must answer in whatever structured-output mode Cognee's LLM gateway uses at the pin (JSON schema or tool calls through litellm). M3 confirms the mode before any run.
-- **Fixtures.** Each document carries an id tag. The fixture holds its chunks' graph extraction: entities with canonical keys, plus relations. Summaries are fixed strings.
-- **Realism check, not used for verdicts.** Cognee's local extraction path (the `gliner` extra in the README) runs once per scenario, to show that the stubbed results are not an artefact of the stub.
+- **Structured output.** The stub must answer in whatever structured-output mode Cognee's LLM gateway uses at the pin (JSON schema or tool calls through litellm). M3 confirms the mode before any run. **Confirmed:** the JSON-object path, with the schema in the system prompt (C15).
+- **Fixtures.** Each document carries an id tag. The fixture holds its chunks' graph extraction: entities with canonical keys, plus relations. Summaries are fixed strings. At v1.6.8 summaries come from the extraction, so no summary prompt is scripted (C16).
+- **Realism check, not used for verdicts.** Cognee's local extraction path (the `gliner` extra in the README) runs once per scenario, to show that the stubbed results are not an artefact of the stub. **Not run in M3:** the GLiNER runtime and its model download from the network, which the no-network rule forbids. Open question §10.
+
+**As built (M3).**
+
+| Part | Where | What it does |
+|---|---|---|
+| Server | `core/witnessmark/stub_server.py` (standard library) | `ThreadingHTTPServer` on 127.0.0.1, serving `/v1/chat/completions`, `/v1/embeddings` and `/v1/models`. Every answer is validated against the schema the request carries (in `response_format.json_schema`, or as a fenced `json` block in the system prompt) by a small JSON-schema validator. An unknown prompt gets HTTP 400; an answer that breaks its schema gets HTTP 500. Every call, answered or not, goes in a ledger, and the run drains it. |
+| Handlers | `witnessmark_cognee/stub.py` | The connection test gets `"test"`. `KnowledgeGraph` gets the fixture entities (ids are canonical names) and relations of every tagged document in the chunk. Anything else is unknown. |
+| Embeddings | core | `stubs.embed(text, 256)`; the dimension is set by `EMBEDDING_DIMENSIONS=256`, and a request for any other dimension is refused |
+| Wiring | `witnessmark_cognee/envsetup.py` | `LLM_PROVIDER=openai`, `LLM_MODEL=openai/witnessmark-stub`, a dummy `LLM_API_KEY`; `EMBEDDING_PROVIDER=openai_compatible` (Cognee's engine for local OpenAI-compatible servers), `EMBEDDING_MODEL=witnessmark-embed`; both endpoints point at the stub |
+| Gates | `core/witnessmark/memory.py` | A trial with a stub error is invalid, and a sequential control with one is not met |
+
+**Attribution.** HTTP calls carry no client id, so ledger entries name the document tags they served, not the operation. The overlap control counts the operations themselves.
 
 ## 5. Scenarios
+
+### 5.0 As built in M3 (amends the designs below)
+
+**Runner shape.** The coordinator never imports cognee: it drives a helper process over two pipes (`helper.py`). `reset` starts a fresh store root, `.state/runs/<run>/gNNNN/`, for every trial. Before every process-mode trial the runner calls the adapter's new `release()` hook (master §4.2), which stops the helper. Ladybug holds an exclusive file lock while a process has the store open, so a coordinator holding it would keep the workers out. Worker processes read the current root from a pointer file and run Cognee in-process.
+
+**Why `data_per_batch=1`.** C0 below shows that one `cognify` call over several documents that share entities stores duplicate vector rows by itself, in one process, with nobody racing it. That happens because the call's data items run concurrently. The cross-process scenarios C1, C2, C3, C5 and C6 therefore cognify with `data_per_batch=1`, so that what they measure is the concurrency they create. C0 measures Cognee's default, and C4 keeps the default as #6170's reporter did.
+
+**Corpus sizes.** C1 uses 24 documents, not 200, to keep a 20-trial run under about half an hour. Six people, four companies and four cities recur across them. Worker i adds slice i plus the first two documents of slice i+1, so every slice overlaps the next.
+
+| ID | Mode | Clients | Support (C21) | Basis | Trials |
+|---|---|---|---|---|---|
+| `c0.single_call` | one helper, one call per case | 1 | supported | documented: `create_data_points` upserts and dedups (C14) | 2 cases: `data_per_batch=1` and the default (20) |
+| `c1.k{2,4,8}` | process | K adds, then K cognifies, one worker each | boundary | documented (C21) | 20 |
+| `c1.disjoint.k4` | process | the same, each worker on its own dataset | boundary | documented | 20 |
+| `c2.writers` | process, access control off | add+cognify A; add+cognify B; delete C (cognified in setup) | boundary | issue #5254 | 20 |
+| `c3.cross_process` | process, no pause | delete A's copy; add the same bytes to B, then cognify B | boundary | issue #6559 | 36: one per declared offset, −50 to +125 ms in steps of 5 |
+| `c3.in_process` | one helper | `paused` (the reporter's method) and `gather` (no pause) | supported | issue #6559 | 2 cases |
+| `c5.visibility` | writer helper + reader helper (separate processes) | 10 documents, `search(CHUNKS)` | none | inferred | 10 writes |
+| `c6.deletion` | one helper | `delete`, and `delete_during_cognify` (another dataset cognified meanwhile) | none | documented receipt (C20) | 2 cases |
+| `c4.ladder` | one helper | 448, 1000, 1650, 2500, 5401 documents, batches of 16, `chunks_per_batch=16`, pinned `data_id`s | none | issue #6170 | 5 rungs |
+
+**Checks that are not invariants** are kept in every trial and tabulated by the reporter:
+- `ERR`: the error class of every operation that raised (Ladybug file lock, LanceDB writer conflict, SQLite locked, file not found, …).
+- `C2W`: writer conflicts.
+- `C2P`: partially indexed documents.
+- `CRASH`: crashes on the ladder.
+
+**Not run in M3:** memify in C2. At v1.6.8 `memify` is a deprecated shim, and its replacement `improve` needs prompts the fixture does not script. Also not run: every build that needs a pull request's code (§11).
+
+### C0. One call, one process (new in M3; I1 Form B)
+
+- **Procedure.** `add` and then one `cognify` over 8 documents of the C1 corpus, which share entities. Two cases, each on a fresh store: `data_per_batch=1`, and Cognee's default.
+- **Why.** It separates what Cognee's own in-call concurrency does from what concurrent callers do.
 
 ### C1. Several workers ingesting one dataset (I1 Form B, I2, consistency across stores)
 
@@ -192,9 +268,21 @@ C1 to C6 in §5 fill this table: one row per matrix row, one cell per check, eac
 
 | Question | Settled in |
 |---|---|
-| Does `remember` at v1.6.8 wrap `add` and `cognify`, or does it take a different path? | Read in M3 |
-| Which adapter does `GRAPH_DATABASE_PROVIDER="kuzu"` (the `.env.template` value) select at v1.6.8: Kuzu or Ladybug? | Read in M3 |
-| How does the provided Docker Compose run several API workers? This decides whether the FastAPI-worker setup is a fifth execution mode. | M3 |
-| Which structured-output mode does the LLM gateway use? | M3 |
-| Does Cognee's conflict handling (`api/v1/conflicts`) make I7 applicable? Until shown otherwise, I7 is NOT_APPLICABLE. | M3 |
-| Does the community FalkorDB adapter install on cognee 1.6.8? | M3 |
+| Does `remember` at v1.6.8 wrap `add` and `cognify`, or does it take a different path? | **Answered (C18):** `add`, `cognify`, then `improve` |
+| Which adapter does `GRAPH_DATABASE_PROVIDER="kuzu"` (the `.env.template` value) select at v1.6.8: Kuzu or Ladybug? | **Answered (C10):** Ladybug |
+| How does the provided Docker Compose run several API workers? This decides whether the FastAPI-worker setup is a fifth execution mode. | **Answered (C21):** it does not; `entrypoint.sh` runs `gunicorn -w 1`. No fifth mode. |
+| Which structured-output mode does the LLM gateway use? | **Answered (C15)** |
+| Does Cognee's conflict handling (`api/v1/conflicts`) make I7 applicable? Until shown otherwise, I7 is NOT_APPLICABLE. | Still open: conflict review is an `improve` stage that needs scripted prompts. I7 stays NOT_APPLICABLE. |
+| Does the community FalkorDB adapter install on cognee 1.6.8? | Open, for the maintainer: testing it means overriding the adapter's `cognee==1.6.1` pin, a build nobody publishes. M3 ran the pinned 1.6.1. |
+| Should the GLiNER realism check run? It needs the `gliner` runtime and a model download. | Open, for the maintainer: it conflicts with the no-network rule |
+| R4 (PostgreSQL) | Deferred: needs a pinned Postgres service in `baselines/` and #4167's head |
+
+## 11. Pull-request builds pending approval
+
+Installing or running third-party pull-request code needs the maintainer's explicit yes. None of these builds was installed or run in M3. Heads as of 2026-11-14:
+
+| PR | Head | Would run | Status |
+|---|---|---|---|
+| [#5253](https://github.com/topoteretes/cognee/pull/5253) | `599ae0110bf5ddf4d6865f586e1887ea5f99a1fa` | C2 on R1 and R2, C1 | pending approval |
+| [#4167](https://github.com/topoteretes/cognee/pull/4167) | `87301c704d1a8b660b481e3b12e5796d91ae44f4` | C1 on R1 (SQLite file lock) and R4 (advisory lock) | pending approval |
+| [#6571](https://github.com/topoteretes/cognee/pull/6571) | `9455c4c7043d8b59a28921fcdd3947ccb4867a7e` | its own regression test, next to C3 | pending approval |

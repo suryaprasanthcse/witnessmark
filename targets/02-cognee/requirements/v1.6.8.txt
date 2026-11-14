@@ -91,6 +91,7 @@ more-itertools==11.2.1
 multidict==7.2.1
 mypy-extensions==1.2.0
 nbformat==5.11.1
+neo4j==5.28.8
 networkx==3.7
 numpy==2.5.4
 onnxruntime==1.32.0

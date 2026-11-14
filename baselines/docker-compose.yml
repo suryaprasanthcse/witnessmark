@@ -26,6 +26,9 @@ services:
       - "127.0.0.1:17687:7687"  # Bolt, used by Graphiti's driver
     environment:
       NEO4J_AUTH: "none"
+      # APOC core ships inside the pinned image (/var/lib/neo4j/labs); this only switches it on. Cognee's Neo4j
+      # adapter calls apoc.create.addLabels and apoc.merge.relationship (M3, row R2); Graphiti does not need it.
+      NEO4J_PLUGINS: '["apoc"]'
       NEO4J_server_memory_heap_initial__size: "512m"
       NEO4J_server_memory_heap_max__size: "1g"
       NEO4J_server_memory_pagecache_size: "256m"

@@ -13,6 +13,10 @@ Prompts at v1.6.8, with the default cognify pipeline (summary_method "from_extra
 - ``KnowledgeGraph`` extraction, once per chunk: the fixture entities and relations of
   every tagged document in the chunk. Entity ids are canonical names (ideal model).
 
+- ``SummarizedContent`` (cognee 1.6.1 only, row R3): before ``summary_method`` existed, every chunk got a second
+  model call, ``extract_summary`` (tasks/summarization/summarize_text.py @ eb90d03); the answer is a fixed
+  string that names the chunk's tags.
+
 Anything else is unknown and fails loudly.
 """
 
@@ -54,6 +58,9 @@ class FixtureHandler:
                                                  f"{relation.target}"})
             return {"nodes": nodes, "edges": edges}, {"prompt": "KnowledgeGraph", "tags": tags,
                                                      "nodes": len(nodes), "edges": len(edges)}
+        if title == "SummarizedContent":
+            tags = [tag for tag in tags_in(user) if tag in self.docs]
+            return {"summary": "Summary of " + (", ".join(tags) if tags else "an untagged chunk") + "."},                 {"prompt": "SummarizedContent", "tags": tags}
         raise UnknownPrompt(f"no handler for schema {title!r}; system prompt starts {system[:80]!r}")
 
 

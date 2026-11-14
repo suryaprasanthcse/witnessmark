@@ -355,7 +355,10 @@ def _c3_checks(state_a: dict, state_b: dict, delete_ok: bool, add_ok: bool, cogn
     if add_ok and not rows_b:
         checks.append(Check("I2", False, 1, "acknowledged adds without a row", "add(B) returned but B has no row"))
     if delete_ok:
-        left = len(_rows(state_a).get("C3X", [])) + _tag_counts(state_a, "DocumentChunk").get("C3X", 0)
+        # A was only added, never cognified, so it owns no chunk. When the datasets share one store (access control
+        # off: rows R2 and R3) A's dump reads B's graph, and B's chunk is not a leftover of A.
+        shared = bool((state_a.get("graph") or {}).get("nodes")) and state_a.get("graph") == state_b.get("graph")
+        left = len(_rows(state_a).get("C3X", [])) + (0 if shared else _tag_counts(state_a, "DocumentChunk").get("C3X", 0))
         checks.append(Check("I5", not left, left, "A artefacts left", "A's copy is gone" if not left
                             else "A still holds the deleted document"))
     return checks

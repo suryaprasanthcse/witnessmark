@@ -77,7 +77,7 @@ class OperationCapture:
             self.emit(op)
 
     def client(self, endpoint: str, graph: str = "witnessmark", *, timeout: float = 60,
-               label: str = "c00") -> OmnigraphClient:
+               label: str = "c00", bearer_token: str | None = None) -> OmnigraphClient:
         def observed(method, path, body, inv, ret, reply):
             data = reply.data if isinstance(reply.data, dict) else {}
             commit = data.get("commit") or {}
@@ -97,7 +97,7 @@ class OperationCapture:
                         request, inv, ret, outcome, result=reply.data, error=error,
                         token=str(token) if token is not None else None)
 
-        return OmnigraphClient(endpoint, graph, timeout=timeout, observed=observed)
+        return OmnigraphClient(endpoint, graph, timeout=timeout, observed=observed, bearer_token=bearer_token)
 
     def action(self, kind: str, target: str, invoke, *, phase: str = "nemesis", decode=None, **inputs):
         inv = stamp()

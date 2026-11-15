@@ -17,6 +17,7 @@ from contextlib import contextmanager  # noqa: E402
 from witnessmark.runner import OMNIGRAPH_THREAD_SPREAD_GATE_MS, RunConfig, run, run_sequential_control  # noqa: E402
 from witnessmark.scenarios import Expectation  # noqa: E402
 
+from witnessmark_omnigraph.actors import make_tokens  # noqa: E402
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
 from witnessmark_omnigraph.capture import OperationCapture, repro_command  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
@@ -36,16 +37,17 @@ BUILDS = {
 }
 
 
-def _engine(args) -> OmnigraphEngine:
+def _engine(args, actor_tokens=None) -> OmnigraphEngine:
     build = BUILDS[args.build]
-    return OmnigraphEngine(args.endpoint, args.build, build["image"], build["digest"], storage=args.storage)
+    return OmnigraphEngine(args.endpoint, args.build, build["image"], build["digest"], storage=args.storage,
+                           actor_tokens=actor_tokens)
 
 
 @contextmanager
-def _race_stack(args, run_id, history):
+def _race_stack(args, run_id, history, actor_tokens=None):
     capture = OperationCapture(REPO, run_id, history.append)
     stack = Stack(REPO, f"wm-m5-race-{args.build.replace('.', '-')}-{args.storage}", BUILDS[args.build],
-                  args.storage, capture=capture)
+                  args.storage, capture=capture, actor_tokens=actor_tokens)
     try:
         stack.provision()
         yield
@@ -99,6 +101,10 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--batch", default=None)
             sub.add_argument("--evidence", default=str(REPO / "evidence"))
             sub.add_argument("--provision", action="store_true", help="start a fresh disposable Omnigraph stack")
+            sub.add_argument("--actors", choices=["per-client", "shared"], default=None,
+                             help="per-client (default with --provision): one actor and bearer token per client; "
+                                  "shared (default without it): the unauthenticated server of batch "
+                                  "m5-20261115T222957Z")
             gate = sub.add_mutually_exclusive_group()
             gate.add_argument("--no-spread-gate", action="store_true", help="record Δ without gating on it")
             gate.add_argument("--spread-gate-ms", type=float, default=OMNIGRAPH_THREAD_SPREAD_GATE_MS)
@@ -135,6 +141,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_argument("--spread-gate-ms", type=float, default=None,
                      help="gate on the release spread; off (recorded) until Omnigraph's delta is set")
     sub.add_argument("--falkordb-port", type=int, default=16380)
+    sub.add_argument("--actors", choices=["per-client", "shared"], default="per-client",
+                     help="Omnigraph side: one actor and bearer token per agent, or one unauthenticated actor")
     args = parser.parse_args(argv)
     command = repro_command(REPO, argv if argv is not None else sys.argv[1:])
 
@@ -146,8 +154,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             if args.build is None:
                 parser.error("--build is required for --engine omnigraph")
+            tokens = make_tokens(50) if args.actors == "per-client" else None
             manifest, path = run_o2b(REPO, evidence, args.batch, args.build, BUILDS[args.build], args.storage,
-                                     command=command, smoke=args.smoke, gate_ms=args.spread_gate_ms, seed=args.seed)
+                                     command=command, smoke=args.smoke, gate_ms=args.spread_gate_ms, seed=args.seed,
+                                     actor_tokens=tokens)
         print(f"{manifest['scenario']['id']}: {len(manifest['trials'])} trial(s), status {manifest['status']}")
         print_table(manifest)
         print(f"evidence: {path}")
@@ -182,7 +192,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"evidence: {path}")
         return 0
 
-    engine = _engine(args)
+    actor_tokens = None
+    if args.command == "race" and (args.actors or ("per-client" if args.provision else "shared")) == "per-client":
+        if not args.provision:
+            parser.error("--actors per-client needs --provision, which configures the actors on a fresh stack")
+        actor_tokens = make_tokens(args.clients)
+    engine = _engine(args, actor_tokens)
 
     if args.command == "smoke":
         run_id = args.run_id or f"part1-{args.build}-{args.storage}-smoke"
@@ -221,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
                        spread_gate_ms=None if args.no_spread_gate else args.spread_gate_ms,
                        command=command, expectation=expectation,
                        additional_components=tuple(storage_components(args.storage)))
-    manifest = run(config, prepare=(lambda run_id, history: _race_stack(args, run_id, history))
+    manifest = run(config, prepare=(lambda run_id, history: _race_stack(args, run_id, history, actor_tokens))
                    if args.provision else None)
     print(f"{manifest['scenario']['id']}: {manifest['verdicts'][0]['status']}")
     print(f"evidence: {manifest['path']}")

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
 from witnessmark.checkers import Check, check_claim_lease
 from witnessmark.history import FAIL, OK
 from witnessmark.scenarios import Scenario, client_name
@@ -12,6 +14,41 @@ from .scenarios import SCHEMA_DOC, SERVER_DOC
 TASK = "task-0"
 SKILL = "skill-0"
 MERGE_REFUSALS = frozenset({"CardinalityViolation", "DivergentInsert", "DivergentUpdate", "DeleteVsUpdate"})
+# Error types that carry no server-typed reason: the client's fallbacks for a refusal it could not name.
+_UNTYPED = frozenset({"", "refusal", "untyped", "http_error", "protocol"})
+
+
+def refusal_type(op) -> str | None:
+    """The typed reason of a definite refusal, or None when the refusal is untyped."""
+    kind = str((op.error or {}).get("type") or "")
+    return None if kind in _UNTYPED or kind.startswith("http_") else kind
+
+
+def refusal_counts(ops) -> dict[str, int]:
+    counts = Counter(refusal_type(op) or "untyped" for op in ops if op.outcome == FAIL)
+    return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
+
+
+def typed_refusal_check(base: Check, ops, *, extra_problems: list[str] | None = None,
+                        extra_witnesses: list[str] | None = None) -> Check:
+    """I1 at the race (M5 maintainer ruling, 2026-11-16).
+
+    Every typed definite refusal is accepted and counted per type. The check fails only on a second
+    winner, a second holder, a winner that does not hold its lease (a lost acknowledged write), an
+    outcome that could have applied but cannot be accounted for (check_claim_lease), or an untyped
+    refusal.
+    """
+    untyped = [op.op_id for op in ops if op.outcome == FAIL and refusal_type(op) is None]
+    problems = ([] if base.held else [base.detail]) + list(extra_problems or [])
+    if untyped:
+        problems.append(f"{len(untyped)} refusal(s) carried no typed reason")
+    counts = "; ".join(f"{kind} {count}" for kind, count in refusal_counts(ops).items()) or "none"
+    if not problems:
+        return Check(base.invariant, True, base.magnitude, base.unit, f"{base.detail}; refusals by type: {counts}",
+                     [])
+    witnesses = list(dict.fromkeys(base.witnesses + list(extra_witnesses or []) + untyped))
+    return Check(base.invariant, False, max(1, base.magnitude, len(untyped)), base.unit,
+                 f"{'; '.join(problems)}; refusals by type: {counts}", witnesses)
 
 
 class _TaskRace(Scenario):
@@ -69,20 +106,17 @@ class ClaimScenario(_TaskRace):
 
     def check(self, ops, state, n):
         base = check_claim_lease(ops, state["holders"].get(TASK, []), state["lease_records"])
-        unexpected = [op for op in ops if op.outcome != OK and
-                      (op.outcome != FAIL or (op.error or {}).get("type") not in self.allowed_refusals)]
-        if not unexpected:
-            return base
-        return Check("I1A", False, max(base.magnitude, len(unexpected)), base.unit,
-                     f"{base.detail}; {len(unexpected)} non-winner outcome(s) were not typed refusals "
-                     f"{sorted(self.allowed_refusals)}",
-                     list(dict.fromkeys(base.witnesses + [op.op_id for op in unexpected])))
+        return typed_refusal_check(base, ops)
 
     def sequential_expected(self, ops, state, n):
+        # The sequential control keeps the documented answer exactly: one winner and, for every later
+        # claim, the scenario's documented refusal type (precondition_failure or CardinalityViolation).
         winners = [op.input.get("agent") for op in ops if op.outcome == OK]
         holders = state["holders"].get(TASK, [])
         check = self.check(ops, state, n)
-        met = winners == [client_name(0)] and holders == [client_name(0)] and check.held
+        documented = all(op.outcome == OK or (op.outcome == FAIL and refusal_type(op) in self.allowed_refusals)
+                         for op in ops)
+        met = winners == [client_name(0)] and holders == [client_name(0)] and check.held and documented
         return met, "one winner, its live lease, typed refusals, no overlapping lease records", \
             f"winners {winners}; holders {holders}; {check.detail}"
 
@@ -132,14 +166,14 @@ class MergeScenario(_TaskRace):
 
     def check(self, ops, state, n):
         holders = state["holders"].get(TASK, [])
-        lease = check_claim_lease(ops, holders, state["lease_records"])
-        unexpected = [op.op_id for op in ops if op.outcome == FAIL
-                      and (op.error or {}).get("type") not in MERGE_REFUSALS]
-        if lease.held and not unexpected and len(holders) == 1 and len(state["lease_records"]) == 1:
-            return lease
-        detail = f"{lease.detail}; holders {holders}; unexpected merge refusals {unexpected}"
-        return Check(self.invariant, False, max(1, lease.magnitude, len(unexpected)), lease.unit,
-                     detail, list(dict.fromkeys(lease.witnesses + unexpected)))
+        records = state["lease_records"]
+        lease = check_claim_lease(ops, holders, records)
+        problems = []
+        if len(holders) != 1:
+            problems.append(f"holders {holders}, not exactly one")
+        if len(records) != 1:
+            problems.append(f"{len(records)} lease records, not exactly one")
+        return typed_refusal_check(lease, ops, extra_problems=problems)
 
     def sequential_expected(self, ops, state, n):
         check = self.check(ops, state, n)

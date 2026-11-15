@@ -57,8 +57,11 @@ _TYPED_NAME = re.compile(
     r"\b(CardinalityViolation|DivergentInsert|DivergentUpdate|DeleteVsUpdate|"
     r"OrphanEdge|UniqueViolation|ValueConstraintViolation|WriterFenced)\b"
 )
+# server.md (v0.15.0 and b2dbaff), "Errors and retries": "Admission limits use 429 ... with Retry-After".
+# A request refused at admission never ran, so the refusal is definite.
+ADMISSION_LIMIT = "admission_limit"
 _DEFINITE_REFUSALS = {
-    "precondition_failure", "CardinalityViolation", "DivergentInsert", "DivergentUpdate",
+    ADMISSION_LIMIT, "precondition_failure", "CardinalityViolation", "DivergentInsert", "DivergentUpdate",
     "DeleteVsUpdate", "OrphanEdge", "UniqueViolation", "ValueConstraintViolation", "WriterFenced",
 }
 _CONFLICT_NAMES = {
@@ -81,6 +84,8 @@ def _conflict_kinds(payload: Any) -> list[str]:
 
 
 def _error_kind(payload: Any, status: int) -> str:
+    if status == 429:
+        return ADMISSION_LIMIT
     if not isinstance(payload, dict):
         return f"http_{status}"
     if payload.get("precondition_failure") is not None:

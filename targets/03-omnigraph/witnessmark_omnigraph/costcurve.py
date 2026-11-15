@@ -28,6 +28,7 @@ from witnessmark.history import FAIL, OK, UNKNOWN
 from witnessmark.scenarios import ClaimState, client_name
 from witnessmark.timing import Stamp, iso, stamp, utc_now
 
+from .actors import describe as describe_actors
 from .capture import OperationCapture, RunCapture, repro_command
 from .client import OmnigraphClient, OperationResult, Outcome
 from .engine import _token
@@ -452,18 +453,22 @@ def _finish_sweep(manifest_fields: dict, trials: list[dict], plan: dict, run_id:
 
 def run_o2b(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str, *,
             command: str, smoke: bool = False, gate_ms: float | None = None, seed: int = 0,
-            endpoint: str = "http://127.0.0.1:18080") -> tuple[dict, Path]:
+            endpoint: str = "http://127.0.0.1:18080",
+            actor_tokens: list[tuple[str, str]] | None = None) -> tuple[dict, Path]:
+    """actor_tokens: (actor, token) pairs, the admin first, then agent i at index i + 1 (actors.py)."""
     started = _utc()
     run_id = _run_id(started)
     project = f"wm-m5-o2b-{build_name.replace('.', '-')}-{storage}".lower()
     plan = sweep_plan(smoke)
     extra = {"sweep": plan, "spread_gate": spread_gate(gate_ms), "smoke": smoke, "seed": seed,
              "interpretation": INTERPRETATION, "invariants_note": "I1A is a sanity check here, not the purpose",
-             "expected": {"omnigraph": "[unmeasured]; hypothesis [inference from O-K3]: wasted attempts grow with N"}}
+             "expected": {"omnigraph": "[unmeasured]; hypothesis [inference from O-K3]: wasted attempts grow with N"},
+             "actors": describe_actors(actor_tokens)}
     planned = _manifest(repo, batch, build, build_name, storage, OMNIGRAPH_ID, OMNIGRAPH_MODE, started, [],
                         run_id=run_id, invariants=["I1A"], status="planned-before-execution", **extra)
     capture = RunCapture(repo, evidence, planned, command)
-    stack = Stack(repo, project, build, storage, capture=capture)
+    stack = Stack(repo, project, build, storage, capture=capture, actor_tokens=actor_tokens)
+    tokens = [token for _, token in actor_tokens] if actor_tokens else []
     queries = load_queries()
     rng = random.Random(seed)
     trials: list[dict] = []
@@ -471,14 +476,15 @@ def run_o2b(repo: Path, evidence: Path, batch: str, build_name: str, build: dict
     hung = False
     try:
         stack.provision()
-        admin = capture.client(endpoint, timeout=180, label="admin")
+        admin = capture.client(endpoint, timeout=180, label="admin", bearer_token=tokens[0] if tokens else None)
         for k, (round_index, n, warmup) in enumerate(rounds(plan), 1):
             capture.trial(k, "setup")
             healthy_before = admin.health().ok
             _setup_omnigraph(admin, queries, n)
             before = digest(observe_omnigraph(admin, queries, n, holders=False))
             precondition_ok = expected_pre.setdefault(n, before) == before
-            clients = [OmnigraphClient(endpoint, timeout=60) for _ in range(n)]
+            clients = [OmnigraphClient(endpoint, timeout=60, bearer_token=tokens[i + 1] if tokens else None)
+                       for i in range(n)]
             runs, faults, hung = race_agents(
                 n, lambda i: clients[i].health(),
                 lambda i: omnigraph_agent(clients[i], queries, i, cap=MAX_ATTEMPTS), rng=rng)

@@ -1,0 +1,20 @@
+# One actor per race client (targets/03-omnigraph/witnessmark_omnigraph/actors.py).
+# Format: docs/user/operations/policy.md at v0.15.0 and b2dbaff.
+version: 1
+groups:
+  agents: [wm-admin, wm-c00, wm-c01, wm-c02, wm-c03, wm-c04, wm-c05, wm-c06, wm-c07, wm-c08, wm-c09, wm-c10, wm-c11, wm-c12, wm-c13, wm-c14, wm-c15, wm-c16, wm-c17, wm-c18, wm-c19, wm-c20, wm-c21, wm-c22, wm-c23, wm-c24, wm-c25, wm-c26, wm-c27, wm-c28, wm-c29, wm-c30, wm-c31, wm-c32, wm-c33, wm-c34, wm-c35, wm-c36, wm-c37, wm-c38, wm-c39, wm-c40, wm-c41, wm-c42, wm-c43, wm-c44, wm-c45, wm-c46, wm-c47, wm-c48, wm-c49]
+rules:
+  - id: agents-read-and-change
+    allow:
+      actors: { group: agents }
+      actions: [read, change]
+      branch_scope: any
+  - id: agents-branch-and-merge
+    allow:
+      actors: { group: agents }
+      actions: [branch_create, branch_delete, branch_merge]
+      target_branch_scope: any
+  - id: agents-invoke-queries
+    allow:
+      actors: { group: agents }
+      actions: [invoke_query]

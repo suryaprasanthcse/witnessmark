@@ -6,6 +6,7 @@ from pathlib import Path
 
 from witnessmark.adapters.base import Engine, EngineError, EngineUnavailable, Reply, Session
 
+from .actors import describe as describe_actors
 from .client import OmnigraphClient, OperationResult, Outcome
 from .workload import load_queries
 
@@ -19,9 +20,11 @@ def _token(result: OperationResult) -> str | None:
 
 
 class OmnigraphSession(Session):
-    def __init__(self, endpoint: str, graph: str, timeout: float, queries: dict[str, str]):
-        self.client = OmnigraphClient(endpoint, graph, timeout=timeout)
+    def __init__(self, endpoint: str, graph: str, timeout: float, queries: dict[str, str],
+                 bearer_token: str | None = None, actor: str | None = None):
+        self.client = OmnigraphClient(endpoint, graph, timeout=timeout, bearer_token=bearer_token)
         self.queries = queries
+        self.actor = actor
 
     @staticmethod
     def _raise(result: OperationResult) -> None:
@@ -88,7 +91,8 @@ class OmnigraphEngine(Engine):
     repo = "https://github.com/ModernRelay/omnigraph"
 
     def __init__(self, endpoint: str, build: str, image: str, digest: str, *, graph: str = "witnessmark",
-                 storage: str = "local", queries_path: Path | None = None):
+                 storage: str = "local", queries_path: Path | None = None,
+                 actor_tokens: list[tuple[str, str]] | None = None):
         self.endpoint = endpoint
         self.build = build
         self.image = image
@@ -96,9 +100,17 @@ class OmnigraphEngine(Engine):
         self.graph = graph
         self.storage = storage
         self.queries = load_queries(queries_path)
+        # Per-client actors (actors.py). The core runner opens the admin session first, then one session per
+        # client in client order, so sessions take the (actor, token) pairs in that order, cycling per run.
+        self.actor_tokens = actor_tokens
+        self._next_token = 0
 
     def session(self, timeout: float = 60.0) -> OmnigraphSession:
-        return OmnigraphSession(self.endpoint, self.graph, timeout, self.queries)
+        if not self.actor_tokens:
+            return OmnigraphSession(self.endpoint, self.graph, timeout, self.queries)
+        actor, token = self.actor_tokens[self._next_token % len(self.actor_tokens)]
+        self._next_token += 1
+        return OmnigraphSession(self.endpoint, self.graph, timeout, self.queries, bearer_token=token, actor=actor)
 
     def reset(self, session: Session) -> None:
         session.run("m_reset", {})
@@ -115,5 +127,6 @@ class OmnigraphEngine(Engine):
             "image": self.image,
             "digest": self.digest,
             "role": "sut",
-            "config": {"endpoint": self.endpoint, "graph": self.graph, "storage": self.storage},
+            "config": {"endpoint": self.endpoint, "graph": self.graph, "storage": self.storage,
+                       "actors": describe_actors(self.actor_tokens)},
         }

@@ -27,6 +27,7 @@ from witnessmark.adapters.base import EngineError, EngineUnavailable
 from witnessmark.history import FAIL, OK, UNKNOWN
 from witnessmark.timing import stamp
 
+from .actors import CLUSTER_CONFIG as ACTOR_CLUSTER_CONFIG
 from .capture import OperationCapture, RunCapture, redact_text
 from .client import OmnigraphClient, OperationResult, Outcome
 from .controls import run_o6_sequential
@@ -141,8 +142,12 @@ class Stack:
 
     def __init__(self, repo: Path, project: str, build: dict, storage: str,
                  lease_seconds: int = DEFAULT_LEASE_SECONDS, capture: OperationCapture | None = None,
-                 cluster_config: str = "cluster.yaml"):
+                 cluster_config: str = "cluster.yaml", actor_tokens: list[tuple[str, str]] | None = None):
         self.lease_seconds = lease_seconds
+        # Per-client actors (actors.py): the override file, the policy-binding cluster config and the tokens.
+        self.actor_tokens = actor_tokens
+        if actor_tokens:
+            cluster_config = ACTOR_CLUSTER_CONFIG
         self.repo = repo
         self.project = project
         self.build = build
@@ -160,9 +165,14 @@ class Stack:
             "WM_S3_ENDPOINT": "http://wm-object-proxy:9010" if storage == "proxy" else "http://wm-minio:9000",
             "WM_CLUSTER_LEASE_SECONDS": str(lease_seconds),
         })
+        self.compose_files = [self.compose_file]
+        if actor_tokens:
+            self.compose_files.append(self.compose_file.with_name("compose.actors.yml"))
+            self.environ["WM_OMNIGRAPH_TOKENS_JSON"] = json.dumps(dict(actor_tokens), sort_keys=True)
 
     def compose(self, *args: str, timeout: float = 300, check: bool = True) -> subprocess.CompletedProcess:
-        return _command(["docker", "compose", "-p", self.project, "-f", str(self.compose_file), *args],
+        files = [part for path in self.compose_files for part in ("-f", str(path))]
+        return _command(["docker", "compose", "-p", self.project, *files, *args],
                         cwd=self.repo, environ=self.environ, timeout=timeout, check=check)
 
     def down(self, *, check: bool = False) -> None:

@@ -1,0 +1,16 @@
+version: 1
+metadata:
+  name: witnessmark-m5-actors
+state:
+  backend: cluster
+  lock: true
+graphs:
+  witnessmark:
+    schema: schema.pg
+    queries: queries.gq
+# One actor per race client (M5 Phase B): the policy grants the actors that
+# compose.actors.yml configures. Format: docs/user/operations/policy.md.
+policies:
+  wm-actors:
+    file: actors.policy.yaml
+    applies_to: [witnessmark]

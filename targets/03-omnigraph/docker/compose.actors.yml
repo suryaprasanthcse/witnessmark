@@ -1,0 +1,28 @@
+# Override for the M5 per-client-actor races (witnessmark_omnigraph/actors.py).
+# Used only with compose.yml: `docker compose -f compose.yml -f compose.actors.yml ...`.
+# It replaces `--unauthenticated` with the documented actor-to-token object
+# (docs/user/operations/server.md, "Authentication", at v0.15.0 and b2dbaff) and
+# mounts the policy that cluster-actors.yaml binds. The tokens are random per
+# run, passed through the environment only, and never written to evidence.
+services:
+  wm-omnigraph-a:
+    command:
+      - --cluster
+      - ${WM_OMNIGRAPH_CLUSTER:-file:///var/lib/omnigraph}
+      - --bind
+      - 0.0.0.0:8080
+    environment:
+      OMNIGRAPH_SERVER_BEARER_TOKENS_JSON: ${WM_OMNIGRAPH_TOKENS_JSON:?per-client actor tokens are required}
+    volumes:
+      - ../workload/actors.policy.yaml:/config/actors.policy.yaml:ro
+
+  wm-omnigraph-b:
+    command:
+      - --cluster
+      - ${WM_OMNIGRAPH_CLUSTER:-file:///var/lib/omnigraph}
+      - --bind
+      - 0.0.0.0:8080
+    environment:
+      OMNIGRAPH_SERVER_BEARER_TOKENS_JSON: ${WM_OMNIGRAPH_TOKENS_JSON:?per-client actor tokens are required}
+    volumes:
+      - ../workload/actors.policy.yaml:/config/actors.policy.yaml:ro

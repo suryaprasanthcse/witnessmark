@@ -800,3 +800,64 @@ transfer from A to B uses only the clean-stop path
 - MinIO's `If-None-Match` and `If-Match` qualification versus RustFS
   [unmeasured: MinIO conditional writes]. The pinned storage guide qualifies
   RustFS [docs: storage.md @ `b2dbaff`].
+
+## 12. M5 run plan
+
+Declared on 2026-11-16, before the first Phase B batch started (master §10, no
+fishing). Every cell below runs once in its batch, and every result is
+reported. Builds are v0.15.0 and edge-b2dbaff. Races use `thread` mode with 50
+clients and T = 20 (master §3.4, §6.6). Each Omnigraph command runs its own
+sequential control and the controls its scenario defines (§3, master §6.2). A
+cell whose sequential control is not met is INVALID by rule; it is recorded
+and the batch continues.
+
+**Baseline claim controls.** `python wm.py calibrate` names its own batch
+`m1-<UTC>` and has no batch option [code: `core/witnessmark/cli.py:68` @
+`6be2b8e`]. To keep the controls in the same batch as the Omnigraph cells,
+without changing harness code, each batch runs the twelve cells of the M1
+matrix (`--only falkordb,neo4j` selects all twelve) as the per-run command
+that calibrate itself records: `python wm.py run --engine <e> --scenario <s>
+--shape <shape> --clients 50 --trials 20 --seed <20261113 + i>
+--no-spread-gate --batch <batch> --evidence evidence`, with i the cell's index
+in calibrate's order. FalkorDB's naive guarded claim is the negative control
+and Neo4j's naive claim the positive control for O2 (§3, O2 controls).
+
+**Batch 1, calibration (`m5-<UTC>`).** O2 runs here are calibration only and
+are never reported as O2 results.
+
+| Cell | Command (`targets/03-omnigraph/wm_omnigraph.py`, unless noted) |
+|---|---|
+| Baselines | `docker compose -f baselines/docker-compose.yml up -d` |
+| M1 controls, 12 cells | `python wm.py run ...` as above, `--no-spread-gate` |
+| O2a, both builds | `race --scenario o2a --build <b> --storage local --clients 50 --trials 20 --no-spread-gate --provision` |
+| O2c, both builds | `race --scenario o2c` with the same options |
+
+After batch 1, Omnigraph's thread-mode δ is 1.5 × p99 of the release spread
+over every valid O2a and O2c trial of both builds, rounded up to the next
+whole ms, as master §6.3 did for M1. It is recorded in master §6.3 with the
+batch id and p50, p99 and max, and becomes the Omnigraph default gate in code
+before batch 2.
+
+**Batch 2, main (`m5b-<UTC>`), on the commit that sets δ, in master §12.1
+Phase B order.**
+
+| # | Cell | Command (`targets/03-omnigraph/wm_omnigraph.py`, unless noted) |
+|---|---|---|
+| 0 | Baselines | `docker compose -f baselines/docker-compose.yml up -d` |
+| 1 | O2b, Omnigraph, both builds, local | `costcurve --engine omnigraph --build <b> --storage local --spread-gate-ms <δ>`; the declared sweep N ∈ {1, 2, 5, 10, 25, 50}, 3 warm-ups, 5 measured repetitions (§3, O2b) |
+| 2 | O2b, FalkorDB side | `costcurve --engine falkordb --spread-gate-ms 40` (the M1 thread-mode δ) |
+| 3 | M1 controls, 12 cells | `python wm.py run ...` as above, `--no-spread-gate`, as calibrate runs them |
+| 4 | O2a and O2c, both builds | `race --scenario o2a\|o2c --build <b> --storage local --clients 50 --trials 20 --spread-gate-ms <δ> --provision` |
+| 5 | O3, both builds | `race --scenario o3` with the same options |
+| 6 | O6, both builds | `parity --build <b> --storage local`; Neo4j 5.26.2 primary, FalkorDB 6.0.4 second reference |
+| 7 | O5, both builds | `visibility --build <b> --storage minio`, then `--storage local` for comparison with M4 |
+| 8 | O4, both builds | `failover --variant clean-stop --build <b> --storage local` |
+| 9 | O1, both builds | `curve --build <b> --storage local\|minio\|proxy`; `--include-falkor` once, on v0.15.0 local, which runs first among the O1 cells. If the FalkorDB curve misses the S28 band, the driver stops the batch (master §6.5, §8) |
+
+O2b is reported as the cost of documented behaviour, not as a defect (§3,
+O2b). Any FalkorDB comparison stays internal (master §11.5).
+
+**Re-runs.** Only a harness bug, fixed with a unit test and committed first,
+re-runs a cell, under a new batch id (`m5c-`, `m5d-`, ...). The affected
+cells and the reason are recorded. Nothing is re-run to change a result, and
+no evidence is deleted or edited.

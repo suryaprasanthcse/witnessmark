@@ -1,7 +1,7 @@
 name: witnessmark-m4
 
 x-omnigraph: &omnigraph
-  image: ${WM_OMNIGRAPH_IMAGE:-witnessmark/omnigraph@sha256:9fd617ad5d7590ec66e8c32fc9eeba92395a2fde0550ce7866a31db0a9279a2a}
+  image: ${WM_OMNIGRAPH_IMAGE:-witnessmark/omnigraph@sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792}
   command:
     - --cluster
     - ${WM_OMNIGRAPH_CLUSTER:-file:///var/lib/omnigraph}
@@ -14,6 +14,9 @@ x-omnigraph: &omnigraph
     AWS_REGION: us-east-1
     AWS_ENDPOINT_URL_S3: ${WM_S3_ENDPOINT:-http://wm-minio:9000}
     AWS_S3_FORCE_PATH_STYLE: "true"
+    # storage.md ("S3 configuration") requires this for a plain-HTTP endpoint;
+    # both test endpoints are local, disposable containers.
+    AWS_ALLOW_HTTP: "true"
     OMNIGRAPH_CLUSTER_LEASE_SECONDS: ${WM_CLUSTER_LEASE_SECONDS:-2}
   volumes:
     - omnigraph-root:/var/lib/omnigraph

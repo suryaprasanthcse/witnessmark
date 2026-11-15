@@ -112,6 +112,9 @@ class Stack:
     def down(self) -> None:
         self.compose("--profile", "failover-b", "down", "-v", "--remove-orphans", check=False)
 
+    # Wait on /readyz, never /healthz: the listener opens before graphs load, so
+    # /healthz answers while data requests still get 503 graph_unavailable
+    # (deployment.md, S3 cluster serving text on /readyz).
     def _wait_url(self, url: str, timeout: float = 45) -> None:
         deadline = time.monotonic() + timeout
         last = "no response"
@@ -150,7 +153,7 @@ class Stack:
         self.compose("run", "--rm", "--no-deps", "--entrypoint", "/usr/local/bin/omnigraph",
                      "wm-omnigraph-a", "cluster", "force-unlock", found.group(1), "--target", self.root)
         self.compose("up", "-d", "--no-build", "wm-omnigraph-a")
-        self._wait_url("http://127.0.0.1:18080/healthz")
+        self._wait_url("http://127.0.0.1:18080/readyz")
 
     def pause_a(self) -> None:
         _command(["docker", "pause", "wm-omnigraph-a"], cwd=self.repo)
@@ -165,7 +168,7 @@ class Stack:
         result = self.compose("--profile", "failover-b", "up", "-d", "--no-build", "wm-omnigraph-b",
                               check=check)
         if check:
-            self._wait_url("http://127.0.0.1:18081/healthz")
+            self._wait_url("http://127.0.0.1:18081/readyz")
         return result
 
 
@@ -212,9 +215,14 @@ def update_manifest(destination: Path, manifest: dict) -> None:
                                            encoding="utf-8", newline="\n")
 
 
+def redact_paths(text: str, repo: Path) -> str:
+    """Remove the repository location and anything under a user's home folder."""
+    text = text.replace(str(repo), "<repo>").replace(repo.as_posix(), "<repo>")
+    return re.sub(r"(?i)[A-Z]:[/\\]Users[/\\][^/\\\s]+(?:[/\\]AppData[^\s\"')]*)?", "<user-home>", text)
+
+
 def _error_note(destination: Path, repo: Path, exc: Exception) -> None:
-    message = f"{type(exc).__name__}: {exc}".replace(str(repo), "<repo>")
-    message = re.sub(r"(?i)[A-Z]:[/\\]Users[/\\][^/\\\s]+", "<user-home>", message)
+    message = redact_paths(f"{type(exc).__name__}: {exc}", repo)
     (destination / "ERROR.md").write_text(
         "# Run error\n\nThe declared run did not complete. No result was inferred.\n\n"
         f"- Error: `{message[:1000].replace('`', "'")}`\n",
@@ -513,9 +521,7 @@ def run_falkor_curve(repo: Path) -> dict:
             for warmup in range(WARMUPS):
                 dest = f"o1warm{size}{warmup}"
                 admin.call("GRAPH.COPY", source, dest)
-                deleted = time.perf_counter_ns()
                 admin.call("GRAPH.DELETE", dest)
-                samples[-1]["delete_ms"] = (time.perf_counter_ns() - deleted) / 1e6
             samples = []
             for repetition in range(REPETITIONS):
                 dest = f"o1copy{size}{repetition}"
@@ -546,13 +552,17 @@ def run_falkor_curve(repo: Path) -> dict:
                 def gap(values):
                     inside = [v for v in values if started <= v <= finished]
                     return max(((b - a) / 1e6 for a, b in zip([started, *inside], [*inside, finished])), default=0)
+                rss_after = _rss_mb("wm-falkordb")
+                deleted = time.perf_counter_ns()
+                admin.call("GRAPH.DELETE", dest)
+                delete_ms = (time.perf_counter_ns() - deleted) / 1e6
                 samples.append({"repetition": repetition, "copy_ms": (finished - started) / 1e6,
+                                "delete_ms": delete_ms,
                                 "source_reader_stall_ms": gap(source_done),
                                 "unrelated_reader_stall_ms": gap(other_done),
                                 "unrelated_writer_stall_ms": gap(writer_done),
-                                "rss_before_mb": before, "rss_after_mb": _rss_mb("wm-falkordb"),
+                                "rss_before_mb": before, "rss_after_mb": rss_after,
                                 "aof_bytes": _info_value(info_text, "aof_current_size")})
-                admin.call("GRAPH.DELETE", dest)
             median_ms = statistics.median(sample["copy_ms"] for sample in samples)
             reference = {32_000: 165, 128_000: 546, 512_000: 2400}[size]
             rows.append({"size": size, "warmups": WARMUPS, "repetitions": REPETITIONS,
@@ -583,13 +593,47 @@ def _op_json(result: OperationResult | None) -> dict | None:
             "message": result.message, "data": result.data}
 
 
+O4_HARNESS_GAPS = [
+    "The epoch claim (Omnigraph::claim_branch_writer, an embedding-program call) was not performed, so the "
+    "writer epoch fence was never engaged and the acceptance criteria could not be tested.",
+    "On a local root the documented ownership transfer (stop the previous owner, then force-unlock its exact "
+    "lock id) was not performed: A was paused, not terminal, so the successor was refused admission.",
+]
+
+
+def classify_o4_cell(build_name: str, storage: str, successor_ready: bool) -> tuple[str, str]:
+    """Return (status, reason) for one O4 cell from what happened, never from what was hoped."""
+    if not successor_ready:
+        return ("NOT_EXERCISED",
+                "no failover took place: the successor server did not become ready; the local root's "
+                "admission lock is unleased and its documented transfer needs a terminal owner, so a "
+                "paused A keeps it" if storage == "local" else
+                "no failover took place: the successor server did not become ready")
+    if build_name.startswith("edge"):
+        return ("NOT_EXERCISED",
+                "the successor took over, but main's epoch was never claimed (no CLI or HTTP route claims a "
+                "branch at this pin), so the fence acceptance criteria cannot apply; the outcome at epoch 0 "
+                "is recorded")
+    return ("BOUNDARY",
+            "the stable release predates the epoch fence; a stale writer is bounded only by the documented "
+            "one-writer deployment rule")
+
+
 def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
            seed: int = 20261115) -> tuple[dict, Path]:
-    """Run the process topology, retaining the documented claim-route boundary.
+    """Run the O4 topology and classify each cell from what it actually did.
 
-    The edge pin documents that no CLI or HTTP route claims a branch.  We still
-    exercise each requested pause/resume target and successor-server topology,
-    but classify every cell BOUNDARY rather than pretending epoch 0 is fenced.
+    The edge pin documents that no CLI or HTTP route claims a branch; only a
+    program that embeds the engine calls ``Omnigraph::claim_branch_writer``.
+    This harness drives the published server and CLI binaries and never claims,
+    so no cell can engage the epoch fence. A cell is therefore never PASS or
+    FAIL here, and a gap of the harness is never labelled a boundary:
+
+    * NOT_EXERCISED: the successor did not become a writer (the local root's
+      unleased admission lock was not transferred), or it did but the fence
+      acceptance criteria cannot apply because ``main`` was never claimed.
+    * BOUNDARY: a failover took place on the stable release, whose documented
+      deployment rule (one writer process) is its only protection.
     """
     started = _utc()
     trials = []
@@ -632,7 +676,7 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                 if storage != "local":
                     time.sleep(LEASE_SECONDS * 1.75)
                 start = stack.start_b(check=False)
-                b_ready = _health("http://127.0.0.1:18081/healthz", 10 if storage != "local" else 3)
+                b_ready = _health("http://127.0.0.1:18081/readyz", 10 if storage != "local" else 3)
                 b_write = None
                 if b_ready and variant == "b":
                     b = OmnigraphClient("http://127.0.0.1:18081", "witnessmark", timeout=30)
@@ -650,29 +694,31 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                     a.query(queries["q_ledger"], {"rule": "genesis"}, name="q_ledger"),
                 ]
                 fenced = bool(a_result and a_result[0].kind == "WriterFenced")
+                status, reason = classify_o4_cell(build_name, storage, b_ready)
                 trials.append({
                     "valid": True, "phase": phase, "variant": variant, "seed": seed, "offset_s": offset,
-                    "status": "BOUNDARY", "boundary": "the pinned server exposes no branch writer-claim route",
+                    "status": status, "reason": reason,
                     "fault_actions": actions, "successor_start_exit": start.returncode, "successor_ready": b_ready,
                     "a_write": _op_json(a_result[0] if a_result else None), "b_write": _op_json(b_write),
                     "writer_fenced_observed": fenced, "branch_list": _op_json(branch_state),
                     "graph_open_and_scan": all(result.outcome is Outcome.OK for result in scan_results),
                     "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
-                    "single_epoch": "epoch_zero_unclaimed_boundary",
+                    "single_epoch": "epoch_zero_unclaimed",
                 })
             finally:
                 stack.resume_a()
                 stack.down()
     boundary_probes = [
-        {"operation": name, "status": "BOUNDARY", "reason": "requires a claimed epoch unavailable on HTTP/CLI"}
+        {"operation": name, "status": "NOT_EXERCISED",
+         "reason": "needs a claimed epoch; claiming is an embedding-program step this harness did not perform"}
         for name in ("branch create/delete", "cleanup", "optimize", "several failovers", "simultaneous claims")
     ]
     manifest = _manifest(repo, batch, build, build_name, storage, "o4.failover_acceptance", "matrix", started,
                          trials, invariants=["I1A", "I2"], seed=seed,
                          matrix={"phases": list(offsets), "variants": ["a", "b"], "storage": storage,
                                  "build": build_name}, boundary_probes=boundary_probes,
-                         support="boundary", basis="documented",
-                         basis_ref="docs/user/operations/troubleshooting.md#writer-epoch")
+                         harness_gaps=O4_HARNESS_GAPS,
+                         basis="documented", basis_ref="docs/user/operations/troubleshooting.md#writer-epoch")
     return manifest, write_manifest(repo, evidence, manifest)
 
 

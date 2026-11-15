@@ -13,6 +13,13 @@ LABEL org.opencontainers.image.title="Witnessmark Omnigraph test image" \
       org.opencontainers.image.revision="${OMNIGRAPH_SOURCE_COMMIT}" \
       org.opencontainers.image.source="https://github.com/ModernRelay/omnigraph"
 
+# The binaries build their S3 client with the system trust store; without a CA
+# bundle it fails to initialise ("storage_root_invalid"), even for plain HTTP.
+# Upstream's own Dockerfile installs the same package.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY omnigraph-linux-x86_64.tar.gz /tmp/omnigraph-linux-x86_64.tar.gz
 
 RUN echo "${OMNIGRAPH_ARCHIVE_SHA256}  /tmp/omnigraph-linux-x86_64.tar.gz" | sha256sum -c - \

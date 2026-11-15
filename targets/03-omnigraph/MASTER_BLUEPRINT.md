@@ -195,22 +195,41 @@ clients without process-start noise [code:
   - Until the rejection, A's reads return the snapshot from before the claim; afterwards they see B's rows. This is the RFC's stated freshness bound.
   - `branch list --detailed` shows a single epoch.
 
-**Pinned-surface boundary.** The edge pin's troubleshooting guide explicitly
-says that no CLI command or HTTP route claims a branch writer; only an embedding
-process can call `Omnigraph::claim_branch_writer`. An unclaimed branch remains
-at epoch 0 and accepts writers as before. The containerized server topology can
-therefore exercise leased root takeover and every pause/resume phase, but it
-cannot engage the epoch fence. Those cells are reported as BOUNDARY, never as
-PASS, and retain the actual A/B outcomes and integrity scan [docs:
-`docs/user/operations/troubleshooting.md#writer-epoch`] [code:
-`targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
+**What the pinned release can and cannot do (corrected after batch 1).** The edge
+pin's troubleshooting guide says that no CLI command or HTTP route claims a
+branch; only a program that embeds the engine can, through
+`Omnigraph::claim_branch_writer`. An unclaimed branch stays at epoch 0 and accepts
+every writer as before [docs: `docs/user/operations/troubleshooting.md#writer-epoch`
+@b2dbaff]. At the pin the RFC still says `implementation: not-started`, and
+`omnigraph-server`, `omnigraph-cli` and `omnigraph-cluster` contain no claim call
+[code: `crates/omnigraph-{server,cli,cluster}/src` @b2dbaff, searched for
+`claim_branch_writer`, `claim_writer_epoch` and `writer_epoch`]. The RFC's server
+claim of `main` after admission is its rollout phase 3, not shipped
+[docs: RFC "Rollout"]. **The documented way to engage the fence is therefore a step
+this harness does not perform**, so no O4 cell can pass or fail the fence criteria.
+That is a harness gap, not a property of Omnigraph, and it is listed as open.
+
+O4 cells are classified from what happened:
+
+- **NOT_EXERCISED**: the successor never became ready, or it did on the edge build
+  but `main` was never claimed. On a local root the successor is refused because
+  the admission lock is unleased and its documented transfer (stop the previous
+  owner, then `cluster force-unlock` with the exact lock id) needs a terminal
+  owner; a paused A is not terminal, and the harness did not force the unlock
+  [docs: deployment.md "Writer topology"].
+- **BOUNDARY**: a failover took place on v0.15.0. The stable release predates the
+  fence, so its documented one-writer deployment rule is its only protection.
+
+The outcomes (A's and B's writes, the integrity scan, `branch list --detailed`) are
+recorded for every cell regardless of its label [code:
+`targets/03-omnigraph/witnessmark_omnigraph/part2.py`, `classify_o4_cell`].
 - **Baseline on v0.15.0, before the fence.** The same sequence documents the behaviour the RFC describes: a stale writer's publish can land while its head precondition holds (O-K7). It is reported as BOUNDARY, because the deployment rule is documented, and not as FAIL.
 - **Boundary probes on the edge build.** After the failover, A runs branch create or delete, cleanup, or optimize. The RFC puts all of these outside the fence (O-K8). The run records what happens, then checks integrity:
   - every object main's head references exists;
   - the graph opens;
   - a full scan succeeds.
 
-  Results are reported as BOUNDARY.
+  These probes, the several-failovers variant and the simultaneous-claims variant all need a claimed epoch. They are declared and **not implemented in this harness**; M4 reports them as NOT_EXERCISED, with the reason.
 - **Variants.**
   - A paused for longer than the admission or lease timeout; the RFC says no timeout closes the gap.
   - Several failovers in a row.
@@ -246,11 +265,12 @@ while Neo4j's naive claim had 20/20 [measured:
 
 | Component | Pin |
 |---|---|
-| Omnigraph v0.15.0 | Source commit `373834b4c1c4b29cf0ddd64bee9565f98c60cc26`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `d7312ce49abca47a6bb47956b6987d32f650fa91678be1abd10e02824937bb15`; local image `witnessmark/omnigraph:v0.15.0`, digest `sha256:32caa4e848b2196dd60b5496be53f89dc46d62fa9522ad5d511b5ef96e2871c7` [measured: Docker build output, 2026-11-15]. |
-| Omnigraph edge-20261113-b2dbaff | Source commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `6b5b449cd4c292eae37ebd8d61a667b293714a5ad573b43a97a2299607297b8d`; local image `witnessmark/omnigraph:edge-b2dbaff`, digest `sha256:9fd617ad5d7590ec66e8c32fc9eeba92395a2fde0550ce7866a31db0a9279a2a` [measured: Docker build output, 2026-11-15]. |
-| Image build | `targets/03-omnigraph/docker/Dockerfile` uses digest-pinned Debian trixie-slim `sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2`; `build.ps1` downloads only the two pinned release archives, verifies each checksum, and labels the image with its exact source commit [code: `targets/03-omnigraph/docker/`]. The published-binary alternative is used, so a Rust toolchain and `protobuf-compiler` are not part of this image path. |
+| Omnigraph v0.15.0 | Source commit `373834b4c1c4b29cf0ddd64bee9565f98c60cc26`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `d7312ce49abca47a6bb47956b6987d32f650fa91678be1abd10e02824937bb15`; local image `witnessmark/omnigraph:v0.15.0`, digest `sha256:97d4950250b20019a80b03c8fd52cf52aa6243a86058a54895ba2772f15a2159` [measured: Docker build output, 2026-11-15]. |
+| Omnigraph edge-20261113-b2dbaff | Source commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `6b5b449cd4c292eae37ebd8d61a667b293714a5ad573b43a97a2299607297b8d`; local image `witnessmark/omnigraph:edge-b2dbaff`, digest `sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792` [measured: Docker build output, 2026-11-15]. |
+| Image build | `targets/03-omnigraph/docker/Dockerfile` uses digest-pinned Debian trixie-slim `sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` and installs the distribution's `ca-certificates` (20250419+deb13u1), as upstream's own Dockerfile does: without a trust store the binaries cannot build their S3 client and every S3 root fails with `storage_root_invalid`, even for a plain-HTTP endpoint [measured: MinIO smoke runs, `.state/scratch/m4-p2-smoke.json`, before and after]. The two image digests above are the rebuilt ones; batch 1 ran on the earlier, certificate-less images `sha256:32caa4e848b2…` (v0.15.0) and `sha256:9fd617ad5d75…` (edge). `build.ps1` downloads only the two pinned release archives, verifies each checksum, and labels the image with its exact source commit [code: `targets/03-omnigraph/docker/`]. The published-binary alternative is used, so a Rust toolchain and `protobuf-compiler` are not part of this image path. |
 | MinIO | Built locally from MinIO's official, GitHub-verified signed tag `RELEASE.2025-09-07T16-13-09Z`, which dereferences to commit `07c3a429bfed433e49018cb0f78a52145d4bedeb`. `Dockerfile.minio` verifies that dereference before compiling with the release's own `buildscripts/gen-ldflags.go`; its Go and Debian stages are pinned to `sha256:79390b5e5af9ee6e7b1173ee3eac7fadf6751a545297672916b59bfa0ecf6f71` and `sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc`. Local image `witnessmark/minio:RELEASE.2025-09-07T16-13-09Z`, digest `sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899`; `minio --version` reports the exact tag, commit and Go 1.24.2 [code: `targets/03-omnigraph/docker/Dockerfile.minio`] [measured: source build and loopback readiness smoke, 2026-11-15]. |
-| Delay proxy | Standard-library forwarding proxy `core/witnessmark/proxy.py`; fixed 17 ms before each forwarded request, matching #642's method. `GET /__witnessmark__/counts` returns request count, request bytes and response bytes per HTTP method; `POST /__witnessmark__/reset` starts a matched repetition from zero. Its control calls are not counted. Local image `witnessmark/proxy:17ms`, digest `sha256:7b6bf668e928601b00e2cdd69b6865b828b967f1046221203a271c1fe45adf73`; it runs only in separate matched repetitions, never timing repetitions [code: `core/witnessmark/proxy.py`] [measured: loopback MinIO smoke, 2026-11-15]. |
+| Delay proxy | Standard-library forwarding proxy `core/witnessmark/proxy.py`; fixed 17 ms before each forwarded request, matching #642's method. `GET /__witnessmark__/counts` returns request count, request bytes and response bytes per HTTP method; `POST /__witnessmark__/reset` starts a matched repetition from zero. Its control calls are not counted. Local image `witnessmark/proxy:17ms`, digest `sha256:a865395be1e245d04d4e0b5a8bcc0813272a8e056f18b2cd94cb5a7230fc3e23`; it runs only in separate matched repetitions, never timing repetitions. Its first build rewrote the `Content-Length` of every `HEAD` reply to 0, so the object-store client saw empty objects (`Range started at 0 and ended at 0`); a reply to `HEAD` now keeps the upstream length (`core/tests/test_proxy.py`) [code: `core/witnessmark/proxy.py`] [measured: loopback MinIO smoke, 2026-11-15]. |
+| S3 settings and readiness | `compose.yml` passes `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=us-east-1`, `AWS_ENDPOINT_URL_S3`, `AWS_S3_FORCE_PATH_STYLE=true` and `AWS_ALLOW_HTTP=true` for the local, disposable endpoints [docs: [storage.md, "S3 configuration"](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/concepts/storage.md#s3-configuration), [deployment.md](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#s3-compatible-storage)]. The binary derives plain-HTTP transport from the endpoint scheme and refuses an `AWS_ALLOW_HTTP` that disagrees [code: `crates/omnigraph-storage/src/binding.rs` L128 and L338–342@b2dbaff]. The harness waits on `GET /readyz`, never `/healthz`: the listener opens before graphs load, and a data request sent in between returns 503 `graph_unavailable` [docs: [deployment.md, "Use `GET /healthz`…" paragraph](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md)] [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py`]. |
 | FalkorDB | 6.0.4 by digest (master §7.2) |
 | Neo4j | 5.26.2 (master §7.3) |
 | Clients | The core runner: standard-library HTTP for Omnigraph and Neo4j, RESP for FalkorDB |
@@ -306,12 +326,17 @@ while Neo4j's naive claim had 20/20 [measured:
    S3 and require exact-id recovery. [docs: [deployment](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#writer-topology),
    [storage failure and restart](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/storage-failures.md#restart-after-a-failure)]
 
-   On the edge pin, a server claims `main`'s persistent writer epoch after it
-   wins cluster admission and before it serves. The epoch row itself has no
-   expiry: a successor claim increments it, and a stale writer from the previous
-   epoch is refused with `WriterFenced` at its next publication. v0.15.0 has the
-   admission lock but predates this writer-epoch fence. [docs:
+   The writer-epoch RFC designs for the server to claim `main`'s persistent epoch
+   after it wins cluster admission and before it serves, and for a successor claim
+   to increment it, so that a stale writer from the previous epoch is refused with
+   `WriterFenced` at its next publication. **That server claim is the RFC's rollout
+   phase 3 and is not in the edge pin**: the pinned troubleshooting guide says no CLI
+   command or HTTP route claims a branch, and the server, CLI and cluster crates
+   contain no claim call (corrected 2026-11-15 after batch 1; the earlier reading of
+   the RFC's design text as shipped behaviour was wrong). v0.15.0 has the admission
+   lock but predates the fence. [docs:
    [writer-epoch RFC](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/rfcs/2026-11-09-writer-epoch-fence.md#main-and-the-lease),
+   [troubleshooting](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/troubleshooting.md#writer-epoch),
    [write protocol](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/dev/writes.md#writer-epoch)]
 
 2. **Object-store request counts.** The documented server surface exposes

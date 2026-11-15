@@ -25,11 +25,11 @@ from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
 BUILDS = {
     "v0.15.0": {
         "image": "witnessmark/omnigraph:v0.15.0",
-        "digest": "sha256:32caa4e848b2196dd60b5496be53f89dc46d62fa9522ad5d511b5ef96e2871c7",
+        "digest": "sha256:97d4950250b20019a80b03c8fd52cf52aa6243a86058a54895ba2772f15a2159",
     },
     "edge-b2dbaff": {
         "image": "witnessmark/omnigraph:edge-b2dbaff",
-        "digest": "sha256:9fd617ad5d7590ec66e8c32fc9eeba92395a2fde0550ce7866a31db0a9279a2a",
+        "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792",
     },
 }
 

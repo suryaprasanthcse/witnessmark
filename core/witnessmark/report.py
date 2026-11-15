@@ -447,7 +447,9 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
             lines += ["### FalkorDB `GRAPH.COPY` sanity curve", "", copy_table, ""]
     if omnigraph_failovers:
         lines += ["## O4 failover acceptance matrix", "", omnigraph_failover_table(omnigraph_failovers), "",
-                  "Every BOUNDARY cell reflects the pinned release's documented lack of an HTTP/CLI branch-writer claim route; epoch 0 is not reported as a fence pass.", ""]
+                  "BOUNDARY: a failover took place on the stable release, which predates the epoch fence; its documented deployment rule is its only protection. "
+                  "NOT_EXERCISED: the harness did not perform a documented step (the epoch claim, an embedding-program call, or the local ownership transfer), "
+                  "so the cell says nothing about the fence. No cell is a fence pass, and none is a fence failure.", ""]
     if omnigraph_visibility:
         lines += ["## O5 cross-process read your writes", "", omnigraph_visibility_table(omnigraph_visibility), ""]
     if ladders:

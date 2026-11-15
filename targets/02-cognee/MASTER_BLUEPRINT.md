@@ -254,7 +254,7 @@ The reporter builds this table from evidence ("Invariants by backend" in `eviden
 |---|---|
 | E1 | The invariants table in §3, every cell linked to its run_id |
 | E2 | Scenario tables for C1 to C6 |
-| E3 | A single-file repro for each new FAIL, needing only the standard library, cognee and the stub, with the sequential control printed |
+| E3 | A single-file repro for each new FAIL, needing only the standard library, cognee and the stub, with the sequential control printed. Written in `targets/02-cognee/repros/`: `repro_c0_single_call_duplicates.py` (finding 1), `repro_r2_lancedb_multiprocess.py` (findings 3 and 4) and `repro_r3_falkor_adapter.py` (C24, C27, C28; findings 5 to 7). Each runs its control first, prints EXPECTED next to OBSERVED, and exits 0 when the behaviour reproduces. Run results are in §12. |
 | Drafts | Kept in `drafts/` and never committed: comments for #5254, #6559, #6170 and #4167, plus one issue for each new finding |
 
 ## 8. Contribution plan (non-competing)
@@ -383,5 +383,9 @@ The table in §3 is filled from these reports; each cell names its run.
 ### Not run, and open
 
 - **Deferred:** R4 (PostgreSQL), memify in C2 (§5.0), the GLiNER realism check (§4). Nothing that needs a pull request's code ran (§11).
-- **E3 (single-file repros) was not written in M3.** The candidates are C27 (R3 delete), the R2 `AfterRunHookError` under concurrent processes, and C0's default-path duplicates.
+- **E3 repros.** Three single-file repros in `targets/02-cognee/repros/`, each run once on 2026-11-15 against the pinned builds and baselines, [measured: repro run, 2026-11-15, not part of a batch]; none was run on `dev`. All three reproduce (exit 0).
+  - `repro_c0_single_call_duplicates.py` (cognee 1.6.8, Ladybug + LanceDB, no server). Control, `data_per_batch=1`: 0 duplicate ids in `EntityType_name`, `Entity_name` and `EdgeType_relationship_name`. Default `data_per_batch=20`: 3, 6 and 10 duplicated ids. The counts vary from run to run: an earlier run of the same file gave 3, 8 and 5, another 3, 8 and 0.
+  - `repro_r2_lancedb_multiprocess.py` (cognee 1.6.8, Neo4j 5.26.2 with APOC, LanceDB, access control off). Control, one process: no error and 0 duplicate ids in six tables. Case, 4 processes on one dataset, 3 trials: 1, 2 and 1 `cognify` calls raised `AfterRunHookError … LanceDB compaction failed … Retryable commit conflict` after their data was stored (no `Too many concurrent writers`), and `DocumentChunk_text`, `TextDocument_name` and `TextSummary_text` held duplicated ids in all three (1 to 8 ids per table). This agrees with findings 3 and 4 and is not a new measurement of their rates.
+  - `repro_r3_falkor_adapter.py` (cognee 1.6.1, adapter 0.4.1 at `ff1324ec`, FalkorDB 6.0.4). C24: the graph client on `GRAPH_DATABASE_PORT=16380` answers, while the vector client raises `ConnectionError … 127.0.0.1:6379` with `VECTOR_DB_PORT=16380` and no shim. C27a: delete after cognify returns without error; delete of an added-but-uncognified document raises `DocumentSubgraphNotFoundError`. C27b: the graph before the delete is the fixture's (2 `Entity` nodes, 1 edge between them); after deleting the document that owns the edge, with a second document still naming both entities, it holds 2 nodes and 1 edge where 2 and 0 are expected. C28: `GRAPH.CONFIG GET RESULTSET_SIZE` is 10000; a 9,000-node graph comes back whole, a 10,500-node graph comes back as 10,000 nodes.
+  - Two repro bugs surfaced and were fixed in the repro, not in a finding: the C24 case first raised outside its `try`, and its control compared an int port with the string the client reports.
 - **Invalid trials.** The reports' "Invalid trials" tables list, per run, the trials a validity gate removed (release spread over 1 ms for processes, an operation with an unknown outcome) and why. Verdict cells count valid trials only.

@@ -14,7 +14,7 @@ from witnessmark.timing import stamp
 TARGET = Path(__file__).resolve().parents[2] / "targets" / "03-omnigraph"
 sys.path.insert(0, str(TARGET))
 
-from witnessmark_omnigraph.capture import RunCapture, repro_command  # noqa: E402
+from witnessmark_omnigraph.capture import LOG_CAP, RunCapture, repro_command  # noqa: E402
 from witnessmark_omnigraph.client import OperationResult, Outcome  # noqa: E402
 
 RUN = "20261116T120000Z-12345678"
@@ -59,6 +59,8 @@ class Part2EvidenceTest(unittest.TestCase):
                     client.query("query", {"password": "key-to-hide"}, name="q_task")
                     client.mutate("mutation", name="m_claim")
                 capture.action("pause", "wm-omnigraph-a", lambda: subprocess.CompletedProcess([], 0))
+                log = capture.write_log("wm-minio", ("é" * LOG_CAP) + "\nRootUser: example-id\n"
+                                        "RootPass: example-secret\n" + home)
                 trial = {}
                 capture.final_state(trial, {"rows": [1]})
                 capture.write_manifest(manifest | {"trials": [trial]})
@@ -78,6 +80,12 @@ class Part2EvidenceTest(unittest.TestCase):
             state = json.loads((capture.path / trial["state_file"]).read_text(encoding="utf-8"))
             self.assertEqual(state["state"], {"rows": [1]})
             self.assertTrue(state["digest"].startswith("sha256:"))
+            log_file = capture.path / log
+            self.assertLessEqual(log_file.stat().st_size, LOG_CAP)
+            log_text = log_file.read_text(encoding="utf-8")
+            for value in ("someone", "example-id", "example-secret"):
+                self.assertNotIn(value, log_text)
+            self.assertIn("RootUser: <redacted>", log_text)
             repro = (capture.path / "REPRO.md").read_text(encoding="utf-8")
             for value in ("someone", chr(92)):
                 self.assertNotIn(value, repro)

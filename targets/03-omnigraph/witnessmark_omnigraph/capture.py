@@ -17,9 +17,11 @@ from .client import OmnigraphClient, Outcome
 
 STATE_CAP = 5 * 1024 * 1024
 LOG_CAP = 64 * 1024
-SENSITIVE_KEY = re.compile(r"(?i)(?:authorization|password|secret|credential|access[_-]?key|bearer|token)")
+SENSITIVE_KEY = re.compile(r"(?i)(?:authorization|password|secret|credential|access[_-]?key|root[_-]?user|"
+                           r"root[_-]?pass|bearer|token)")
 KEY_VALUE = re.compile(
-    r"""(?i)((?:authorization|password|secret|credential|access[_-]?key|bearer|token)[\w-]*['"]?\s*[:=]\s*)"""
+    r"""(?i)((?:authorization|password|secret|credential|access[_-]?key|root[_-]?user|root[_-]?pass|"""
+    r"""bearer|token)[\w-]*['"]?\s*[:=]\s*)"""
     r"""(?:"[^"]*"|'[^']*'|(?:Bearer\s+)?[^\s,;}]+)"""
 )
 
@@ -142,6 +144,18 @@ class RunCapture:
     def final_state(self, trial: dict, state: dict) -> None:
         trial["k"] = self.k
         trial["state_file"] = self.directory.write_state(self.k, safe(state, self.repo), max_bytes=STATE_CAP)
+
+    def write_log(self, service: str, text: str) -> str:
+        relative = f"logs/{self.k}-{service}.log"
+        path = self.path / relative
+        path.parent.mkdir(exist_ok=True)
+        cleaned = redact_text(text, self.repo).encode("utf-8")
+        if len(cleaned) > LOG_CAP:
+            prefix = b"[earlier log output omitted]\n"
+            tail = cleaned[-(LOG_CAP - len(prefix)):].decode("utf-8", errors="ignore")
+            cleaned = prefix + tail.encode("utf-8")
+        path.write_bytes(cleaned)
+        return relative
 
     def close(self) -> None:
         with self.lock:

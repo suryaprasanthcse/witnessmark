@@ -200,6 +200,21 @@ class Stack:
             self._wait_url("http://127.0.0.1:18081/readyz")
         return result
 
+    def failure_logs(self, since: str, until: str) -> list[str]:
+        services = ["wm-omnigraph-a", "wm-omnigraph-b"]
+        if self.storage != "local":
+            services.append("wm-minio")
+        files = []
+        for service in services:
+            try:
+                logs = _command(["docker", "logs", "--timestamps", "--since", since, "--until", until,
+                                 "--tail", "300", service], cwd=self.repo, timeout=20, check=False)
+                output = logs.stdout
+            except (OSError, subprocess.SubprocessError) as exc:
+                output = f"Log capture failed: {exc}"
+            files.append(self.capture.write_log(service, output))
+        return files
+
 
 def _manifest(repo: Path, batch: str, build: dict, build_name: str, storage: str,
               scenario: str, mode: str, started: datetime, trials: list[dict], *,
@@ -258,6 +273,7 @@ def _local_store_bytes() -> int | None:
 
 def _probe(url: str, method: str, timeout: float, capture: RunCapture | None, *, parse_json=False):
     request = urllib.request.Request(url, method=method, data=b"" if method == "POST" else None)
+    kind = "readiness" if url.endswith(("/readyz", "/health/ready")) else "probe"
     inv = stamp() if capture else None
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -268,11 +284,11 @@ def _probe(url: str, method: str, timeout: float, capture: RunCapture | None, *,
             error = {"type": type(exc).__name__, "message": str(exc)}
             if isinstance(code, int):
                 error["code"] = code
-            capture.record("c00", "probe", {"method": method, "url": url}, inv, stamp(),
+            capture.record("c00", kind, {"method": method, "url": url}, inv, stamp(),
                            FAIL if "code" in error else UNKNOWN, error=error, phase="observe")
         raise
     if capture:
-        capture.record("c00", "probe", {"method": method, "url": url}, inv, stamp(), OK,
+        capture.record("c00", kind, {"method": method, "url": url}, inv, stamp(), OK,
                        result=result, phase="observe")
     return result
 
@@ -744,19 +760,21 @@ def o4_integrity(client: OmnigraphClient, queries: dict[str, str], acknowledged:
 def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
            seed: int = 20261115, *, command: str, smoke: bool = False) -> tuple[dict, Path]:
     started = _utc()
-    planned = _manifest(repo, batch, build, build_name, storage, "o4.failover_acceptance", "matrix", started, [],
+    trials = []
+    planned = _manifest(repo, batch, build, build_name, storage, "o4.failover_acceptance", "matrix", started, trials,
                         status="planned-before-execution", smoke=smoke)
     capture = RunCapture(repo, evidence, planned, command)
     try:
-        return _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture)
+        return _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture, trials)
     except Exception as exc:
         _error_note(capture.path, repo, exc)
+        capture.write_manifest(planned)
         raise
     finally:
         capture.close()
 
 
-def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture):
+def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture, trials):
     """Run the O4 topology and classify each cell from what it actually did.
 
     The edge pin documents that no CLI or HTTP route claims a branch; only a
@@ -771,18 +789,19 @@ def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started,
     * BOUNDARY: a failover took place on the stable release, whose documented
       deployment rule (one writer process) is its only protection.
     """
-    trials = []
     queries = load_queries()
     offsets = {"p1": -1.0} if smoke else {"p1": -1.0, "p2": 0.001, "p3": 0.005}
     variants = ("b",) if smoke else ("a", "b")
     for phase, offset in offsets.items():
         for variant in variants:
             capture.trial(len(trials) + 1)
+            since = stamp().wall
             project = f"wm-m4-o4-{build_name.replace('.', '-')}-{storage}-{phase}-{variant}".lower()
             stack = Stack(repo, project, build, storage, lease_seconds=LEASE_SECONDS, capture=capture)
             actions = []
             a_result: list[OperationResult] = []
             thread = None
+            paused = False
             try:
                 stack.provision()
                 a = capture.client("http://127.0.0.1:18080", label="c00")
@@ -798,6 +817,7 @@ def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started,
                 thread = threading.Thread(target=write_a, name="wm-o4-a-write", daemon=True)
                 if offset < 0:
                     stack.pause_a()
+                    paused = True
                     actions.append({"client": "nemesis", "kind": "pause", "target": "wm-omnigraph-a",
                                     "assertion": "pause our A test container before staging"})
                     thread.start()
@@ -805,8 +825,9 @@ def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started,
                     thread.start()
                     time.sleep(offset)
                     stack.pause_a()
+                    paused = True
                     actions.append({"client": "nemesis", "kind": "pause", "target": "wm-omnigraph-a",
-                                    "assertion": f"pause our A test container at seeded {phase} offset {offset}s"})
+                                    "assertion": f"pause the A test container at fixed {phase} offset {offset}s"})
 
                 # S3 admission has the configured leased takeover. Local roots
                 # deliberately have no timeout and cannot be transferred while
@@ -822,6 +843,7 @@ def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started,
                                        {"agent_id": f"b-{phase}-{variant}", "skill_id": SKILL},
                                        name="m_fixture_agent")
                 stack.resume_a()
+                paused = False
                 actions.append({"client": "nemesis", "kind": "resume", "target": "wm-omnigraph-a",
                                 "assertion": "resume our stale A test container and observe its pending publication"})
                 thread.join()
@@ -850,9 +872,17 @@ def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started,
                     "single_epoch": "epoch_zero_unclaimed",
                 }
                 capture.final_state(trial, integrity.pop("state"))
+                if (not b_ready or not integrity["scan_ok"] or integrity["acknowledged_missing"]
+                        or (b_write is not None and not b_write.ok) or (b_ready and a_result and a_result[0].ok)):
+                    trial["logs"] = stack.failure_logs(since, stamp().wall)
                 trials.append(trial)
+            except Exception as exc:
+                trials.append({"k": capture.k, "valid": False, "phase": phase, "variant": variant,
+                               "error": str(exc), "logs": stack.failure_logs(since, stamp().wall)})
+                raise
             finally:
-                stack.resume_a()
+                if paused:
+                    stack.resume_a()
                 if thread is not None and thread.ident is not None:
                     thread.join()
                 stack.down()

@@ -36,7 +36,10 @@ services:
       - "127.0.0.1:18081:8080"
 
   wm-minio:
-    image: dappros/minio@sha256:624bad2fe79a8613aa3c5c9b765ebcab365080b8445cf1b05c357cc7753725f0
+    image: ${WM_MINIO_IMAGE:-witnessmark/minio:RELEASE.2025-09-07T16-13-09Z}
+    build:
+      context: .
+      dockerfile: Dockerfile.minio
     container_name: wm-minio
     command: server /data --console-address :9001
     environment:

@@ -1,0 +1,44 @@
+# MinIO Community Edition built from its official signed release tag.
+FROM golang@sha256:79390b5e5af9ee6e7b1173ee3eac7fadf6751a545297672916b59bfa0ecf6f71 AS build
+
+ARG MINIO_TAG=RELEASE.2025-09-07T16-13-09Z
+ARG MINIO_COMMIT=07c3a429bfed433e49018cb0f78a52145d4bedeb
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git init \
+    && git remote add origin https://github.com/minio/minio.git \
+    && git fetch --depth 1 origin "refs/tags/${MINIO_TAG}:refs/tags/${MINIO_TAG}" \
+    && test "$(git rev-parse "${MINIO_TAG}^{}")" = "${MINIO_COMMIT}" \
+    && git checkout --detach "${MINIO_COMMIT}"
+
+# This is the release form of MinIO's own Makefile build: static binary,
+# kqueue build tag, trimpath, and buildscripts/gen-ldflags.go.  Supplying the
+# release timestamp gives the binary its upstream RELEASE.* version string.
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    release_ldflags="$(MINIO_RELEASE=RELEASE go run buildscripts/gen-ldflags.go 2025-09-07T16:13:09Z)" \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags kqueue -trimpath \
+       --ldflags "${release_ldflags}" -o /out/minio .
+
+FROM debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+
+ARG MINIO_TAG=RELEASE.2025-09-07T16-13-09Z
+ARG MINIO_COMMIT=07c3a429bfed433e49018cb0f78a52145d4bedeb
+
+LABEL org.opencontainers.image.title="MinIO" \
+      org.opencontainers.image.source="https://github.com/minio/minio" \
+      org.opencontainers.image.version="${MINIO_TAG}" \
+      org.opencontainers.image.revision="${MINIO_COMMIT}" \
+      org.opencontainers.image.licenses="AGPL-3.0"
+
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /out/minio /usr/local/bin/minio
+
+EXPOSE 9000 9001
+VOLUME ["/data"]
+ENTRYPOINT ["/usr/local/bin/minio"]
+CMD ["server", "/data", "--console-address", ":9001"]

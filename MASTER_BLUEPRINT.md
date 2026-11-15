@@ -949,6 +949,8 @@ Each milestone ends with a review by the maintainer, and the next one starts onl
 
 All 12 sequential controls and all 9 negative controls were met, and all 3 positive controls fired.
 
+**Review, M1.** Reviewed and signed off by the maintainer on 2026-11-16. M1 is closed.
+
 **Status, M2.** M2 met its exit criterion on 2026-11-13:
 
 - batch `m2-20261113T174128Z`, harness commit `526e98f`;
@@ -957,16 +959,18 @@ All 12 sequential controls and all 9 negative controls were met, and all 3 posit
 
 The sequential control reproduced the fixture graph in all 11 race runs, on FalkorDB and on Neo4j. G6–G8 are deferred.
 
+**Review, M2.** Reviewed and signed off by the maintainer on 2026-11-16. M2 is closed.
+
 **Status, M3.** M3's exit criterion is met in part, on 2026-11-15:
 
 - the sequential control passed on all four rows for the primary scenario `c1.k2`, and on 22 of the 24 final race runs; the two that did not are R3's `c2.writers` and `c3.cross_process`, which trip Cognee 1.6.1 behaviour on FalkorDB (target blueprint C27, §12), so those two are INVALID by rule (§9);
 - batches `m3-20261114T131136Z` (harness `1fd4dd0`), `m3b-20261114T204628Z` (`f3dbe98`), `m3c-20261114T221140Z` (`84dcdb7`) and `m3d-20261114T233706Z` (`5747966`); the later batches re-ran what a harness fix or a crash spoiled, and the target blueprint's §12 says which and why;
 - reports in `evidence/M3_COGNEE.md`, `evidence/M3_COGNEE_B2.md`, `evidence/M3_COGNEE_B3.md` and `evidence/M3_COGNEE_B4.md`; results in the Cognee blueprint, §12;
-- deferred: R4 (PostgreSQL) and the GLiNER check; no pull-request build was installed or run.
+- R4 (PostgreSQL) and the C2 `memify` check were deferred. The maintainer skipped the GLiNER check permanently and declined pull-request builds for M3 (Cognee blueprint §10–§12).
 
 **Review, M3.** Reviewed and signed off by the maintainer on 2026-11-15, after the closeout commits `4675786` to `57e0049` (support-boundary reporting, the two-node gap, the C0 cause, unit tests, the single-file repros, and the boundary-table fix) and an independent second-reader audit. The C0 repro was re-run for the sign-off and reproduced (exit 0). The decisions on the open items are in the Cognee blueprint, §10 and §11. M3 is closed, and M4 may start.
 
-**Status, M4.** M4's exit criterion is met, on 2026-11-15; the milestone awaits review:
+**Status, M4.** M4 met its exit criterion on 2026-11-15.
 
 - The re-measured FalkorDB `GRAPH.COPY` curve falls inside the S28 band at all three sizes, with 95.3, 441.7 and 1,820.0 ms against 165, 546 and 2,400 (-42%, -19%, -24%) under S28's `appendonly yes` and `appendfsync always` settings [measured: `20261115T172253Z-0adb5788`]. The first attempt was 61%, 49% and 57% faster than S28 and the batch stopped by rule [measured: `20261115T164756Z-236def5c`]. It likely inherited the baseline's `appendonly no` [inference from `persistence_found` in `20261115T165838Z-b4925bd5` and `20261115T172253Z-0adb5788`].
 - Six batches. The false start `m4-20261115T153532Z` has one planned manifest at `46adb1d` and no results [measured: `20261115T153548Z-45dc303e`]. The five reported batches are `m4-20261115T153804Z` (`46adb1d`), `m4b-20261115T164749Z` (`48737aa`), `m4c-20261115T165831Z` (`8f7bb3b`), `m4d-20261115T172246Z` (`2a02bd8`, the main batch) and `m4e-20261115T183929Z` (`8bc5fd3`) [measured: `20261115T154356Z-9ebd8e7e`, `20261115T164756Z-236def5c`, `20261115T165838Z-b4925bd5`, `20261115T172253Z-0adb5788`, `20261115T183931Z-fa543284`]. The Omnigraph blueprint's §10 records the batch history.
@@ -974,6 +978,54 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 - O4 recorded unclaimed epochs and fixed pause offsets without staging or publish-phase verification. In `m4e` the stable MinIO cells were BOUNDARY and the edge cells were NOT_EXERCISED [measured: `20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`, `20261115T184523Z-2ae7e967`]. At the edge pin an epoch claim requires an embedding program [docs: Omnigraph troubleshooting.md, "Writer epoch" @ `b2dbaff`]. The epoch-claim test waits for an upstream release with a claim route.
 - M4 evidence lacks `history.jsonl` and `REPRO.md` (the Omnigraph blueprint, §10) [measured: the M4 run directories in `evidence/omnigraph/`, including `20261115T153548Z-45dc303e` through `20261115T184523Z-2ae7e967`]. The M5 decisions, including the O2, O3 and O6 work and O5 on MinIO, are in the Omnigraph blueprint's §11.
 - commit `bfdec20` carries a `Co-Authored-By` trailer by mistake; it is kept because the evidence records harness commit hashes.
+
+**Review, M4.** Reviewed and signed off by the maintainer on 2026-11-16, after the independent second-reader audit and the correction commit `387b2cf`. The decisions on the open items are in the Omnigraph blueprint, §11. M4 is closed, and M5 may start.
+
+### 12.1 Draft M5 checklist
+
+#### Omnigraph
+
+- [ ] Write `history.jsonl` and `REPRO.md` for the Omnigraph runs, following §9.1.
+- [ ] Before repeating O4, record wall-clock timestamps for the pause, resume,
+  successor readiness and each acknowledgement. Capture server logs on failure.
+- [ ] Add an unrelated-graph reader and a writer to the Omnigraph side of O1
+  before any public FalkorDB comparison. Follow §11.5 for publication.
+- [ ] Run the O2 claim races, the O3 merge races and O6 traversal parity beyond
+  the Part 1 sequential controls. Run O5 on MinIO.
+- [ ] Exercise O4 local ownership transfer. Stop A, obtain its exact lock ID
+  from `cluster status --json`, and run `cluster force-unlock` before starting B.
+
+The O4 epoch-claim test and its dependent probes wait for an upstream release
+with a claim route. The O1 catalog-width axis and MinIO conditional-write
+qualification versus RustFS remain deferred. [Omnigraph decisions (§11)](targets/03-omnigraph/MASTER_BLUEPRINT.md#11-open-questions-and-decisions-after-the-m4-audit)
+
+#### Graphiti
+
+- [ ] G6. Check index readiness at startup.
+- [ ] G7. Check persistence across restarts in the root and MCP FalkorDB
+  Compose configurations.
+- [ ] G8. Check deletion permanence under I5 (§5.5).
+
+[Graphiti scenarios (§5)](targets/01-zep-graphiti/MASTER_BLUEPRINT.md#5-scenarios)
+
+#### Cognee
+
+- [ ] Revisit C1 on R4 (Ladybug, LanceDB and PostgreSQL). Pin the PostgreSQL
+  baseline. The advisory-lock case depends on the #4167 code path. Testing its
+  pull-request build requires the maintainer's explicit approval.
+- [ ] Revisit C2's deferred `memify` case through its replacement `improve`.
+  Script the required prompts with the deterministic stub before measuring it.
+
+The GLiNER check stays permanently skipped. The M3 C27 findings for C2 and C3 on
+R3 stand as documented. The C3 fixture variant on R3 remains an open question.
+[Cognee decisions (§10)](targets/02-cognee/MASTER_BLUEPRINT.md#10-open-questions)
+
+#### Closeout
+
+- [ ] Complete the planned reruns and regenerate their reports from evidence.
+  Verify that every reported number traces to a run ID (§9.6).
+- [ ] Prepare contribution drafts under §11.1 and record the maintainer's M5
+  review in this section.
 
 ## 13. Open questions
 

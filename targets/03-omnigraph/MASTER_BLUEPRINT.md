@@ -305,6 +305,15 @@ harness. The proxy tag in Compose is the record of the image selected at run
 time [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:41,200` and
 `targets/03-omnigraph/docker/compose.yml:58` @ `2a02bd8`].
 
+**M5 image pins.** Compose uses the local `repo@sha256` references for MinIO
+and the proxy, as it does for the server. Docker's local image index resolves
+both references to the image IDs in the table. Compose uses
+`pull_policy: never`, and a missing local image stops startup
+[code: `targets/03-omnigraph/docker/compose.yml:42–58` @ `fe13385`].
+The manifest records the MinIO image ID and whether it is in use. Proxy runs
+also record the proxy image ID
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:50` @ `fe13385`].
+
 ## 5. Checks
 
 | Check | How |
@@ -615,6 +624,37 @@ writes and every acknowledged write [measured: `20261115T184233Z-3a4a4f31`,
 
 ## 11. Open questions and decisions after the M4 audit
 
+### M5 evidence and diagnostics
+
+The Part 2 commands write the §9.1 evidence layout under
+`evidence/omnigraph/<build>.<storage>/<scenario>.<mode>/<run_id>/`.
+`history.jsonl` records HTTP calls from the Omnigraph clients and readiness
+and proxy probes. It gives fault actions the `nemesis` client and phase,
+with monotonic and wall-clock timestamps. An unknown outcome has a null
+`ret`. `REPRO.md` gives the redacted command, harness commit and dirty flag,
+build, image digests and storage
+[code: `targets/03-omnigraph/witnessmark_omnigraph/capture.py:50–145` @ `a064bb1`].
+
+| Scenario | Final state in `state/<k>.json` |
+|---|---|
+| O1 curve | The detailed branch list and commit IDs after each size and sibling cell [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:537` @ `a064bb1`] |
+| Standalone I6 | The ledger sequences on main and the branch, plus the branch-only and main-only visibility results [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:455` @ `a064bb1`] |
+| O4 matrix | Branch heads, task and holder rows at the observed commit, and the eligible agents from the integrity scan [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:740` @ `a064bb1`] |
+| O5 | The task read from B and the holder response from B's final visibility poll [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:952` @ `a064bb1`] |
+
+Each state file includes a digest. States above 5 MiB retain the digest,
+total byte count, and bounded excerpts from the canonical JSON
+[code: `core/witnessmark/evidence.py:64` @ `b274458`].
+
+For failed or unexplained O4 cells, `run.json` lists the trial's
+`logs/<k>-wm-omnigraph-a.log`, `logs/<k>-wm-omnigraph-b.log` and, on
+MinIO, `logs/<k>-wm-minio.log`. The harness collects these before teardown,
+restricts the capture to the trial window, redacts it and retains at most
+64 KiB per file. The readiness response from B and server acknowledgements
+carry their own return timestamps in `history.jsonl`
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:203,274,874`
+and `targets/03-omnigraph/witnessmark_omnigraph/capture.py:148` @ `a064bb1`].
+
 ### M5
 
 - Add `history.jsonl` and `REPRO.md` for Omnigraph runs to meet master §9.1.
@@ -631,6 +671,13 @@ writes and every acknowledged write [measured: `20261115T184233Z-3a4a4f31`,
   with `cluster status --json`, and runs `cluster force-unlock` before
   starting B [unmeasured: O4 local transfer] [docs: deployment.md, "Writer
   topology" @ `b2dbaff`].
+
+  **Phase A blocker.** The pinned versions release admission after a clean
+  server shutdown. If A retains its lock, the operator must establish that
+  its graph and control-store I/O are terminal before unlocking that exact
+  ID. The variant needs a defined retained-lock case with that evidence.
+  [docs: [v0.15.0 writer topology](https://github.com/ModernRelay/omnigraph/blob/v0.15.0/docs/user/deployment.md#writer-topology),
+  [b2dbaff writer topology](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#writer-topology)]
 
 ### Awaiting an upstream release
 

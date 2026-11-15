@@ -1019,10 +1019,18 @@ Implement the harness changes and cover them with unit tests. Run only the smoke
   `run.json`, following §9.1. In `history.jsonl`, record fault-injector
   actions as client `nemesis` with wall-clock times in `inv` and `ret`,
   following §9.3.
-- [ ] Pin the MinIO and proxy images by digest in `compose.yml` before the
+- [x] Pin the MinIO and proxy images by digest in `compose.yml` before the
   M5 reruns. Record the proxy image ID in the run manifests.
 - [ ] Capture O4 wall-clock times for pause, resume, successor readiness and
   each acknowledgement. Capture server logs on failure.
+- [ ] Make the Phase B entry points available. Add the O3 thread race, O6
+  parity evidence, O4 local transfer, and O1 unrelated reader and writer.
+  Check O5 evidence on MinIO and expose the O2 calibration option.
+
+Part 2 evidence and O4 diagnostics passed the offline unit tests. The smoke
+checks are pending. The requested O4 local transfer needs a defined case in
+which A retains its lock after stopping and its I/O can be shown to have
+settled. [Omnigraph Phase A blocker](targets/03-omnigraph/MASTER_BLUEPRINT.md#11-open-questions-and-decisions-after-the-m4-audit)
 
 #### 2. Phase B — Omnigraph runs
 

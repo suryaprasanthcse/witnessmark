@@ -55,12 +55,26 @@ _TYPED_NAME = re.compile(
     r"\b(CardinalityViolation|DivergentInsert|DivergentUpdate|DeleteVsUpdate|"
     r"OrphanEdge|UniqueViolation|ValueConstraintViolation|WriterFenced)\b"
 )
+_DEFINITE_REFUSALS = {
+    "precondition_failure", "CardinalityViolation", "DivergentInsert", "DivergentUpdate",
+    "DeleteVsUpdate", "OrphanEdge", "UniqueViolation", "ValueConstraintViolation", "WriterFenced",
+}
+_CONFLICT_NAMES = {
+    "cardinality_violation": "CardinalityViolation",
+    "divergent_insert": "DivergentInsert",
+    "divergent_update": "DivergentUpdate",
+    "delete_vs_update": "DeleteVsUpdate",
+    "orphan_edge": "OrphanEdge",
+    "unique_violation": "UniqueViolation",
+    "value_constraint_violation": "ValueConstraintViolation",
+}
 
 
 def _conflict_kinds(payload: Any) -> list[str]:
     if not isinstance(payload, dict) or not isinstance(payload.get("merge_conflicts"), list):
         return []
-    return [str(conflict["kind"]) for conflict in payload["merge_conflicts"]
+    return [_CONFLICT_NAMES.get(str(conflict["kind"]), str(conflict["kind"]))
+            for conflict in payload["merge_conflicts"]
             if isinstance(conflict, dict) and conflict.get("kind")]
 
 
@@ -71,6 +85,9 @@ def _error_kind(payload: Any, status: int) -> str:
         return "precondition_failure"
     if payload.get("writer_fenced") is not None:
         return "WriterFenced"
+    error = str(payload.get("error", ""))
+    if "@card violation" in error:
+        return "CardinalityViolation"
     conflicts = _conflict_kinds(payload)
     if conflicts:
         return conflicts[0]
@@ -183,6 +200,8 @@ class OmnigraphClient:
             payload["conflict_kinds"] = kinds
         kind = _error_kind(payload, status)
         message = _message(payload, fallback)
+        if kind in _DEFINITE_REFUSALS:
+            return OperationResult(Outcome.REFUSAL, status, kind, payload, message)
         if status >= 500 or effects in ("partial", "unknown") or kind == "outcome_unknown":
             return OperationResult(Outcome.UNKNOWN, status, kind, payload, message)
         return OperationResult(Outcome.REFUSAL, status, kind, payload, message)

@@ -4,7 +4,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Nothing has been measured yet; every expectation below is [unmeasured] until a run says otherwise. |
+| Status | Specification v0.1, 2026-11-13. Part 1 build, syntax and sequential-control results are recorded below; race, curve and failover expectations remain [unmeasured] until Part 2. |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
 | Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |
@@ -54,7 +54,8 @@ still says `status: draft`, but its `implementation` has changed from `not-start
 
 1. **A second engine.** It measures another engine's branching primitive, FalkorDB `GRAPH.COPY`, on the same host and the same graph shape.
 2. **A real stale writer from a previous epoch.** It pauses whole test containers at chosen points in a write and performs a real failover to a second server, against a real object store. Write cuts that stop a child process cannot produce a writer that resumes later, and a DST whose actors share one registry does not model one.
-3. **Many independent clients.** Many separate client processes drive the server over HTTP.
+3. **Many independent clients.** Separate client sessions drive the server over HTTP; each
+   thread owns its connection, and no connection is shared across threads.
 
 ## 2. Workload model
 
@@ -70,21 +71,21 @@ These are specifications, not source. The `.pg` and `.gq` files are written in M
 | `HasSkill` | edge `Agent → Skill` | none | eligibility |
 | `Needs` | edge `Task → Skill` | none | eligibility |
 | `HeldBy` | edge `Task → Agent`, `@card(0..1)` | `from_seq: I64`, `until_pt: I64`, `rw: String` | the lease; the schema itself allows at most one live holder per task |
-| `LeaseEvent` | node | `id @key`, `task`, `agent`, `from_seq`, optional `until_seq` | history of live and closed leases, for the overlap check in I1 Form A (d) |
 | `Entry` | node | `id @key`, `seq: I64`, `rule: String`, `hash: String`, `prev: String`, `ts: I64` | padding to reach I6 graph sizes |
 | `Next` | edge `Entry → Entry`, `@card(0..1)` | none | the padding chain |
 
-**Lease history choice (F2).** The workload uses choice (a): each claim mutation
-inserts its `HeldBy` edge and a `LeaseEvent` in the same atomic mutation; the
-release mutation deletes the edge and sets that event's exclusive `until_seq`
-in the same atomic mutation. Omnigraph's HTTP response exposes an opaque
-`graph_commit_id`, not an ordered graph-commit sequence. Therefore `from_seq`
-and `until_seq` are deterministic, monotonically increasing harness lease-event
-sequence numbers allocated before the corresponding mutation. They are not
-presented as an engine commit order. This is sufficient for O2/O3's overlap
-assertion because every simultaneously live lease has no `until_seq`, while the
-opaque server commit id is retained separately in history for reconciliation
-[code: `targets/03-omnigraph/workload/queries.gq`] [unmeasured].
+**Lease history choice (F2).** The workload uses choice (b): the runner derives
+`lease_records` from the `HeldBy` rows observed at one server snapshot and the
+claim operations in history. Omnigraph exposes an opaque `graph_commit_id`, not
+an ordered graph-commit sequence, so every live record retains that id as
+`observed_graph_commit_id` and receives a deterministic harness observation
+ordinal as `observed_order`. `from_seq` is the harness claim ordinal written on
+the edge; `until_seq` is absent for a live record. These values are not presented
+as native commit order. O2/O3 do not release a lease, so any two acknowledged
+leases would both be live intervals and I1(d) remains decidable. This choice was
+confirmed after the stable pin refused an attempted option-(a) release because
+one mutation may not mix updates and deletes [measured: Part 1 query smoke,
+2026-11-15] [code: `targets/03-omnigraph/witnessmark_omnigraph/engine.py`].
 
 **Padding shape.** n `Entry` nodes and n `Next` edges form a log-like chain. The shape is close to the one behind the published FalkorDB numbers (equal node and edge counts, log-like properties; master §7.2). The S28 band therefore applies only approximately.
 
@@ -92,19 +93,23 @@ opaque server commit id is retained separately in history for reconciliation
 
 | Name | Does |
 |---|---|
-| `q_task` | Reads a task's state, with the response's `graph_commit_id`; `q_task_holder` reads its at-most-one holder and `q_lease_events` reads its lease history. A final-state dump passes the same `graph_commit_id` as the `snapshot` parameter to the latter two queries, so all three describe one state. The pinned [query](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md) and [traversal](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md) guides do not document an optional traversal/projection that can return both when no holder exists [docs] [unmeasured: O2]. |
-| `m_claim_cond` | Sets `state = claimed`, inserts `HeldBy` and its `LeaseEvent`, under `--if-commit` (over HTTP, the conditional route) |
-| `m_claim_card` | Inserts `HeldBy` and its `LeaseEvent` with no condition, relying on `@card(0..1)` |
-| `m_release` | Deletes `HeldBy`, reopens the task and sets the matching `LeaseEvent.until_seq` in one atomic mutation |
+| `q_task` | Reads a task's state, with the response's `graph_commit_id`; `q_task_holder` reads its at-most-one holder and the `HeldBy` lease fields. A final-state dump passes the same `graph_commit_id` as the `snapshot` parameter to the holder query, so both describe one state. The pinned [query](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md) and [traversal](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md) guides do not document an optional traversal/projection that can return both when no holder exists [docs] [unmeasured: O2]. |
+| `m_claim_cond` | Sets `state = claimed` and inserts `HeldBy`, under `--if-commit` (over HTTP, the conditional route) |
+| `m_claim_card` | Inserts `HeldBy` with no condition, relying on `@card(0..1)` |
 | `q_live` | Counts `HeldBy` per task |
 | `q_eligible` | Traverses `Agent → HasSkill → Skill ← Needs ← Task`; compared with the same Cypher on FalkorDB and Neo4j (I4) |
 | `m_ledger` | Appends an `Entry` with the next `seq` (the I6a ledger) |
 
 **No-match semantics (F3).** Both claim mutations contain an `update Task ...
-where state = "open"` followed by unconditional inserts. Whether a zero-row
-update prevents the inserts, lets them run, or causes the whole mutation to be
-refused is [unmeasured]. Task 4's syntax smoke and sequential controls settle
-this against both pinned builds before any concurrent finding is accepted.
+where state = "open"` followed by unconditional inserts. A zero-row update does
+not skip later statements: the inserts run. On a second `m_claim_card`, the
+`HeldBy @card(0..1)` check rejects the entire mutation and neither the edge nor
+the preceding task update publishes. The HTTP envelope is status 400, code `bad_request`,
+message `@card violation ...`, and disposition `effects: unknown`; the client
+maps that documented constraint message to the definite typed refusal
+`CardinalityViolation` [measured: `m4-part1-v0.15.0-local-20261115` and
+`m4-part1-edge-b2dbaff-local-20261115`]. The edge pin produced the same result
+[code: `targets/03-omnigraph/witnessmark_omnigraph/client.py`].
 
 ## 3. Scenarios
 
@@ -150,6 +155,13 @@ this against both pinned builds before any concurrent finding is accepted.
   - Sequential: the 50 claims one at a time.
   - Negative: the same race on FalkorDB 6.0.4, using a naive guarded Cypher claim.
   - Positive: Neo4j 5.26.2 with the naive claim (master §6.2).
+
+**Runner wiring.** Omnigraph is a network server, so O2 uses the core thread
+runner. Every client owns a distinct `OmnigraphClient`/HTTP connection and the
+core barrier releases their requests together; this models independent network
+clients without process-start noise [code:
+`targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py` and
+`core/witnessmark/runner.py`].
 
 ### O3. One branch per agent, then merge (I1 at merge)
 
@@ -197,6 +209,19 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 `q_eligible` and `q_live` run on identical data, in Omnigraph and as Cypher on FalkorDB and Neo4j. Each result is classified as identical, rejected, or silently different.
 
+### Part 1 controls
+
+Fresh local roots on both pinned builds applied `schema.pg`, validated the
+cluster configuration and executed all 11 declarations in `queries.gq`.
+O2a, O2c, sequential O3 and O6 then met their expected states with 50 clients
+on both builds; O3's 49 losing merges were typed `CardinalityViolation`
+[measured: `m4-part1-v0.15.0-local-20261115` and
+`m4-part1-edge-b2dbaff-local-20261115`]. The M1 claim controls also reproduced
+their calibration: FalkorDB's naive guarded claim had 0/20 violating trials,
+while Neo4j's naive claim had 20/20 [measured:
+`m4-part1-control/20261115T143907Z-81158dcd` and
+`m4-part1-control/20261115T143905Z-022d7057`].
+
 ## 4. Environment and pins
 
 | Component | Pin |
@@ -214,7 +239,7 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 | Check | How |
 |---|---|
-| I1 Form A | Built from `HeldBy`, `LeaseEvent` and the acknowledged replies. Claim and release write the live edge and historical interval atomically; final reads use one snapshot across task, holder and event queries [code: `targets/03-omnigraph/workload/queries.gq`] [unmeasured]. |
+| I1 Form A | Built from `HeldBy` and the acknowledged replies. Final task and holder reads use one snapshot; the runner derives live lease intervals and retains the opaque server commit id plus its own observation order [code: `targets/03-omnigraph/witnessmark_omnigraph/engine.py`] [measured: the two Part 1 control run ids in §3]. |
 | I6a | The ledger prefix is gapless |
 | O4 integrity | The graph opens; a full scan succeeds; every object the head references exists; error types match the documentation |
 | I4 | Normalised row multisets, compared across the three engines (master §5.4) |

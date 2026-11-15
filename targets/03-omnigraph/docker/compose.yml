@@ -17,6 +17,7 @@ x-omnigraph: &omnigraph
     OMNIGRAPH_CLUSTER_LEASE_SECONDS: ${WM_CLUSTER_LEASE_SECONDS:-2}
   volumes:
     - omnigraph-root:/var/lib/omnigraph
+    - ../workload:/config:ro
 
 services:
   wm-omnigraph-a:

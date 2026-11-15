@@ -1,0 +1,10 @@
+version: 1
+metadata:
+  name: witnessmark-m4
+state:
+  backend: cluster
+  lock: true
+graphs:
+  witnessmark:
+    schema: schema.pg
+    queries: queries.gq

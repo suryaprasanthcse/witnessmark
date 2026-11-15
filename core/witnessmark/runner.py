@@ -42,6 +42,7 @@ class RunConfig:
     trial_timeout_s: float = 600.0
     spread_gate_ms: float | None = THREAD_SPREAD_GATE_MS  # None records the spread without gating on it
     evidence_root: Path = Path("evidence")
+    evidence_dir: str | None = None
     repo_root: Path = Path(".")
     batch: str | None = None
     command: str = ""
@@ -231,7 +232,7 @@ def run(config: RunConfig) -> dict:
         "started_at": iso(started),
     }
     run_id = make_run_id(started, header)
-    run_dir = RunDir(config.evidence_root, engine.name, config.scenario_id, run_id)
+    run_dir = RunDir(config.evidence_root, config.evidence_dir or engine.name, config.scenario_id, run_id)
     try:
         return _run_body(config, expectation, header, run_id, run_dir, component, harness)
     except Exception:
@@ -310,3 +311,33 @@ def _run_body(config: RunConfig, expectation: Expectation, header: dict, run_id:
     run_dir.write_repro(_repro(config, run_id, component, harness))
     manifest["path"] = run_dir.path.as_posix()
     return manifest
+
+
+def run_sequential_control(engine: Engine, scenario: Scenario, shape: str, clients: int, *,
+                           timeout_s: float = 60.0, run_id: str = "sequential-control") -> dict:
+    """Run only the runner's sequential control, without creating evidence.
+
+    Target smoke suites use this to exercise the exact adapter, classifier and
+    history mapping that a later race uses while keeping their provisional
+    output under ``.state/scratch``.
+    """
+    admin = engine.session(timeout_s)
+    sessions: list[Session] = []
+    try:
+        sessions = [engine.session(timeout_s) for _ in range(clients)]
+        engine.reset(admin)
+        scenario.setup(admin, clients)
+        ops = []
+        for i in range(clients):
+            sessions[i].ping()
+            query, params, recorded = scenario.payload(shape, i, clients)
+            ops.append(_execute(sessions[i], scenario, query, params, recorded, run_id, 0, "control",
+                                client_name(i)))
+        state = scenario.observe(admin, clients)
+        met, expected, observed = scenario.sequential_expected(ops, state, clients)
+        return {"met": met, "expected": expected, "observed": observed,
+                "operations": ops, "state": state, "checks": [scenario.check(ops, state, clients)]}
+    finally:
+        for session in sessions:
+            session.close()
+        admin.close()

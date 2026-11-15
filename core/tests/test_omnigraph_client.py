@@ -71,6 +71,12 @@ class _Handler(BaseHTTPRequestHandler):
                 "code": "conflict",
                 "disposition": {"effects": "none", "action": "fix"},
             })
+        if parsed.path.endswith("/mutate") and body["query"] == "cardinality_envelope":
+            return self._send(400, {
+                "error": "@card violation on edge HeldBy: source 'task-0' has 2 edges (max 1)",
+                "code": "bad_request",
+                "disposition": {"effects": "unknown", "action": "reconcile"},
+            })
         if parsed.path.endswith("/mutate") and body["query"] == "server_error":
             return self._send(500, {
                 "error": "internal error",
@@ -85,7 +91,7 @@ class _Handler(BaseHTTPRequestHandler):
                 "error": "merge conflict",
                 "merge_conflicts": [
                     {"kind": "CardinalityViolation", "item": "HeldBy"},
-                    {"kind": "DivergentUpdate", "item": "Task"},
+                    {"kind": "divergent_update", "item": "Task"},
                 ],
                 "disposition": {"effects": "none", "action": "fix"},
             })
@@ -136,6 +142,11 @@ class OmnigraphClientTest(unittest.TestCase):
 
     def test_cardinality_violation_is_a_typed_refusal(self):
         result = self.client.mutate("cardinality")
+        self.assertIs(result.outcome, Outcome.REFUSAL)
+        self.assertEqual(result.kind, "CardinalityViolation")
+
+    def test_documented_cardinality_message_overrides_generic_unknown_disposition(self):
+        result = self.client.mutate("cardinality_envelope")
         self.assertIs(result.outcome, Outcome.REFUSAL)
         self.assertEqual(result.kind, "CardinalityViolation")
 

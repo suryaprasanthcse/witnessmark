@@ -25,14 +25,6 @@ edge HeldBy: Task -> Agent @card(0..1) {
   rw: String
 }
 
-node LeaseEvent {
-  id: String @key
-  task: String
-  agent: String
-  from_seq: I64
-  until_seq: I64
-}
-
 node Entry {
   id: String @key
   seq: I64

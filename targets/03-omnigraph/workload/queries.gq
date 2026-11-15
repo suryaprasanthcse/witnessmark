@@ -4,6 +4,38 @@
 // Mutation syntax: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/index.md
 // Commit guard: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/conditional.md
 
+// Harness fixture lifecycle. Deleting nodes cascades their incident edges.
+query m_reset() {
+  delete Entry where true
+  delete Task where true
+  delete Agent where true
+  delete Skill where true
+}
+
+query m_fixture_base($task_id: String, $skill_id: String) {
+  insert Skill { id: $skill_id }
+  insert Task { id: $task_id, state: "open" }
+  insert Needs { from: $task_id, to: $skill_id }
+  insert Entry {
+    id: "entry-0",
+    seq: 0,
+    rule: "genesis",
+    hash: "0",
+    prev: "",
+    ts: 0
+  }
+}
+
+query m_fixture_agent($agent_id: String, $skill_id: String) {
+  insert Agent { id: $agent_id }
+  insert HasSkill { from: $agent_id, to: $skill_id }
+}
+
+query m_fixture_task($task_id: String, $skill_id: String) {
+  insert Task { id: $task_id, state: "open" }
+  insert Needs { from: $task_id, to: $skill_id }
+}
+
 // The response envelope supplies graph_commit_id. The pinned docs do not
 // document an optional traversal/projection, so q_task returns the state row
 // and q_task_holder separately returns the at-most-one live holder. Phase 2
@@ -18,23 +50,14 @@ query q_task($task_id: String) {
 query q_task_holder($task_id: String) {
   match {
     $task: Task { id: $task_id }
-    $task heldBy $holder
-  }
-  return { $holder.id as holder }
-}
-
-query q_lease_events($task_id: String) {
-  match {
-    $lease: LeaseEvent { task: $task_id }
+    $task $lease:heldBy $holder
   }
   return {
-    $lease.id as id,
-    $lease.task as task,
-    $lease.agent as agent,
+    $holder.id as holder,
     $lease.from_seq as from_seq,
-    $lease.until_seq as until_seq
+    $lease.rw as rw
   }
-  order { from_seq asc, id asc }
+  order { holder asc }
 }
 
 // Send this mutation through the conditional route with the graph commit id
@@ -56,12 +79,6 @@ query m_claim_cond(
     until_pt: $until_pt,
     rw: $rw
   }
-  insert LeaseEvent {
-    id: $rw,
-    task: $task_id,
-    agent: $agent_id,
-    from_seq: $from_seq
-  }
 }
 
 // No graph-commit precondition: HeldBy @card(0..1) is the one-winner guard.
@@ -81,26 +98,6 @@ query m_claim_card(
     until_pt: $until_pt,
     rw: $rw
   }
-  insert LeaseEvent {
-    id: $rw,
-    task: $task_id,
-    agent: $agent_id,
-    from_seq: $from_seq
-  }
-}
-
-// Close the historical interval in the same mutation that removes the live
-// edge. until_seq is exclusive.
-query m_release(
-  $task_id: String,
-  $lease_id: String,
-  $until_seq: I64
-) {
-  delete HeldBy where from = $task_id
-  update LeaseEvent set { until_seq: $until_seq }
-    where id = $lease_id
-  update Task set { state: "open" }
-    where id = $task_id
 }
 
 // Aggregate-only returns produce one row and count 0 when no edge matches.

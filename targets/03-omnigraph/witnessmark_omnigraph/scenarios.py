@@ -1,16 +1,17 @@
-"""No-run scaffolding for Omnigraph scenarios O2, O3 and O6.
+"""Pure declarations and checks for Omnigraph scenarios O2, O3 and O6.
 
 The classes follow :class:`witnessmark.memory.RaceScenario`: ``clients``
 declares one isolated database client per item, ``check`` consumes only history
 and final state, and ``sequential_expected`` describes the phase-2 control.
 
 For claim checks, ``states["main"]`` has ``holders`` (task id to agent-id list)
-and ``lease_records`` (I1A half-open harness-sequence intervals). A final-state
-reader must pass the ``graph_commit_id`` returned by ``q_task`` as the snapshot
-parameter to both ``q_task_holder`` and ``q_lease_events``; those observations
-then describe one state even when another client is writing. O6 states are
+and ``lease_records`` (I1A half-open harness-sequence intervals derived from
+the live ``HeldBy`` rows). A final-state reader must pass the
+``graph_commit_id`` returned by ``q_task`` as the snapshot parameter to
+``q_task_holder``; those observations then describe one state even when another
+client is writing. O6 states are
 engine to query to either ``{"outcome": "ok", "rows": [...]}`` or a rejected
-observation. Phase 2 runner wiring will produce these canonical observations.
+observation. The network runner produces these canonical observations.
 """
 
 from __future__ import annotations

@@ -1,0 +1,18 @@
+{
+  "k": 19,
+  "digest": "sha256:899ffdec19f1863277309d35fab958ae1fcdaa2ef8c0a5a04f2d5d37de3bf90c",
+  "state": {
+    "holders": [
+      "c03",
+      "c12",
+      "c13",
+      "c15",
+      "c19",
+      "c25",
+      "c35",
+      "c36",
+      "c48",
+      "c49"
+    ]
+  }
+}

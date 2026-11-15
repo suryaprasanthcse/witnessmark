@@ -1,0 +1,579 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261115T223551Z-36ddd91e",
+  "batch": "m5c-20261115T223540Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "772ef9601ead98e750aa0a45a9b146bff6423e35",
+    "dirty": false
+  },
+  "target": {
+    "name": "neo4j",
+    "repo": "neo4j/neo4j",
+    "ref": "5.26.2 community",
+    "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "neo4j",
+      "version": "5.26.2 community",
+      "config": {
+        "api": "HTTP tx/commit",
+        "isolation": "read committed (default)"
+      },
+      "image": "neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365",
+      "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "claim.state.lock_first",
+    "invariants": [
+      "I1A"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "lock_first",
+      "query": "MATCH (t:WMTask {id: $task}) SET t._wm_lock = true REMOVE t._wm_lock WITH t WHERE t.state = 'open' SET t.state = 'claimed', t.holder = $agent RETURN count(t) AS won",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261119,
+  "started_at": "2026-11-15T22:35:51.496647Z",
+  "finished_at": "2026-11-15T22:35:56.128038Z",
+  "expectation": {
+    "role": "negative",
+    "basis": "documented",
+    "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "neo4j claim.state.lock_first: 50 clients, one at a time",
+      "expected": "only c00 wins and holds the task",
+      "observed": "winners ['c00']; holder 'c00'",
+      "met": true
+    },
+    {
+      "kind": "negative",
+      "configuration": "neo4j claim.state.lock_first: 50 clients x 20 trials",
+      "expected": "no violation in 20 valid trials",
+      "observed": "0 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 8.47,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3e913c16f0d65ee70466a39e18807a7fe076e8ea4ab88016721cef13ee6cbf3f",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c26'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.909,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:77cf2d23c6edfe9b2694e6852b32efdc8e03a883822c3f78c5141a3ad5b02294",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c03'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 8.359,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:2928efbffb7826cd80c87ebb6b82c089b9dea3e376a71fbb10972d00883a33c6",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c49'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 15.127,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:56852a264e03c286810aab7cc740b8379fbeaabe29591042159982052dacc66a",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c10'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.128,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9e6001d922f3754f62bef2811f30ddefdb7ec0ad8abb52563253866e717e262a",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c22'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.878,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:77cf2d23c6edfe9b2694e6852b32efdc8e03a883822c3f78c5141a3ad5b02294",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c03'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 5.151,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:00dcd2ca104983127f7264e8fab8cb63e05f63aafb5471e0ec8c1c85928f8e12",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c07'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 14.303,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a727477f0d135cb4b3a8681d92b332b2873ba686309866316499d0da89e0024a",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c43'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 5.842,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:ca8dbee0c96dc70f8db1080d5ff418668d9e331492fc8d4157f5448ac923034c",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c32'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 8.015,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3f3e76d4ac1fb9819bdbab81e9a81c21e0bf8fd4e7a36b9356f5571e21a2d2b3",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c38'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.871,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:7dd27a1c54cbbce234a3a644e854949cd33afeed769dafb81e6e0f8a86e35691",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c44'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.692,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:eb28200059e4b8e8860119972926d262d5e8fc9121b3772519e3fa60e881a63c",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c36'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.177,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:56852a264e03c286810aab7cc740b8379fbeaabe29591042159982052dacc66a",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c10'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.638,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:cad3cf8d8efb940851dff061070e149d286c231ce549805b9e4174b403b93356",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c13'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.244,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c41c62dc3b027ea9f78debb3850b1850cc17a7b225eafcf6e3d2de0088e9ad63",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c19'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 5.327,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c41c62dc3b027ea9f78debb3850b1850cc17a7b225eafcf6e3d2de0088e9ad63",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c19'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.938,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:f42dc5b3c39e8b21a5a05861bf4fd8f3b8a07d2bf030ce1593f98296917f27d8",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c48'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.586,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:14d31b8b8ef4ae9ddcb14ecba5a58cbfd8f36b4b885462d1b5ea2eeca2bcd6e4",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c20'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 5.885,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d42e67cbfa408037e2c67cb355f0e1eac5ad37b67c616099c29482fcdd6ca07e",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c27'",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.223,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9e6001d922f3754f62bef2811f30ddefdb7ec0ad8abb52563253866e717e262a",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "winners",
+          "detail": "1 winner(s); final holder 'c22'",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1A",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "winners"
+      },
+      "basis": "documented",
+      "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+      "witnesses": []
+    }
+  ]
+}

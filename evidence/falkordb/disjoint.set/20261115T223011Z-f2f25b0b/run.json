@@ -1,0 +1,580 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261115T223011Z-f2f25b0b",
+  "batch": "m5-20261115T222957Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "772ef9601ead98e750aa0a45a9b146bff6423e35",
+    "dirty": false
+  },
+  "target": {
+    "name": "falkordb",
+    "repo": "FalkorDB/FalkorDB",
+    "ref": "6.0.4 (graph module 60004)",
+    "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "falkordb",
+      "version": "6.0.4 (graph module 60004)",
+      "config": {
+        "appendonly": "no",
+        "appendfsync": "everysec",
+        "save": "3600 1 300 100 60 10000"
+      },
+      "image": "falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f",
+      "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "disjoint.set",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "set",
+      "query": "MATCH (d:WMDoc {id: $doc}) SET d.<prop> = $v RETURN 1 AS done",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261117,
+  "started_at": "2026-11-15T22:30:11.429611Z",
+  "finished_at": "2026-11-15T22:30:13.909286Z",
+  "expectation": {
+    "role": "negative",
+    "basis": "baseline",
+    "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "falkordb disjoint.set: 50 clients, one at a time",
+      "expected": "all 50 properties present",
+      "observed": "50 acknowledged; 50 present",
+      "met": true
+    },
+    {
+      "kind": "negative",
+      "configuration": "falkordb disjoint.set: 50 clients x 20 trials",
+      "expected": "no violation in 20 valid trials",
+      "observed": "0 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 6.511,
+      "outcomes": {
+        "ok": 49,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5157750a750fc796a988c130e48c10fd86d532972b8961ed63a31e2b0aed3a45",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 49 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 4.169,
+      "outcomes": {
+        "ok": 41,
+        "fail": 9,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:eb80c0f35d9a2c9d5221d5ecc257ebce7cd54e0a1aa0af8768b4ca9086e925f8",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 41 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 12.149,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 3.941,
+      "outcomes": {
+        "ok": 38,
+        "fail": 12,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:53af7677435f85a06ee312eb995fa3466d6ae38cff273d34d5ca9db982ee5b92",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 38 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 5.18,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 8.093,
+      "outcomes": {
+        "ok": 49,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:be06ab83261eaeaeb3ed2f4ce9621429d483ed4258eb74022995b4cc5ee73ba7",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 49 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 6.811,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 5.591,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 6.876,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 4.167,
+      "outcomes": {
+        "ok": 34,
+        "fail": 16,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:ef1bde3d6f5ec2fb7df102e7a8ff4eee0236e694b540cc38e9f7afa05bb03fbc",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 34 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 4.122,
+      "outcomes": {
+        "ok": 41,
+        "fail": 9,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:96bad1532a75f078f485eddcace3c3a1f829f426b1ad5bae56de07c52c83a07c",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 41 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 4.633,
+      "outcomes": {
+        "ok": 43,
+        "fail": 7,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:45f1f5ce9b4e509473e2d294028d232cf2a2eba9258300d89ad7a44dd053bbeb",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 43 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 6.308,
+      "outcomes": {
+        "ok": 49,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5e4ffb747eb7f5622405bf2faa1deaf48b03383385c5c83f9e916c217639390b",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 49 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 10.133,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 5.575,
+      "outcomes": {
+        "ok": 48,
+        "fail": 2,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:66d7fa58216e51ed0df883b61aa83d357f14a36920ef1d7a63eb162184bcb6fc",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 48 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 4.133,
+      "outcomes": {
+        "ok": 39,
+        "fail": 11,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:40a8b3604fe9d0580b66a2b709c5b1e759ab6dd1ee3c3d7e4393fb4958814495",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 39 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 3.933,
+      "outcomes": {
+        "ok": 47,
+        "fail": 3,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c634bf664362fbb929ca4b69a9a4b33faa9ece22fd5b862ce57c0319c65395fa",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 47 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 5.554,
+      "outcomes": {
+        "ok": 47,
+        "fail": 3,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:754ce306def9a0d46e356b71329051b57f01a3757de3607b13d78cb964653885",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 47 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 3.038,
+      "outcomes": {
+        "ok": 26,
+        "fail": 24,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d2033ed2c6b7e55310a638e2eb195592632e05f8d3ac7570795f3fb9d02b5264",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 26 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:c8e10530680c051544967b5de474ca275b7793fbae870dbfd4a413242427c7d3",
+      "release_spread_ms": 7.598,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9961aa68d44ba1e546d7bd3d342f61eacf0c2eb0c39ed9f4b8a1deb61010975",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost writes",
+          "detail": "all 50 acknowledged writes survived",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "lost writes"
+      },
+      "basis": "baseline",
+      "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+      "witnesses": []
+    }
+  ]
+}

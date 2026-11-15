@@ -1074,6 +1074,18 @@ scenario with its sequential control and the applicable controls in §6.2.
    before any public FalkorDB comparison. Follow §6.5 for the cost curve
    and §11.5 for publication.
 
+**Status, Phase B (stopped, 2026-11-16).** Step 1 is done. Steps 2 to 8 have not run.
+
+- [x] Run plan declared in the Omnigraph blueprint, §12 (`772ef96`).
+- [x] Step 1: batch `m5-20261115T222957Z` (`772ef96`). Its Neo4j control
+  cells were re-run in `m5c-20261115T223540Z` (`772ef96`). δ = 55 ms (§6.3),
+  set in `fffe48b`. Reports: `evidence/M5_OMNIGRAPH_CALIBRATION.md` and
+  `evidence/M5_OMNIGRAPH_B1.md`.
+- [ ] Steps 2 to 8 (batch 2). Stopped for a maintainer decision. In batch 1
+  every O2 trial had one winner, but 34 of the 50 claims in each trial were
+  refused with `too_many_requests` (actor in-flight cap 16), and the checker
+  accepts only one refusal type (Omnigraph blueprint, §13).
+
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write
 qualification versus RustFS remain deferred. [Omnigraph decisions (§11)](targets/03-omnigraph/MASTER_BLUEPRINT.md#11-open-questions-and-decisions-after-the-m4-audit)

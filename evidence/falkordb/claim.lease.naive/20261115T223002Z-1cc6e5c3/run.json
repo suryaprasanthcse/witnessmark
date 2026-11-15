@@ -1,0 +1,580 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261115T223002Z-1cc6e5c3",
+  "batch": "m5-20261115T222957Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "772ef9601ead98e750aa0a45a9b146bff6423e35",
+    "dirty": false
+  },
+  "target": {
+    "name": "falkordb",
+    "repo": "FalkorDB/FalkorDB",
+    "ref": "6.0.4 (graph module 60004)",
+    "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "falkordb",
+      "version": "6.0.4 (graph module 60004)",
+      "config": {
+        "appendonly": "no",
+        "appendfsync": "everysec",
+        "save": "3600 1 300 100 60 10000"
+      },
+      "image": "falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f",
+      "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "claim.lease.naive",
+    "invariants": [
+      "I1A"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "naive",
+      "query": "MATCH (a:WMAgent {id: $agent}), (t:WMTask {id: $task}) OPTIONAL MATCH (t)<-[l:WM_HOLDS]-(:WMAgent) WITH a, t, count(l) AS live WHERE live = 0 CREATE (a)-[:WM_HOLDS]->(t) RETURN count(*) AS won",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261114,
+  "started_at": "2026-11-15T22:30:02.484376Z",
+  "finished_at": "2026-11-15T22:30:04.773210Z",
+  "expectation": {
+    "role": "negative",
+    "basis": "baseline",
+    "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "falkordb claim.lease.naive: 50 clients, one at a time",
+      "expected": "only c00 wins and holds the lease",
+      "observed": "winners ['c00']; holders ['c00']",
+      "met": true
+    },
+    {
+      "kind": "negative",
+      "configuration": "falkordb claim.lease.naive: 50 clients x 20 trials",
+      "expected": "no violation in 20 valid trials",
+      "observed": "0 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.12,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d6a9385640ada9f5145f95672c0cbf6571ed40f43ede428313779c6c7497632b",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c34']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.661,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:6ca4f759edeb2949eb218435cde69c64e3455156fbee1be0e6524f3e122aa186",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c37']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.38,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b3fa474b44cd5497734f03624f1505567b402909b7e75e523068c514d5e1001f",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c26']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.236,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:e363433cbcd1fe596dc1c527c57b9b8f9338a56f555ad67cd81a8c4b0ac7b6c9",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c12']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.638,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3e2d50688924f6e799da5d8b1da7eba054ca633a38618bae0bd547acc9e69b81",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c16']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.135,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c34c25e0beb36a1a60d3078177b86bb9e7a0be0ada95f739bee67e1b0ed2cbfc",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c14']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 4.211,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:322d2dd85c063a87c276a10cde63b3598ec11023ba4152e0a6eeba8ba2f10a96",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c00']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 9.472,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fd258b3e28b002746deafaa7f5cc299e32a7a2ed5592f50ae0db30d5e31355fd",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c43']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 5.654,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:0e5551b617a60beb44cca36cdfc6355a6a88309918c3a258f059224731740ebc",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c28']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 12.467,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3d8fc1dec11c06b56820df9fd5ae94814f61394e306b75ae28d170d506a93d3e",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c48']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 9.211,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:e0d8eb53a319427cc07073feb0be666a87c153ce69d7c2c0ccd4d431ec099de8",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c02']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.901,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c9eeda8882f567258f3fc28d598f269c29bd7b8294b05d4c91957d5eca94d5eb",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c04']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 5.068,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:00065f6fa31795e80cc75abdde2b9164eec257d48e165c3eec13af5ac1f31661",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c29']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.219,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:00065f6fa31795e80cc75abdde2b9164eec257d48e165c3eec13af5ac1f31661",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c29']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 7.03,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:221639d9e14a5b4d2d3318597c51ca4f34d98ee3dfdf731fe57e09530b14dd2d",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c19']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.076,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3e2d50688924f6e799da5d8b1da7eba054ca633a38618bae0bd547acc9e69b81",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c16']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 2.889,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c95b5802fbb7e86369ca8e250247f1e386f6bbaaf2e91704841f939bd0b6152c",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c46']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.63,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c95b5802fbb7e86369ca8e250247f1e386f6bbaaf2e91704841f939bd0b6152c",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c46']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 6.093,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3d8fc1dec11c06b56820df9fd5ae94814f61394e306b75ae28d170d506a93d3e",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c48']",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:69f5795723dbb50c9202812b8c590bc34803e6588400280e02165269417b82d8",
+      "release_spread_ms": 3.312,
+      "outcomes": {
+        "ok": 1,
+        "fail": 49,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:0e5551b617a60beb44cca36cdfc6355a6a88309918c3a258f059224731740ebc",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": true,
+          "magnitude": 1,
+          "unit": "competing claims or leases",
+          "detail": "1 winner(s); lease holders ['c28']",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1A",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "competing claims or leases"
+      },
+      "basis": "baseline",
+      "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+      "witnesses": []
+    }
+  ]
+}

@@ -1,0 +1,580 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261115T223008Z-6cc2bc17",
+  "batch": "m5-20261115T222957Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "772ef9601ead98e750aa0a45a9b146bff6423e35",
+    "dirty": false
+  },
+  "target": {
+    "name": "falkordb",
+    "repo": "FalkorDB/FalkorDB",
+    "ref": "6.0.4 (graph module 60004)",
+    "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "falkordb",
+      "version": "6.0.4 (graph module 60004)",
+      "config": {
+        "appendonly": "no",
+        "appendfsync": "everysec",
+        "save": "3600 1 300 100 60 10000"
+      },
+      "image": "falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f",
+      "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "counter.via_with",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "via_with",
+      "query": "MATCH (c:WMCounter {id: $counter}) WITH c, c.v AS p SET c.v = p + 1 RETURN p + 1 AS v",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261116,
+  "started_at": "2026-11-15T22:30:08.605577Z",
+  "finished_at": "2026-11-15T22:30:11.074672Z",
+  "expectation": {
+    "role": "negative",
+    "basis": "baseline",
+    "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "falkordb counter.via_with: 50 clients, one at a time",
+      "expected": "50 acknowledged increments and a final value of 50",
+      "observed": "50 acknowledged; value 50",
+      "met": true
+    },
+    {
+      "kind": "negative",
+      "configuration": "falkordb counter.via_with: 50 clients x 20 trials",
+      "expected": "no violation in 20 valid trials",
+      "observed": "0 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 8.341,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 5.6,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.594,
+      "outcomes": {
+        "ok": 47,
+        "fail": 3,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:37649b050a8f84671621762f3c6f8d9b507de481e240af2e5b21550cace9f8d7",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "47 acknowledged increments, final value 47",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 7.711,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 7.554,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.6,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 5.787,
+      "outcomes": {
+        "ok": 45,
+        "fail": 5,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:57c904d504a32339c1beb64f162ad05e3902d1784122891dede083b533eb542b",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "45 acknowledged increments, final value 45",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 3.99,
+      "outcomes": {
+        "ok": 29,
+        "fail": 21,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:96277432b88f28fe9e1680e6408cd5176e63a5471fde6519440f1687dad02c4a",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "29 acknowledged increments, final value 29",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.313,
+      "outcomes": {
+        "ok": 38,
+        "fail": 12,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:dcc1d73208eeca5827474e1935a018f8848b28ce9fe7b8dcb491cc795c3d5abc",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "38 acknowledged increments, final value 38",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 5.98,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 3.225,
+      "outcomes": {
+        "ok": 42,
+        "fail": 8,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fc2123546e5e27ce79550e2bb290f36634586e7d88e1d801fae8eebb030d9155",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "42 acknowledged increments, final value 42",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 12.071,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.208,
+      "outcomes": {
+        "ok": 34,
+        "fail": 16,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:17181bbf45d266d6026a5ce3d3befe8b47e1cf800e9f77b8992ac5bb976097b9",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "34 acknowledged increments, final value 34",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 6.903,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 3.237,
+      "outcomes": {
+        "ok": 43,
+        "fail": 7,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:568936924a0a97c1538fffdb90365b42ee018b544f3910944dc43c1274b49b2d",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "43 acknowledged increments, final value 43",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 2.66,
+      "outcomes": {
+        "ok": 34,
+        "fail": 16,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:17181bbf45d266d6026a5ce3d3befe8b47e1cf800e9f77b8992ac5bb976097b9",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "34 acknowledged increments, final value 34",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.039,
+      "outcomes": {
+        "ok": 29,
+        "fail": 21,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:96277432b88f28fe9e1680e6408cd5176e63a5471fde6519440f1687dad02c4a",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "29 acknowledged increments, final value 29",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 4.334,
+      "outcomes": {
+        "ok": 50,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:12352f3b5ca07c918657f36d02f08787478d3dbf26d570430c5beab68cd34438",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "50 acknowledged increments, final value 50",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 3.089,
+      "outcomes": {
+        "ok": 26,
+        "fail": 24,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:21df491fcb867efc8e988581e2ac93209f37daac7b586818c958b92faa674c1b",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "26 acknowledged increments, final value 26",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:ec4f95abcb4e2e3dbe856c3eb2f81995eacb3823d40aa2e78ed4c5e1798f664d",
+      "release_spread_ms": 3.423,
+      "outcomes": {
+        "ok": 27,
+        "fail": 23,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:e1fbf2c593917b274e5f75eadbc007ad85ab25018ec9d52adedfe3e8d1375db2",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "lost updates",
+          "detail": "27 acknowledged increments, final value 27",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "lost updates"
+      },
+      "basis": "baseline",
+      "basis_ref": "https://github.com/suryaprasanthcse/gnomon/blob/acffec2/.agent/FACTS.md",
+      "witnesses": []
+    }
+  ]
+}

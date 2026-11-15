@@ -1,0 +1,29 @@
+{
+  "k": 12,
+  "digest": "sha256:347737dc8c6b04d31943ca80d30db09ec0c112ef560b32f8507a040978b663a8",
+  "state": {
+    "snapshot": "hb1.01M7GNB5ER258F5QSETY3ZKGTD.32.01M7GNB69MAM59N0YXNKFJYAFV",
+    "tasks": [
+      {
+        "task": "task-0",
+        "state": "claimed"
+      }
+    ],
+    "holders": {
+      "task-0": [
+        "c04"
+      ]
+    },
+    "lease_records": [
+      {
+        "id": "lease-04",
+        "task": "task-0",
+        "agent": "c04",
+        "from_seq": 5,
+        "until_seq": null,
+        "observed_graph_commit_id": "hb1.01M7GNB5ER258F5QSETY3ZKGTD.32.01M7GNB69MAM59N0YXNKFJYAFV",
+        "observed_order": 1
+      }
+    ]
+  }
+}

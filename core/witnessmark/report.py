@@ -450,6 +450,196 @@ def ladder_table(run: dict) -> str:
     return "\n".join(lines)
 
 
+def _engine_where(run: dict) -> tuple[str, str, str]:
+    """(engine, build or version, storage) of a thread race, an O2b curve, an O6 run or an O4 transfer."""
+    sut = next((c for c in run.get("components", []) if c.get("role") == "sut"), None)
+    if sut is not None:
+        config = sut.get("config") or {}
+        return "omnigraph", run["target"].get("ref", "?"), config.get("backend", config.get("storage", "?"))
+    first = (run.get("components") or [{}])[0]
+    return first.get("name", run["target"].get("name", "?")), first.get("version", "?"), "–"
+
+
+def thread_race_table(runs: list[dict]) -> str:
+    lines = ["| Engine | Build | Storage | Scenario | Role | Clients | Gate (ms) | Sequential control | Role control | "
+             "Valid trials | Violating trials | Outcomes ok / fail / unknown (valid trials) | "
+             "Release spread p50 / max (ms) | Verdict | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        engine, build, storage = _engine_where(run)
+        verdict = run["verdicts"][0]
+        sequential = _control(run, "sequential") or {}
+        role = _role_control(run) or {}
+        trials = run.get("trials", [])
+        valid = [t for t in trials if t.get("valid")]
+        totals = [sum(t["outcomes"][key] for t in valid) for key in ("ok", "fail", "unknown")]
+        values = [t["release_spread_ms"] for t in valid]
+        gate = run["scenario"].get("params", {}).get("spread_gate_ms")
+        lines.append(f"| {engine} | {build} | {storage} | {run['scenario']['id']} | "
+                     f"{run.get('expectation', {}).get('role', '–')} | {run['scenario'].get('clients')} | "
+                     f"{'off' if gate is None else _fmt(gate)} | {'met' if sequential.get('met') else 'NOT met'} | "
+                     f"{'met' if role.get('met') else 'NOT met'} | {len(valid)} of {len(trials)} | "
+                     f"{verdict['trials_violating']} of {verdict['trials_valid']} | "
+                     f"{' / '.join(str(v) for v in totals)} | {_fmt(percentile(values, 50))} / "
+                     f"{_fmt(max(values) if values else None)} | {verdict['status']} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def thread_spread_table(runs: list[dict]) -> str:
+    """Release spread of valid trials by engine, with the gate that the master section 6.3 rule gives."""
+    lines = ["| Engine | Scenarios | Valid trials | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) | "
+             "1.5 × p99, rounded up (ms) |", "|---|---|---|---|---|---|---|---|"]
+    groups: dict[str, list[dict]] = {}
+    for run in runs:
+        groups.setdefault(_engine_where(run)[0], []).append(run)
+    for engine, members in groups.items():
+        values = spreads(members)
+        scenarios = ", ".join(sorted({run["scenario"]["id"] for run in members}))
+        lines.append(f"| {engine} | {scenarios} | {len(values)} | {_fmt(percentile(values, 50))} | "
+                     f"{_fmt(percentile(values, 95))} | {_fmt(percentile(values, 99))} | "
+                     f"{_fmt(max(values) if values else None)} | {_fmt(proposed_gate_ms(values))} |")
+    return "\n".join(lines)
+
+
+def refusal_table(runs: list[dict]) -> str | None:
+    """Race-phase outcomes by error type, counted from each run's history.jsonl over all race trials."""
+    lines = ["| Engine | Build | Scenario | Race operations | Acknowledged | Refusals by error type (count) | Unknown | Run |",
+             "|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        path = Path(run.get("_dir", ".")) / "history.jsonl"
+        if not path.is_file():
+            continue
+        outcomes: Counter[str] = Counter()
+        refusals: Counter[str] = Counter()
+        for line in path.read_text(encoding="utf-8").splitlines():
+            op = json.loads(line)
+            if op.get("phase") != "race" or op.get("k", 0) < 1:
+                continue
+            outcomes[op["outcome"]] += 1
+            if op["outcome"] == "fail":
+                refusals[(op.get("error") or {}).get("type") or "untyped"] += 1
+        if not outcomes:
+            continue
+        engine, build, _ = _engine_where(run)
+        kinds = "; ".join(f"`{kind}` {count}" for kind, count in sorted(refusals.items(), key=lambda kv: (-kv[1], kv[0])))
+        lines.append(f"| {engine} | {build} | {run['scenario']['id']} | {sum(outcomes.values())} | {outcomes['ok']} | "
+                     f"{kinds or '–'} | {outcomes['unknown']} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
+def _iqr(stats: dict | None) -> str:
+    if not stats or stats.get("median") is None:
+        return "–"
+    return f"{_fmt(stats.get('median'))} [{_fmt(stats.get('q1'))}–{_fmt(stats.get('q3'))}]"
+
+
+def sweep_table(runs: list[dict]) -> str:
+    lines = ["| Engine | Build | Storage | Gate (ms) | N | Valid / measured repetitions | Attempts, median [IQR] | "
+             "Wasted attempts, median [IQR] | Attempts per agent, median / max (medians) | "
+             "Time to all claimed, median [IQR] (ms) | Claim latency p50 / p99, medians (ms) | "
+             "Holder check failed (measured repetitions) | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        engine, build, storage = _engine_where(run)
+        gate = (run.get("spread_gate") or {}).get("gate_ms")
+        for row in run.get("summary", []):
+            n = row.get("n")
+            measured = [t for t in run.get("trials", []) if t.get("n") == n and not t.get("warmup")]
+            holder_failures = sum(1 for t in measured if t.get("holders_ok") is False)
+            lines.append(f"| {engine} | {build} | {storage} | {'off' if gate is None else _fmt(gate)} | {n} | "
+                         f"{row.get('valid_repetitions')} / {row.get('measured_repetitions')} | "
+                         f"{_iqr(row.get('attempts_total'))} | {_iqr(row.get('wasted_attempts'))} | "
+                         f"{_fmt((row.get('agent_attempts_median') or {}).get('median'))} / "
+                         f"{_fmt((row.get('agent_attempts_max') or {}).get('median'))} | "
+                         f"{_iqr(row.get('time_to_all_claimed_ms'))} | "
+                         f"{_fmt((row.get('claim_latency_p50_ms') or {}).get('median'))} / "
+                         f"{_fmt((row.get('claim_latency_p99_ms') or {}).get('median'))} | "
+                         f"{holder_failures} of {len(measured)} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def parity_table(runs: list[dict]) -> str:
+    lines = ["| Build | Storage | Case | Query | Classification | Read errors | Run |", "|---|---|---|---|---|---|---|"]
+    for run in runs:
+        _, build, storage = _engine_where(run)
+        cases = [("sequential control", (run.get("controls") or {}).get("sequential") or {})]
+        cases += [(f"trial {t.get('k')}", t) for t in run.get("trials", [])]
+        for label, case in cases:
+            errors = case.get("errors") or {}
+            error_cell = ("; ".join(f"{engine}: {', '.join(sorted(found))}" for engine, found in sorted(errors.items())
+                                    if found) or "none").replace("|", "/")
+            classifications = case.get("classifications") or {}
+            if not classifications:
+                lines.append(f"| {build} | {storage} | {label} | – | {'met' if case.get('met') else 'NOT met'} | "
+                             f"{error_cell} | `{run['run_id']}` |")
+            for query, value in sorted(classifications.items()):
+                lines.append(f"| {build} | {storage} | {label} | {query} | {value} | {error_cell} | "
+                             f"`{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def _reply_cell(reply: dict | None) -> str:
+    if not reply:
+        return "–"
+    return str(reply.get("kind") or reply.get("outcome") or "–")
+
+
+def transfer_table(runs: list[dict]) -> str:
+    lines = ["| Build | Storage | A write | A exit code | A killed / OOM | Admission released | Successor ready | "
+             "B write | Integrity scan | Acknowledged writes missing | Fence | Classification | Reason | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        _, build, storage = _engine_where(run)
+        for trial in run.get("trials", []):
+            shutdown = trial.get("shutdown") or {}
+            integrity = trial.get("integrity") or {}
+            missing = integrity.get("acknowledged_missing")
+            missing_cell = "–" if not integrity else ("unknown" if missing is None else (", ".join(missing) or "none"))
+            scan = "–" if not integrity else ("ok" if integrity.get("scan_ok") else "NOT ok")
+            lines.append(f"| {build} | {storage} | {_reply_cell(trial.get('a_write'))} | "
+                         f"{shutdown.get('exit_code', '–')} | {'yes' if shutdown.get('killed') else 'no'} / "
+                         f"{'yes' if shutdown.get('oom_killed') else 'no'} | "
+                         f"{'yes' if trial.get('admission_released') else 'no'} | "
+                         f"{'yes' if trial.get('successor_ready') else 'no'} | {_reply_cell(trial.get('b_write'))} | "
+                         f"{scan} | {missing_cell} | "
+                         f"{'WriterFenced' if trial.get('writer_fenced_observed') else 'not engaged'} | "
+                         f"{trial.get('status')} | {str(trial.get('reason', '–')).replace('|', '/')} | "
+                         f"`{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def unrelated_stall_table(runs: list[dict]) -> str | None:
+    """O1's unrelated-graph reader and writer, recorded from M5 on."""
+    lines = ["| Build | Storage | Nodes / edges | Siblings | Unrelated reader stall median (ms) | "
+             "Unrelated writer stall median (ms) | Run |", "|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, storage = _where(run)
+        for trial in run.get("trials", []):
+            samples = trial.get("samples", [])
+            reader = [s["unrelated_reader_stall_ms"] for s in samples if s.get("unrelated_reader_stall_ms") is not None]
+            writer = [s["unrelated_writer_stall_ms"] for s in samples if s.get("unrelated_writer_stall_ms") is not None]
+            if not reader and not writer:
+                continue
+            lines.append(f"| {build} | {storage} | {trial.get('size')} / {trial.get('size')} | {trial.get('siblings')} | "
+                         f"{_fmt(percentile(reader, 50))} | {_fmt(percentile(writer, 50))} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
+def phase_b_invalid_table(runs: list[dict]) -> str | None:
+    lines = ["| Engine | Build | Scenario | Invalid trials | Reasons (distinct, first three) | Run |",
+             "|---|---|---|---|---|---|"]
+    for run in runs:
+        bad = [t for t in run.get("trials", []) if not t.get("valid")]
+        if not bad:
+            continue
+        engine, build, _ = _engine_where(run)
+        reasons = sorted({(t.get("invalid_reason") or "; ".join(t.get("invalid_reasons", [])) or "?")[:110]
+                          for t in bad})[:3]
+        lines.append(f"| {engine} | {build} | {run['scenario']['id']} | {len(bad)} of {len(run['trials'])} | "
+                     f"{'; '.join(reasons).replace('|', '/')} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
 def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     if not runs:
         return f"# {title}\n\nNo runs found for batch `{batch}`.\n"
@@ -463,6 +653,11 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     omnigraph_failovers = [run for run in runs if run["scenario"]["mode"] == "matrix"]
     omnigraph_visibility = [run for run in runs if run["scenario"]["mode"] == "visibility"]
     omnigraph_controls = [run for run in runs if run["scenario"]["mode"] == "controls"]
+    thread_races = [run for run in runs if run["scenario"]["mode"] == "thread"]
+    sweeps = [run for run in runs if run["scenario"]["mode"] == "sweep"]
+    parity = [run for run in runs if run["scenario"]["mode"] == "cases"]
+    transfers = [run for run in runs if run["scenario"]["mode"] == "transfer"]
+    phase_b = thread_races + sweeps + parity + transfers
     first = runs[0]
     host, harness = first.get("host", {}), first.get("harness", {})
     run_summary = f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)"
@@ -482,6 +677,11 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         run_summary,
         "",
     ]
+    if phase_b:
+        commits = sorted({run.get("harness", {}).get("commit", "?")[:7] for run in runs})
+        lines[-1:] = [f"- Runs added in M5: {len(thread_races)} thread-mode races, {len(sweeps)} O2b cost "
+                      f"curves, {len(parity)} O6 parity runs, {len(transfers)} O4 clean-stop transfers",
+                      "- Harness commits in this batch: " + ", ".join(f"`{c}`" for c in commits), ""]
     incomplete = incomplete_table(runs)
     if incomplete:
         lines += ["## Runs that did not complete", "",
@@ -492,6 +692,30 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         lines += ["## Support boundaries reached", "",
                   "[measured] These runs declared a support boundary, recorded ERR classes, and had no valid trials.",
                   "", boundaries, ""]
+    if thread_races:
+        baselines = [run for run in thread_races if _engine_where(run)[0] != "omnigraph"]
+        targets = [run for run in thread_races if _engine_where(run)[0] == "omnigraph"]
+        if baselines:
+            lines += ["## Baseline claim controls (thread mode)", "",
+                      "The M1 control matrix, run in this batch. FalkorDB 6.0.4 is the negative control; "
+                      "Neo4j 5.26.2's naive shapes are the positive control (master blueprint section 6.2).", "",
+                      thread_race_table(baselines), ""]
+        if targets:
+            lines += ["## Omnigraph races (thread mode)", "", thread_race_table(targets), ""]
+            refusals = refusal_table(targets)
+            if refusals:
+                lines += ["### Race outcomes by error type", "",
+                          "Counted from `history.jsonl` over every race trial of the run.", "", refusals, ""]
+        lines += ["### Release spread, thread mode (valid trials)", "", thread_spread_table(thread_races), ""]
+    if sweeps:
+        lines += ["## O2b disjoint-claim cost curve", "",
+                  "Measured repetitions only; warm-ups stay in the evidence and are left out here. "
+                  "This is the cost of documented behaviour, not a correctness verdict.", "",
+                  sweep_table(sweeps), ""]
+    if parity:
+        lines += ["## O6 traversal parity", "", parity_table(parity), ""]
+    if transfers:
+        lines += ["## O4 clean-stop local transfer", "", transfer_table(transfers), ""]
     if races:
         sequential = sum(1 for run in races if (_control(run, "sequential") or {}).get("met"))
         lines += ["## Races", "", race_table(races), "",
@@ -515,6 +739,9 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
             lines += ["## I6a and I6b controls", "", i6, ""]
     if omnigraph_curves:
         lines += ["## O1 branch-creation cost", "", omnigraph_cost_table(omnigraph_curves), ""]
+        unrelated = unrelated_stall_table(omnigraph_curves)
+        if unrelated:
+            lines += ["### Unrelated graph during branch creation", "", unrelated, ""]
         lines += ["### Copy weight", "", copy_weight_table(omnigraph_curves), ""]
         copy_table = falkor_copy_table(omnigraph_curves)
         if copy_table:
@@ -541,6 +768,9 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     invalid = invalid_table(runs)
     if invalid and any(run["target"].get("name") == "cognee" for run in runs):
         lines += ["## Invalid trials", "", invalid, ""]
+    phase_b_invalid = phase_b_invalid_table(phase_b)
+    if phase_b_invalid:
+        lines += ["## Invalid trials (M5 runs)", "", phase_b_invalid, ""]
     return "\n".join(lines)
 
 

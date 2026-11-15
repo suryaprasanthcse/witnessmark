@@ -4,7 +4,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in the results section (§10); O2, O3 and O6 races and the writer-epoch fence acceptance remain not run. M4 awaits review. |
+| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12. Batch 1 set Omnigraph's δ at 55 ms, and the phase stopped before batch 2 for a maintainer decision (§13). |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
 | Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |
@@ -861,3 +861,86 @@ O2b). Any FalkorDB comparison stays internal (master §11.5).
 re-runs a cell, under a new batch id (`m5c-`, `m5d-`, ...). The affected
 cells and the reason are recorded. Nothing is re-run to change a result, and
 no evidence is deleted or edited.
+
+## 13. M5 Phase B, interim record (stopped before batch 2)
+
+Phase B ran batch 1 and one re-run batch, set Omnigraph's δ, and stopped
+before batch 2 for a maintainer decision on the O2 refusal types below.
+The host is the one in §10. Every number comes from the linked reports, which
+are regenerated from `evidence/` and byte-compared.
+
+| Batch | Report | Harness commit | What it holds |
+|---|---|---|---|
+| `m5-20261115T222957Z` | [evidence/M5_OMNIGRAPH_CALIBRATION.md](../../evidence/M5_OMNIGRAPH_CALIBRATION.md) | `772ef96` | batch 1: the five FalkorDB control cells, and O2a and O2c on both builds without a spread gate. The seven Neo4j control cells did not run (below) |
+| `m5c-20261115T223540Z` | [evidence/M5_OMNIGRAPH_B1.md](../../evidence/M5_OMNIGRAPH_B1.md) | `772ef96` | re-run of batch 1's seven Neo4j control cells |
+
+**Why `m5c` exists.** The batch driver started the Neo4j cells 15 s after
+`docker compose up -d`, before Neo4j answered HTTP. Each exited 1 with
+`RemoteDisconnected` in under 1 s and wrote no run directory. Their redacted
+notes are in `evidence/omnigraph/errors/m5-20261115T222957Z/`. The driver,
+which is untracked under `.state`, now waits for both baselines before any
+cell. No harness code changed, and `m5c` ran on the same commit as batch 1.
+
+### Controls
+
+| Control | Result | Runs |
+|---|---|---|
+| FalkorDB 6.0.4, five M1 shapes (negative) | 0 of 20 trials violating in each of the five; sequential controls met | `20261115T222959Z-dd58c949`, `20261115T223002Z-1cc6e5c3`, `20261115T223005Z-c8302f31`, `20261115T223008Z-6cc2bc17`, `20261115T223011Z-f2f25b0b` |
+| Neo4j 5.26.2, three naive shapes (positive) | fired in 20 of 20 trials each (`KNOWN_DEVIATION`, KD-N1) | `20261115T223541Z-d507952d`, `20261115T223556Z-0c7fd4ab`, `20261115T223616Z-c2fb1473` |
+| Neo4j 5.26.2, four lock-first, direct and disjoint shapes (negative) | 0 of 20 trials violating in each | `20261115T223551Z-36ddd91e`, `20261115T223602Z-b838cc27`, `20261115T223608Z-4c7cea08`, `20261115T223623Z-ed33ecfc` |
+| O2a and O2c sequential controls, both builds | met: one winner `c00`, holder `c00`, typed refusals | `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`, `20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d` |
+
+### δ calibration
+
+Batch 1 ran O2a and O2c on both builds with 50 clients. All 80 trials
+(4 runs × 20) were valid. Their release spread had p50 8.671 ms,
+p99 36.365 ms and max 36.365 ms. Omnigraph's thread-mode δ is
+⌈1.5 × 36.365⌉ = **55 ms** [measured: the four O2 runs above]. It is recorded
+in master §6.3 and was set as `OMNIGRAPH_THREAD_SPREAD_GATE_MS` in `fffe48b`.
+The M1 40 ms gate is unchanged.
+
+### Observation: refusal types in batch 1's O2 runs (calibration only)
+
+Batch 1's O2 runs are calibration runs, not O2 results. The core verdict for
+all four is FAIL, in 20 of 20 trials, but not because of a second winner. In
+every one of the 80 trials exactly one client was acknowledged, the task had
+exactly one holder, and the only lease record was the winner's [measured: the
+four O2 runs; every trial's check detail reads "1 winner(s)"]. The checker
+also requires each loser's refusal to be the scenario's one expected type:
+`precondition_failure` for O2a, `CardinalityViolation` for O2c [code:
+`targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py:39,72–79` @
+`fffe48b`]. Counted from `history.jsonl` over 20 trials × 50 clients per
+run, the refusals were:
+
+| Run | Build | Scenario | Acknowledged | Refusals |
+|---|---|---|---|---|
+| `20261115T223017Z-22107db4` | v0.15.0 | O2a | 20 | `too_many_requests` 680, `precondition_failure` 266, `CardinalityViolation` 34 |
+| `20261115T223104Z-bcff6931` | edge-b2dbaff | O2a | 20 | `too_many_requests` 680, `precondition_failure` 262, `CardinalityViolation` 38 |
+| `20261115T223149Z-b1b52c9c` | v0.15.0 | O2c | 20 | `too_many_requests` 680, `conflict` 263, `CardinalityViolation` 37 |
+| `20261115T223237Z-3658b53d` | edge-b2dbaff | O2c | 20 | `too_many_requests` 680, `CardinalityViolation` 300 |
+
+- `too_many_requests` (HTTP 429), "actor in-flight count cap 16 exceeded",
+  came back 34 times in every trial of every run. All 50 harness clients send
+  without credentials. The server appears to treat them as one actor, so at
+  most 16 of the 50 claims were admitted at once [measured: the four runs]
+  [inference: one actor, from the message and the constant count 50 − 16].
+  Whether the pinned docs describe this cap is [unmeasured: docs check].
+- `conflict` on v0.15.0 O2c: "write authority 'graph_head:main' changed during
+  preparation, reprepare from the current branch state". This is O-K2's
+  retryable conflict. In the same position the edge build returned
+  `CardinalityViolation`.
+- In O2a, 34 and 38 conditional claims were refused with `CardinalityViolation`
+  rather than `precondition_failure`.
+
+No refusal was untyped and no outcome was unknown. Nothing here was re-run.
+
+### Not run, pending the maintainer
+
+Batch 2 (`m5b-`, §12) has not started. The cap affects most of its cells:
+O2a, O2c and O3 race 50 clients, and O2b's N = 25 and N = 50 put more than
+16 agents in flight. The maintainer has to decide two things. First, whether
+the harness gives each client its own actor, runs at most 16 clients, or
+accepts `too_many_requests` and `conflict` as typed refusals in the checker.
+Second, whether batch 2 runs as declared in the meantime. O1, the O4 clean
+stop, O5 and O6 are unaffected [inference: at most four requests in flight
+in those commands].

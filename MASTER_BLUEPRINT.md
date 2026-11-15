@@ -938,7 +938,7 @@ Each milestone ends with a review by the maintainer, and the next one starts onl
 | M1 | Core runner; history and evidence writers; I1 and I2 checkers; standard-library FalkorDB (RESP) and Neo4j (HTTP) adapters; the controls | SC and NC pass; PC fires on Neo4j; δ calibrated on this host |
 | M2 | Graphiti adapter, in-process stubs, scenarios G1 to G4 | SC reproduces the fixture graph on both backends |
 | M3 | Cognee adapter, HTTP stub endpoint, matrix rows R1 to R3 | SC passes on every row |
-| M4 | Omnigraph adapter, scenarios O1 to O4 | The re-measured FalkorDB copy curve falls inside the S28 band |
+| M4 | Omnigraph adapter, O1 and I6 controls, O4 failover observations, O5 on a local root | The re-measured FalkorDB copy curve falls inside the S28 band |
 | M5 | Clean reruns, reports regenerated from evidence, drafts | Every number traces to a run_id |
 
 **Status.** M1 met its exit criterion on 2026-11-13:
@@ -968,11 +968,11 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 
 **Status, M4.** M4's exit criterion is met, on 2026-11-15; the milestone awaits review:
 
-- the re-measured FalkorDB `GRAPH.COPY` curve falls inside the S28 band at all three sizes: 95.3, 441.7 and 1,820.0 ms against 165, 546 and 2,400 (-42%, -19%, -24%), under `appendonly yes` and `appendfsync always`, the conditions S28 was measured under; batch `m4d-20261115T172246Z`, harness `2a02bd8`, run `20261115T172253Z-0adb5788`. The first attempt, on the baseline's `appendonly no`, was 61%, 49% and 57% faster than S28 and stopped by rule (`m4b-20261115T164749Z`);
-- five batches, `m4-20261115T153804Z` (harness `46adb1d`), `m4b-20261115T164749Z` (`48737aa`), `m4c-20261115T165831Z` (`8f7bb3b`), `m4d-20261115T172246Z` (`2a02bd8`, the main batch) and `m4e-20261115T183929Z` (`8bc5fd3`); the target blueprint's §10 says which re-run followed which harness fix;
+- The re-measured FalkorDB `GRAPH.COPY` curve falls inside the S28 band at all three sizes, with 95.3, 441.7 and 1,820.0 ms against 165, 546 and 2,400 (-42%, -19%, -24%) under S28's `appendonly yes` and `appendfsync always` settings [measured: `20261115T172253Z-0adb5788`]. The first attempt was 61%, 49% and 57% faster than S28 and the batch stopped by rule [measured: `20261115T164756Z-236def5c`]. It likely inherited the baseline's `appendonly no` [inference from `persistence_found` in `20261115T165838Z-b4925bd5` and `20261115T172253Z-0adb5788`].
+- Six batches. The false start `m4-20261115T153532Z` has one planned manifest at `46adb1d` and no results [measured: `20261115T153548Z-45dc303e`]. The five reported batches are `m4-20261115T153804Z` (`46adb1d`), `m4b-20261115T164749Z` (`48737aa`), `m4c-20261115T165831Z` (`8f7bb3b`), `m4d-20261115T172246Z` (`2a02bd8`, the main batch) and `m4e-20261115T183929Z` (`8bc5fd3`) [measured: `20261115T154356Z-9ebd8e7e`, `20261115T164756Z-236def5c`, `20261115T165838Z-b4925bd5`, `20261115T172253Z-0adb5788`, `20261115T183931Z-fa543284`]. The Omnigraph blueprint's §10 records the batch history.
 - reports in `evidence/M4_OMNIGRAPH.md` and `evidence/M4_OMNIGRAPH_B1.md` to `_B4.md`; results in the Omnigraph blueprint, §10;
-- O4 did not exercise the writer epoch fence: claiming an epoch needs an embedding program, which the harness is not. Its cells are NOT_EXERCISED, or BOUNDARY on the stable release only, and never a pass; the gap is listed as open;
-- not run: the O2, O3 and O6 races, and O5 on MinIO;
+- O4 recorded unclaimed epochs and fixed pause offsets without staging or publish-phase verification. In `m4e` the stable MinIO cells were BOUNDARY and the edge cells were NOT_EXERCISED [measured: `20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`, `20261115T184523Z-2ae7e967`]. At the edge pin an epoch claim requires an embedding program [docs: Omnigraph troubleshooting.md, "Writer epoch" @ `b2dbaff`]. The epoch-claim test waits for an upstream release with a claim route.
+- M4 evidence lacks `history.jsonl` and `REPRO.md` (the Omnigraph blueprint, §10) [measured: the M4 run directories in `evidence/omnigraph/`, including `20261115T153548Z-45dc303e` through `20261115T184523Z-2ae7e967`]. The M5 decisions, including the O2, O3 and O6 work and O5 on MinIO, are in the Omnigraph blueprint's §11.
 - commit `bfdec20` carries a `Co-Authored-By` trailer by mistake; it is kept because the evidence records harness commit hashes.
 
 ## 13. Open questions

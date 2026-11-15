@@ -131,6 +131,9 @@ maps that documented constraint message to the definite typed refusal
 
   Measured: copy time, stall, resident-memory delta, AOF bytes, and `GRAPH.DELETE` time.
 - **Copy weight.** w(n) for GNOMON's decision cycle: create, apply one claim, score with one read, discard. A decision with four candidates makes five such cycles.
+  The M4 reports give the full cycle time `t_cycle` in milliseconds [measured:
+  `20261115T172253Z-0adb5788`]. Master §5.6 defines the copy-weight ratio
+  as `t_snapshot / t_cycle`, which M4 leaves [unmeasured].
 - **I6a.** Create a branch while `m_ledger` appends at a fixed rate. The branch must hold a gapless prefix of the ledger.
 - **I6b.** Writes on the branch must be invisible on main, and the reverse, until a merge.
 - **Runner.** Padding is loaded through the strict bounded NDJSON route in
@@ -184,7 +187,7 @@ clients without process-start noise [code:
 ### O4. Stale writer after failover: an acceptance test for the writer epoch fence (I1 and I2 across a failover)
 
 - **Topology.** Two `omnigraph-server` processes, A and B, on one graph root, in separate containers. Storage is a shared local volume, then MinIO.
-- **Sequence for each trial.**
+- **Planned sequence for the epoch-fence test.**
   1. A serves main and holds its writer epoch. A client asks A to write.
   2. The fault injector pauses A's container (`docker pause`) at one of three phases:
      - p1, before staging;
@@ -194,6 +197,16 @@ clients without process-start noise [code:
      A seeded schedule picks the phase. It uses server-side progress markers where they exist, and otherwise a declared sweep of time offsets across the write.
   3. B starts and becomes main's writer the documented way, by acquiring the lease and claiming the epoch. In variant (b), B also publishes P_B.
   4. The fault injector resumes A (`docker unpause`), and A carries on with its write.
+- **What M4 ran.** The recorded phase names are labels for fixed offsets.
+  For p1 the runner pauses before starting the write thread (`-1.0` sentinel).
+  For p2 and p3 it requests the pause 1 ms and 5 ms after starting the thread,
+  respectively [measured:
+  `20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`,
+  `20261115T184523Z-2ae7e967`]. The runner records the seed but does not use it
+  to schedule pauses and captures no server progress markers [code:
+  `targets/03-omnigraph/witnessmark_omnigraph/part2.py:725` @ `8bc5fd3`].
+  The actual write phase is unknown in p2 and p3, and the evidence cannot
+  distinguish the two as write phases [unmeasured: O4].
 - **Pass criteria on the edge build** [docs: writes.md and the RFC].
   - A's publish is rejected with `WriterFenced` and is not retried.
   - Nothing A staged is reachable from main's head, and A's staging is unreferenced and collectable.
@@ -280,6 +293,16 @@ while Neo4j's naive claim had 20/20 [measured:
 | FalkorDB | 6.0.4 by digest (master §7.2). The O1 `GRAPH.COPY` curve runs with `appendonly yes` and `appendfsync always`, the conditions S28 was measured under, and restores the container's own settings afterwards; the run records both. Batch 2's first attempt ran on the baseline's `appendonly no` and came out 61%, 49% and 57% faster than S28 at 32k, 128k and 512k (64.3, 279.2 and 1,025.1 ms against 165, 546 and 2,400), outside the ±50% band at two of three sizes, so the batch stopped [measured: `20261115T164756Z-236def5c`]. A scratch check of the same curve under S28's persistence gave 106.9, 359.3 and 1,600.3 ms, inside the band at all three [measured: scratch, not part of a batch]. The difference is the persistence setting [inference from that check]. |
 | Neo4j | 5.26.2 (master §7.3) |
 | Clients | The core runner: standard-library HTTP for Omnigraph and Neo4j, RESP for FalkorDB |
+
+**M4 image provenance.** MinIO and the delay proxy were selected by tag
+(`witnessmark/minio:RELEASE.2025-09-07T16-13-09Z` and `witnessmark/proxy:17ms`)
+[code: `targets/03-omnigraph/docker/compose.yml:42,58` @ `2a02bd8`].
+The proxy run manifest records MinIO's tag and a digest field, and omits the
+proxy component [measured: `20261115T173716Z-d303435d`,
+`20261115T181001Z-adf60896`]. The digest field comes from a constant in the
+harness. The proxy tag in Compose is the record of the image selected at run
+time [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:41,200` and
+`targets/03-omnigraph/docker/compose.yml:58` @ `2a02bd8`].
 
 ## 5. Checks
 
@@ -409,17 +432,33 @@ the first O1 curve decides whether to add width as an axis.
 
 ## 10. Results (M4)
 
-**Provenance.** Five batches on this host (Windows 11, 11th Gen i5-11320H, 8 logical cores, 23.8 GB; Docker VM 8 CPUs, 11.6 GB), all with a clean tree. Every number below is [measured] and comes from a report regenerated from `evidence/` and cmp-verified. Nothing was re-run to change a result: each re-run followed a harness fix that was committed first, and the earlier runs stay in `evidence/` and in their reports.
+**Provenance.** Six batches on this host, including one false start (Windows 11,
+11th Gen i5-11320H, 8 logical cores, 23.8 GB, Docker VM 8 CPUs and 11.6 GB).
+The manifests record clean trees [measured: `20261115T153548Z-45dc303e`,
+`20261115T154356Z-9ebd8e7e`, `20261115T164756Z-236def5c`,
+`20261115T165838Z-b4925bd5`, `20261115T172253Z-0adb5788`,
+`20261115T183931Z-fa543284`]. The five linked reports regenerate from
+`evidence/`. The findings cite the manifests directly where they use fields
+beyond the report tables.
+
+**Evidence layout.** All 37 M4 run directories lack `history.jsonl` and
+`REPRO.md`, a departure from master §9.1 [measured: the M4 run directories in
+`evidence/omnigraph/`, including `20261115T153548Z-45dc303e` through
+`20261115T184523Z-2ae7e967`]. The O4 operation records have no `inv` or
+`ret` fields, and the fault actions have no timestamps [measured:
+`20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`,
+`20261115T184523Z-2ae7e967`].
 
 | Batch | Report | Harness commit | What it holds |
 |---|---|---|---|
+| `m4-20261115T153532Z` | — | `46adb1d` | false start with one planned-before-execution manifest, zero trials and no accompanying `ERROR.md` [measured: `20261115T153548Z-45dc303e`] |
 | `m4-20261115T153804Z` | [evidence/M4_OMNIGRAPH_B1.md](../../evidence/M4_OMNIGRAPH_B1.md) | `46adb1d` | the first full batch: 13 commands, 7 failed on harness problems |
 | `m4b-20261115T164749Z` | [evidence/M4_OMNIGRAPH_B2.md](../../evidence/M4_OMNIGRAPH_B2.md) | `48737aa` | stopped after one command: the FalkorDB sanity band was not met |
-| `m4c-20261115T165831Z` | [evidence/M4_OMNIGRAPH_B3.md](../../evidence/M4_OMNIGRAPH_B3.md) | `8f7bb3b` | two failed O1 runs, then the batch driver crashed |
+| `m4c-20261115T165831Z` | [evidence/M4_OMNIGRAPH_B3.md](../../evidence/M4_OMNIGRAPH_B3.md) | `8f7bb3b` | completed stable-local O1, then two failed O1 runs before the batch driver crashed [measured: `20261115T165838Z-b4925bd5`, `20261115T170604Z-7d473a53`, `20261115T171130Z-e052669e`] |
 | `m4d-20261115T172246Z` | [evidence/M4_OMNIGRAPH.md](../../evidence/M4_OMNIGRAPH.md) | `2a02bd8` | the main batch: O1 on both builds and three storages, O4, O5; 13 of 13 commands exit 0 |
 | `m4e-20261115T183929Z` | [evidence/M4_OMNIGRAPH_B4.md](../../evidence/M4_OMNIGRAPH_B4.md) | `8bc5fd3` | re-run of the I6 controls (6 runs) and O4 (4 runs), after two checks in `m4d` proved weak; 11 of 11 commands exit 0 |
 
-**Why there are five batches.**
+**Batch history.**
 
 | Batch | Cause | Where |
 |---|---|---|
@@ -430,7 +469,15 @@ the first O1 curve decides whether to add width as an axis.
 
 **Commit `bfdec20` carries a `Co-Authored-By` trailer by mistake.** The instruction for this work is no attribution line; the trailer was added without noticing. It is kept rather than rewritten because the evidence records harness commit hashes, and an amend or rebase would change them. Every other commit since `0f22a9b` is authored by the maintainer alone, with no attribution line (audited with `git log` on 2026-11-15).
 
-**Batch 1's failures are cited from its driver log.** Its failed commands are in `.state/scratch/m4-batch/m4-20261115T153804Z/driver.log` (kept locally, not committed). Exit codes in command order: `baselines-up` 0; `o1-stable-local` 1, `o1-stable-minio` 1, `o1-stable-proxy` 1; `o1-edge-local` 0, `o1-edge-minio` 1, `o1-edge-proxy` 1; `o4-stable-local` 0, `o4-stable-minio` 1, `o4-edge-local` 0, `o4-edge-minio` 1; `o5-stable-local` 0, `o5-edge-local` 0. The driver also wrote an `ERROR.md` for each failed command under `evidence/omnigraph/errors/`. Those notes recorded the host Python's path under the user's home folder, so they were moved out of `evidence/` unedited, to `.state/scratch/m4-batch/m4-20261115T153804Z/driver-errors/`, instead of being committed. The in-run `ERROR.md` files, which are redacted, stay in the run folders and are listed in the first report's "Runs that did not complete" table. The driver now redacts the command and tracebacks (batches 2 and 3 have their notes in `evidence/omnigraph/errors/`). The failed O1 run of `m4c` on MinIO (`20261115T170604Z-7d473a53`, `Remote end closed connection without response` on the third 512k create) is treated as an observed unknown outcome: Docker emitted no `oom` event, the server container was alive until the harness stopped it, and the VM had 11.6 GB. No server log survives, so the cause is [inference]: the same lease setting, because after the successor takes over a stale server in `m4e` also closes connections without a reply, and the identical run completed under the 30 s lease in `m4d` (`20261115T173025Z-fc74457b`).
+**Batch 1's failures are cited from its driver log.** Its failed commands are in `.state/scratch/m4-batch/m4-20261115T153804Z/driver.log` (kept locally, not committed). Exit codes in command order: `baselines-up` 0; `o1-stable-local` 1, `o1-stable-minio` 1, `o1-stable-proxy` 1; `o1-edge-local` 0, `o1-edge-minio` 1, `o1-edge-proxy` 1; `o4-stable-local` 0, `o4-stable-minio` 1, `o4-edge-local` 0, `o4-edge-minio` 1; `o5-stable-local` 0, `o5-edge-local` 0. The driver also wrote an `ERROR.md` for each failed command under `evidence/omnigraph/errors/`. Those notes recorded the host Python's path under the user's home folder, so they were moved out of `evidence/` unedited, to `.state/scratch/m4-batch/m4-20261115T153804Z/driver-errors/`, instead of being committed. The in-run `ERROR.md` files, which are redacted, stay in the run folders and are listed in the first report's "Runs that did not complete" table. The driver now redacts the command and tracebacks (batches 2 and 3 have their notes in `evidence/omnigraph/errors/`).
+
+**MinIO failure in `m4c`.** The run stopped on the third 512k create with
+`Remote end closed connection without response` [measured:
+`20261115T170604Z-7d473a53`, accompanying `ERROR.md`]. The failure evidence
+contains no server log [measured: `20261115T170604Z-7d473a53`]. The cause is unknown
+[unmeasured: O1, server logs on failure]. Lease expiry is one possibility
+[inference from the closed connections in `20261115T184233Z-3a4a4f31` and
+the completed O1 curve under the 30 s lease in `20261115T173025Z-fc74457b`].
 
 ### Controls
 
@@ -443,18 +490,28 @@ Controls come before findings.
 | I6b, isolation (`m4d` and `m4e`) | held in 12 of 12 runs: a branch write was invisible on main and the reverse | same, and the six `m4d` O1 runs |
 | Part 1 sequential controls (O2a, O2c, O3, O6; M1 claim controls) | met on both builds, as recorded in §3 before M4 | see §3 |
 
+I6a at other branch points remains [unmeasured: I6a with a cut other than
+after the fifth append].
+
 ### Results
 
 | Scenario | v0.15.0 | edge-b2dbaff | Verdict |
 |---|---|---|---|
-| O1, create time, local root | 6.0 to 8.2 ms across n = 32k, 128k, 512k and s = 0, 4, 16, 64 siblings; reader stall 0 to 0.66 ms (`20261115T172253Z-0adb5788`) | 5.4 to 11.2 ms; stall 0 to 0.75 ms (`20261115T175653Z-12eb6ff6`) | observed: no growth with n or s at these sizes |
-| O1, create time, MinIO | 36.2 to 70.9 ms; stall 27 to 60 ms (`20261115T173025Z-fc74457b`) | 37.4 to 88.6 ms; stall 28 to 81 ms (`20261115T180251Z-742224c3`) | observed: no growth with n; no clear growth with s |
-| O1, object-store traffic through the 17 ms proxy, one create + delete | 34 to 39 requests at every cell; GET response bytes 58,335 (32k, s=0) to 418,639 (512k, s=0), and 137,966 at 32k, s=64 (`20261115T173716Z-d303435d`) | 34 to 37 requests; GET response bytes 58,667 to 421,977 at s=0 (`20261115T181001Z-adf60896`) | observed: requests constant, bytes grow with n and with s |
-| O1, copy weight (create, claim, score, discard; one sample per size) | local 87.2, 90.0, 200.6 ms; MinIO 248.1, 274.9, 578.8 ms | local 83.7, 115.1, 195.7 ms; MinIO 2,111.2 (an outlier), 319.1, 576.7 ms | observed |
-| O1, FalkorDB `GRAPH.COPY` (`20261115T172253Z-0adb5788`) | server-wide stop: an unrelated reader's longest gap was 95.1, 441.7 and 1,819.9 ms at 32k, 128k, 512k, equal to the copy; an unrelated writer's 95.3, 419.2 and 1,799.0 ms; delete 8.2 to 8.9 ms; memory delta 3.6, 9.3, 47.2 MB; AOF 50.8 to 101.4 MB | not applicable | curve (I6c) |
+| O1, create time, local root | 6.0 to 8.2 ms across n = 32k, 128k, 512k and s = 0, 4, 16, 64 siblings. Reader stall medians 0 to 0.66 ms [measured: `20261115T172253Z-0adb5788`] | 5.35 to 11.25 ms. Reader stall medians 0 to 0.75 ms [measured: `20261115T175653Z-12eb6ff6`] | OBSERVED, no consistent trend across n or s |
+| O1, create time, MinIO | 36.2 to 70.9 ms. Reader stall medians 27 to 60 ms [measured: `20261115T173025Z-fc74457b`] | 37.4 to 88.6 ms. Reader stall medians 28 to 81 ms [measured: `20261115T180251Z-742224c3`] | OBSERVED, no consistent trend across n or s |
+| O1, object-store traffic through the 17 ms proxy, one create + delete | 34 to 39 requests. GET response bytes 58,335 (32k, s=0) to 418,639 (512k, s=0), and 137,966 at 32k, s=64 [measured: `20261115T173716Z-d303435d`] | 34 to 37 requests. GET response bytes 58,667 to 421,977 at s=0 [measured: `20261115T181001Z-adf60896`] | OBSERVED, requests nearly constant, bytes grow with n and s |
+| O1, cycle time (create, claim, score, discard, one sample per size) | Local 87.2, 90.0, 200.6 ms [measured: `20261115T172253Z-0adb5788`]. MinIO 248.1, 274.9, 578.8 ms [measured: `20261115T173025Z-fc74457b`] | Local 83.7, 115.1, 195.7 ms [measured: `20261115T175653Z-12eb6ff6`]. MinIO 2,111.2, 319.1, 576.7 ms [measured: `20261115T180251Z-742224c3`] | OBSERVED, full cycle times. The master §5.6 ratio is [unmeasured]. |
+| O1, FalkorDB `GRAPH.COPY` [measured: `20261115T172253Z-0adb5788`] | The unrelated reader's median gap was 95.1, 441.7 and 1,819.8 ms at 32k, 128k and 512k. The unrelated writer's was 95.3, 419.2 and 1,799.0 ms. Delete medians were 8.2 to 8.9 ms. RSS after-minus-before medians were 3.6, 9.3 and 47.2 MB. Last-sample AOF file sizes were 50.8, 79.4 and 101.4 MB. | — | OBSERVED (I6c) |
 | O4, local root | the successor never became ready in 6 of 6 cells (the local lock is unleased [docs]); A's write was acknowledged and present in 6 of 6; none missing (`20261115T184136Z-24a2c040`) | same, 6 of 6 (`20261115T184426Z-ba1673ab`) | NOT_EXERCISED (harness gap) |
-| O4, MinIO, leased takeover | the successor became ready in 6 of 6 cells; A's write was acknowledged in 0 of 6; B's write was acknowledged and present in 3 of 3; none missing (`20261115T184233Z-3a4a4f31`) | same: ready 6 of 6; A 0 of 6; B 3 of 3 present (`20261115T184523Z-2ae7e967`) | BOUNDARY (stable); NOT_EXERCISED (edge): the fence was not engaged |
+| O4, MinIO, leased takeover (`m4e`) | The successor became ready in 6 of 6 cells. A had 6 unknown outcomes and none of its writes appeared in the scan through B. All 3 of B's acknowledged writes were present [measured: `20261115T184233Z-3a4a4f31`]. | Ready 6 of 6, A unknown and absent from the scan 6 of 6, B present 3 of 3 [measured: `20261115T184523Z-2ae7e967`]. | BOUNDARY (stable), NOT_EXERCISED (edge) |
 | O5, read your writes, local root, second server | seen on the first poll; window 1,523.8 ms, including stopping A and starting B (`20261115T183504Z-eb41bb89`) | seen on the first poll; 1,334.6 ms (`20261115T183511Z-4d593c85`) | observed, 2 of 2 |
+
+FalkorDB's sampled `aof_current_size` stayed near 101.4 MB across the five
+512k repetitions in both `m4c` and `m4d`, with no sustained growth
+[measured: `20261115T165838Z-b4925bd5`, `20261115T172253Z-0adb5788`].
+The cause is unknown. AOF rewrite status was [unmeasured: O1].
+The manifests also record before and after RSS samples for Omnigraph
+[measured: `20261115T172253Z-0adb5788`, `20261115T175653Z-12eb6ff6`].
 
 ### O4 labelling, checked against the pinned docs
 
@@ -465,25 +522,125 @@ Batch 1 labelled every O4 cell BOUNDARY with the reason "the pinned server expos
 
 No cell is a fence pass or a fence failure. The batch-1 BOUNDARY labels are marked "first-version label, superseded" in its report.
 
+The O4 phase column in the reports carries only the fixed offset labels
+described in §3. The seed is recorded but unused in scheduling. The recorded
+actions cannot distinguish p2 from p3 as write phases [code:
+`targets/03-omnigraph/witnessmark_omnigraph/part2.py:725` @ `8bc5fd3`]
+[measured: `20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`,
+`20261115T184523Z-2ae7e967`].
+
 ### Findings
 
-Each is [measured] with the run id; causes are [code], [docs] or [inference] as marked.
+1. **Readers waited during both primitives in the tests that measured them.**
+   On MinIO, across 60 creates per build, the median per-sample ratio of reader
+   p99 during create to create time was about 1.05× on both builds. The median
+   ratio of stall to create time was about 0.78× on stable and 0.79× on edge.
+   The reader on `main` typically waited for most of the create, consistent with the
+   read-view gate [docs: O-K1] [measured: `20261115T173025Z-fc74457b`,
+   `20261115T180251Z-742224c3`]. The stall metric subtracts the median baseline
+   gap and floors the result at zero [code:
+   `targets/03-omnigraph/witnessmark_omnigraph/part2.py:316–336` @ `2a02bd8`].
+   The local cell medians were below 1 ms [measured: `20261115T172253Z-0adb5788`,
+   `20261115T175653Z-12eb6ff6`]. Within the short local create window the
+   metric cannot resolve a stall shorter than the reader's normal gap
+   [inference from the metric].
 
-1. **Creating a branch took 5 to 11 ms on a local root and 36 to 89 ms on MinIO, and did not grow with graph size (32k to 512k nodes, one edge each) or with 0 to 64 live sibling branches**, on both builds (run ids in the results table). The reader's longest gap beyond its baseline was under 1 ms locally and 27 to 81 ms on MinIO. FalkorDB's `GRAPH.COPY` of the same shapes took 95 to 1,820 ms and stopped every reader and writer on the server for the whole copy (`20261115T172253Z-0adb5788`). The two sides differ in storage, durability and what a copy is, so this compares a primitive's cost on this host, not two products.
-2. **The bytes a create and a delete move grow with n and with s even though the request count does not.** Through the 17 ms proxy, GET response bytes at s=0 grew from 58,335 to 418,639 between 32k and 512k nodes, and at 32k from 58,335 to 137,966 between 0 and 64 siblings, while requests stayed at 34 to 39 (`20261115T173716Z-d303435d`, `20261115T181001Z-adf60896`). [inference] The reads follow the number of table versions and branches, not the row count. #642 describes work that grows with live sibling branches; at this catalog width (a few tables, not #642's 121) the growth is in bytes, and no growth in time showed at 0 to 64 siblings. Whether a wider catalog changes that is [unmeasured].
-3. **After the successor took over an S3 root, the stale server's writes were refused by its own storage layer in 12 of 12 cells, on both builds.** Its replies were `internal` ("storage mutation was fenced while this request was in flight; it may still land"), `service_unavailable` ("server operation admission is closed") or a closed connection (`20261115T184233Z-3a4a4f31`, `20261115T184523Z-2ae7e967`). None of its writes appears in the graph, B's three acknowledged writes per build are all present, and no acknowledged write is missing. [docs] This is the cluster lease: an owner stops its storage writes when no heartbeat is answered for two thirds of a lease (storage-failures.md). It is not the writer epoch fence, which was not engaged (no claim), and the v0.15.0 cells share the behaviour. The stable release's lease held in these six cells.
-4. **One `m4d` cell is unexplained.** In v0.15.0 on MinIO, phase p2 variant b, A's write was acknowledged and B's was acknowledged (`20261115T183001Z-3dcbea3c`). The scan in that batch went through A and failed, so whether both rows persisted is [unmeasured]. The same cell in `m4e` (`20261115T184233Z-3a4a4f31`) did not reproduce it: A's write was refused. The pause offsets are timings and so vary between runs; one cell is not a rate.
-5. **Cross-process visibility on a local root took 1.3 to 1.5 s** from A's acknowledgement to the first successful read on a second server (`20261115T183504Z-eb41bb89`, `20261115T183511Z-4d593c85`). The window includes stopping A and starting B, so it bounds the process turnover and says nothing about a concurrently running second reader.
-6. **The 2 s lease is a hazard for anything that is not a failover test.** Under load and through the 17 ms proxy, a 2 s lease closed storage admission mid-load (`20261115T171130Z-e052669e`). The harness uses the 30 s default outside O4.
-7. **The stable and edge builds do not differ on O1 or O5** beyond this host's run-to-run spread.
+   The measured stall durations differ. MinIO cell medians ranged from 27 to
+   81 ms, while the FalkorDB source reader, unrelated reader and unrelated
+   writer each saw gaps close to the 95–1,820 ms copy times in the three
+   size cells [measured: `20261115T173025Z-fc74457b`,
+   `20261115T180251Z-742224c3`, `20261115T172253Z-0adb5788`]. FalkorDB's gaps
+   are raw gaps during the copy. Omnigraph had one reader on `main`, with
+   neither an unrelated-graph reader nor a writer in the test [code:
+   `targets/03-omnigraph/witnessmark_omnigraph/part2.py` @ `2a02bd8`].
+   MinIO and FalkorDB also ran under different storage and durability
+   conditions [measured: `20261115T173025Z-fc74457b`,
+   `20261115T180251Z-742224c3`, `20261115T172253Z-0adb5788`].
+2. **Create time had no consistent trend across the tested graph sizes or
+   sibling counts.** For example, edge on a local root at 128k rose from
+   6.43 to 11.25 ms (about 6.4 to 11.3 ms) as live siblings went from 0 to 64
+   [measured: `20261115T175653Z-12eb6ff6`, `20261115T172253Z-0adb5788`,
+   `20261115T173025Z-fc74457b`, `20261115T180251Z-742224c3`].
+   Through the 17 ms proxy, request counts changed little while GET response
+   bytes increased with n and s [measured: `20261115T173716Z-d303435d`,
+   `20261115T181001Z-adf60896`]. A wider catalog is [unmeasured: O1].
+3. **The `m4e` MinIO takeovers left A with 12 unknown outcomes across both
+   builds.** The replies were `internal` ("storage mutation was fenced while
+   this request was in flight"), `service_unavailable`
+   ("server operation admission is closed") or a closed connection. The scan
+   through B found none of A's writes and all six of B's acknowledged writes.
+   Both runs record an unclaimed epoch
+   [measured: `20261115T184233Z-3a4a4f31`, `20261115T184523Z-2ae7e967`].
+   An owner stops storage writes after two thirds of a lease without a
+   heartbeat reply [docs: storage-failures.md @ `b2dbaff`]. The cluster lease
+   is a likely explanation [inference from this rule and A's replies].
+4. **In `m4d`, B built on A's acknowledged commit in the stable MinIO p2/b
+   cell.** A published manifest v3 (commit ending in `FW31MY`). B's
+   acknowledged v4 names A's commit as its `parent_commit_id`. They form
+   one lineage on `main` with no fork or overwrite in the recorded commits.
+   The scan through A failed [measured: `20261115T183001Z-3dcbea3c`]. A may
+   have published before the pause took effect [inference from the 1 ms
+   offset and the recorded lineage]. The run lacks the action timestamps
+   needed to place A's publish relative to B's takeover [unmeasured: O4].
+   In the matching `m4e` cell A had an unknown outcome and its write was
+   absent from the scan through B [measured: `20261115T184233Z-3a4a4f31`].
+5. **Cross-process visibility on a local root took 1.3 to 1.5 s** from A's
+   acknowledgement to the first successful read on B. The window includes
+   stopping A and starting B [measured: `20261115T183504Z-eb41bb89`,
+   `20261115T183511Z-4d593c85`]. Visibility to a concurrent second reader
+   is [unmeasured: O5].
+6. **Storage admission closed during the `m4c` proxy load**
+   [measured: `20261115T171130Z-e052669e`, accompanying `ERROR.md`]. That
+   runner configured a 2 s lease [code:
+   `targets/03-omnigraph/witnessmark_omnigraph/part2.py` @ `8f7bb3b`]. The
+   completed O1 proxy run used a 30 s lease [measured:
+   `20261115T173716Z-d303435d`].
+7. **Run-to-run spread is [unmeasured] for the main batch's O1 and O5 build
+   comparisons.** The main batch recorded one run per build and storage
+   for those comparisons [measured: `20261115T172253Z-0adb5788`,
+   `20261115T175653Z-12eb6ff6`, `20261115T173025Z-fc74457b`,
+   `20261115T180251Z-742224c3`, `20261115T173716Z-d303435d`,
+   `20261115T181001Z-adf60896`, `20261115T183504Z-eb41bb89`,
+   `20261115T183511Z-4d593c85`].
 
-**Credit.** On this host, with these shapes, branch creation in Omnigraph is cheap and flat in graph size, the I6a prefix and I6b isolation controls hold on both builds and all three storages, and the lease refused every stale write the harness produced in the leased-takeover cells without losing an acknowledged one.
+**Credit.** The I6a prefix and I6b isolation controls held on both builds and
+all three storage configurations [measured: `20261115T183931Z-fa543284`,
+`20261115T183939Z-2b18faf7`, `20261115T183955Z-401500b4`,
+`20261115T184035Z-505c2756`, `20261115T184042Z-d51c234e`,
+`20261115T184058Z-df6399b2`]. In the 12 `m4e` MinIO leased-takeover cells,
+all 12 of A's outcomes were unknown. Scans through B found none of A's
+writes and every acknowledged write [measured: `20261115T184233Z-3a4a4f31`,
+`20261115T184523Z-2ae7e967`].
 
-### Not run, and open
+## 11. Open questions and decisions after the M4 audit
 
-- **Not run in any batch:** O2 (the 50-client claim races), O3 (merge of 50 agent branches) and O6 (traversal parity) beyond their Part 1 sequential controls; O5 on MinIO; the memory delta of Omnigraph's server (recorded in each sample's `rss_*` fields, not tabulated); a catalog-width axis for O1 (finding 2).
-- **Open harness gap, the fence:** an epoch claim by an embedding program (a small Rust program on the pinned crate, or any later release that adds a claim route) is needed before O4 can pass or fail anything about the writer epoch fence. Until then the pass criteria, the boundary probes (branch create or delete, cleanup, optimize), several failovers in a row and simultaneous claims are all NOT_EXERCISED.
-- **Open harness gap, local roots:** a variant that stops A, reads its lock id from `cluster status --json`, and runs `cluster force-unlock` before starting B would exercise the documented transfer. A paused A holding the lock is the case the docs say an operator must not unlock.
-- **MinIO is not qualified.** The storage guide requires every S3-compatible store to honour `If-None-Match` and `If-Match`, and qualifies only RustFS. These runs raised no double publish, which is not a qualification of MinIO's conditional writes.
-- **The unexplained cell** in finding 4 and the unrecoverable cause of the `m4c` MinIO failure (no server log was captured on failure) are open. Capturing the server's log in a failed run's evidence would close the second.
-- **I6a at other branch points** (the branch is cut after 5 of 20 appends only).
+### M5
+
+- Add `history.jsonl` and `REPRO.md` for Omnigraph runs to meet master §9.1.
+- Record wall-clock timestamps for O4 pause, resume, successor readiness and
+  each acknowledgement before repeating O4. Capture server logs on failure
+  to help explain the timing in finding 4 and diagnose failures like
+  `20261115T170604Z-7d473a53`.
+- Add an unrelated-graph reader and a writer on the Omnigraph side of O1
+  before any public FalkorDB comparison. Follow master §11.5 for publication.
+- Run the O2 claim races, O3 merge races and O6 traversal parity beyond the
+  Part 1 sequential controls, and run O5 on MinIO [unmeasured: O2, O3, O6
+  and O5 on MinIO].
+- Add an O4 local transfer variant that stops A, obtains its exact lock ID
+  with `cluster status --json`, and runs `cluster force-unlock` before
+  starting B [unmeasured: O4 local transfer] [docs: deployment.md, "Writer
+  topology" @ `b2dbaff`].
+
+### Awaiting an upstream release
+
+- O4's epoch claim waits for an upstream release with a claim route.
+  The fence acceptance test, branch create or delete, cleanup, optimize,
+  repeated failovers and simultaneous claims remain [unmeasured: O4 after
+  epoch claim].
+
+### Deferred
+
+- The O1 catalog-width axis [unmeasured: O1 with wider catalogs].
+- MinIO's `If-None-Match` and `If-Match` qualification versus RustFS
+  [unmeasured: MinIO conditional writes]. The pinned storage guide qualifies
+  RustFS [docs: storage.md @ `b2dbaff`].

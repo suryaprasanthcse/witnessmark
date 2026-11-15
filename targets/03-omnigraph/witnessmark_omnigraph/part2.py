@@ -170,10 +170,11 @@ class Stack:
 
 
 def _manifest(repo: Path, batch: str, build: dict, build_name: str, storage: str,
-              scenario: str, mode: str, started: datetime, trials: list[dict], **extra) -> dict:
+              scenario: str, mode: str, started: datetime, trials: list[dict], *,
+              run_id: str | None = None, **extra) -> dict:
     record = {
         "schema_version": 1,
-        "run_id": _run_id(started),
+        "run_id": run_id or _run_id(started),
         "batch": batch,
         "started_at": _iso(started),
         "finished_at": _iso(_utc()),
@@ -204,6 +205,20 @@ def write_manifest(repo: Path, evidence: Path, manifest: dict) -> Path:
     (destination / "run.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
                                            encoding="utf-8", newline="\n")
     return destination
+
+
+def update_manifest(destination: Path, manifest: dict) -> None:
+    (destination / "run.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+                                           encoding="utf-8", newline="\n")
+
+
+def _error_note(destination: Path, repo: Path, exc: Exception) -> None:
+    message = f"{type(exc).__name__}: {exc}".replace(str(repo), "<repo>")
+    message = re.sub(r"(?i)[A-Z]:[/\\]Users[/\\][^/\\\s]+", "<user-home>", message)
+    (destination / "ERROR.md").write_text(
+        "# Run error\n\nThe declared run did not complete. No result was inferred.\n\n"
+        f"- Error: `{message[:1000].replace('`', "'")}`\n",
+        encoding="utf-8", newline="\n")
 
 
 def _rss_mb(container: str) -> float | None:
@@ -364,11 +379,18 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
 def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
            *, include_falkor: bool = False) -> tuple[dict, Path]:
     started = _utc()
+    run_id = _run_id(started)
     project = f"wm-m4-o1-{build_name.replace('.', '-')}-{storage}".lower()
     stack = Stack(repo, project, build, storage)
     trials: list[dict] = []
     copy_weight: list[dict] = []
     queries = load_queries()
+    sweep = {"nodes": list(SIZES), "edges_per_size": list(SIZES), "siblings": list(SIBLINGS),
+             "storage": storage, "warmups": WARMUPS, "measured_repetitions": REPETITIONS}
+    planned = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started, [],
+                        run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
+                        status="planned-before-execution")
+    path = write_manifest(repo, evidence, planned)
     try:
         stack.provision()
         client = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=180)
@@ -432,13 +454,14 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
         i6 = _i6_controls(client, queries)
         falkor = run_falkor_curve(repo) if include_falkor else None
         manifest = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started,
-                             trials, invariants=["I6a", "I6b", "I6c"],
-                             sweep={"nodes": list(SIZES), "edges_per_size": list(SIZES),
-                                    "siblings": list(SIBLINGS), "storage": storage,
-                                    "warmups": WARMUPS, "measured_repetitions": REPETITIONS},
+                             trials, run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
+                             status="complete",
                              copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor})
-        path = write_manifest(repo, evidence, manifest)
+        update_manifest(path, manifest)
         return manifest, path
+    except Exception as exc:
+        _error_note(path, repo, exc)
+        raise
     finally:
         stack.down()
 

@@ -857,6 +857,62 @@ Phase B order.**
 O2b is reported as the cost of documented behaviour, not as a defect (§3,
 O2b). Any FalkorDB comparison stays internal (master §11.5).
 
+**Amendment before batch 2 (maintainer decision, 2026-11-16).** Declared
+before batch 2 started, after batch 1 (§13).
+
+- **One actor per client.** The pinned server guide documents an
+  actor-to-token object, `OMNIGRAPH_SERVER_BEARER_TOKENS_JSON`, in which "the
+  token selects the actor … clients cannot claim another actor". The pinned
+  policy guide documents a graph policy that is bound in `cluster.yaml` and
+  installed by `cluster apply`
+  [docs: [server.md v0.15.0](https://github.com/ModernRelay/omnigraph/blob/373834b4c1c4b29cf0ddd64bee9565f98c60cc26/docs/user/operations/server.md),
+  [server.md b2dbaff](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/server.md),
+  [policy.md v0.15.0](https://github.com/ModernRelay/omnigraph/blob/373834b4c1c4b29cf0ddd64bee9565f98c60cc26/docs/user/operations/policy.md),
+  [policy.md b2dbaff](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/policy.md)].
+  When `race` and `costcurve` provision, the server now runs with one actor
+  per client: `wm-admin` for fixture setup and observation, and `wm-c00` to
+  `wm-c49` for the clients. Each actor has a random bearer token per run. The
+  tokens stay in memory and the container environment, and never reach
+  evidence.
+  - `docker/compose.actors.yml` replaces `--unauthenticated` with the token
+    object.
+  - `workload/cluster-actors.yaml` binds `workload/actors.policy.yaml`, which
+    grants the group `read` and `change` (`branch_scope: any`),
+    `branch_create`, `branch_delete` and `branch_merge`
+    (`target_branch_scope: any`, because the pinned validator refuses
+    `branch_scope` on `branch_create`), and `invoke_query`.
+  - The manifest's SUT component (races) or `actors` field (O2b) records the
+    mode, the actor names, the token source and the policy path
+    [code: `targets/03-omnigraph/witnessmark_omnigraph/actors.py` @ `a6b690d`].
+
+  N stays 50 for O2a, O2c and O3, and the O2b sweep stays N ∈ {1, 2, 5, 10,
+  25, 50}. A scratch smoke on both builds (50 clients, outside `evidence/`)
+  had no admission-limit refusal. Other commands (O1, O4, O5, O6) keep the
+  unauthenticated server they ran under in M4. δ stays 55 ms: it is measured
+  from the clients' invocation times, which the actor change does not touch
+  [inference].
+- **Typed refusals.** HTTP 429 is the typed, definite refusal
+  `admission_limit` [docs: server.md, "Admission limits use 429 … with
+  Retry-After", at both pins]. The O2 and O3 race checks accept every typed
+  definite refusal and report counts per type. A trial fails I1 only on:
+  - a second winner;
+  - a second holder;
+  - a winner that does not hold its lease (a lost acknowledged write);
+  - an unknown outcome that could have applied, which the final state cannot
+    account for (master §6.4);
+  - an untyped refusal.
+
+  Sequential controls still require the documented refusal type
+  (`precondition_failure` for O2a, `CardinalityViolation` for O2c, a typed
+  merge conflict for O3) [code:
+  `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py` and
+  `client.py` @ `a6b690d`]. The O2b agent policy is unchanged: any refusal
+  other than `precondition_failure` ends that agent, and the refusal is
+  recorded.
+- **Commit.** Batch 2 runs on the commit that records this amendment, after
+  `a6b690d`, not on `fffe48b`. Its race and `costcurve` commands are those in
+  the table above, with the default `--actors per-client`.
+
 **Re-runs.** Only a harness bug, fixed with a unit test and committed first,
 re-runs a cell, under a new batch id (`m5c-`, `m5d-`, ...). The affected
 cells and the reason are recorded. Nothing is re-run to change a result, and
@@ -934,13 +990,34 @@ run, the refusals were:
 
 No refusal was untyped and no outcome was unknown. Nothing here was re-run.
 
-### Not run, pending the maintainer
+### Classification (maintainer decision, 2026-11-16)
 
-Batch 2 (`m5b-`, §12) has not started. The cap affects most of its cells:
-O2a, O2c and O3 race 50 clients, and O2b's N = 25 and N = 50 put more than
-16 agents in flight. The maintainer has to decide two things. First, whether
-the harness gives each client its own actor, runs at most 16 clients, or
-accepts `too_many_requests` and `conflict` as typed refusals in the checker.
-Second, whether batch 2 runs as declared in the meantime. O1, the O4 clean
-stop, O5 and O6 are unaffected [inference: at most four requests in flight
-in those commands].
+- **BOUNDARY: per-actor admission limit.** The pinned server guide
+  documents that admission limits answer 429 with `Retry-After` [docs:
+  server.md at v0.15.0 and b2dbaff]. Batch 1 measured the limit's size:
+  "actor in-flight count cap 16 exceeded", 34 refusals in every trial of all
+  four runs with 50 clients on one actor [measured:
+  `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`,
+  `20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d`]. The guide
+  documents the 429 behaviour, not the value 16, which comes only from the
+  server's message [measured]. This is documented behaviour, not a defect.
+  The harness now classifies it as `admission_limit`, a typed definite
+  refusal, and gives each client its own actor (§12, amendment).
+- **OBSERVED: refusal type of admitted O2a losers.** Of the admitted losers
+  (15 per trial × 20 trials = 300 per run), 34 of 300 on v0.15.0 and 38 of
+  300 on edge-b2dbaff were refused with `CardinalityViolation` rather than
+  the documented `precondition_failure` [docs: mutations/conditional.md; O-K3]
+  [measured: `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`]. Both
+  are typed refusals that write nothing, and one holder remained. Not chased
+  with further runs.
+- **OBSERVED: O2c refusal type differs by build.** For a constraint-guarded
+  claim that lost the race, v0.15.0 answered `conflict` ("write authority
+  'graph_head:main' changed during preparation, reprepare from the current
+  branch state") 263 times, while edge-b2dbaff answered `CardinalityViolation`
+  in its place [measured: `20261115T223149Z-b1b52c9c`,
+  `20261115T223237Z-3658b53d`]. Both are typed refusals; `conflict` is O-K2's
+  retryable conflict. Not chased with further runs.
+
+Batch 1's FAIL verdicts stay in the evidence as recorded. The checker that
+produced them is superseded for later batches; nothing was re-run to change
+them. Batch 2 runs as declared in §12, with the amendment.

@@ -1081,10 +1081,12 @@ scenario with its sequential control and the applicable controls in §6.2.
   cells were re-run in `m5c-20261115T223540Z` (`772ef96`). δ = 55 ms (§6.3),
   set in `fffe48b`. Reports: `evidence/M5_OMNIGRAPH_CALIBRATION.md` and
   `evidence/M5_OMNIGRAPH_B1.md`.
-- [ ] Steps 2 to 8 (batch 2). Stopped for a maintainer decision. In batch 1
-  every O2 trial had one winner, but 34 of the 50 claims in each trial were
-  refused with `too_many_requests` (actor in-flight cap 16), and the checker
-  accepts only one refusal type (Omnigraph blueprint, §13).
+- [x] Maintainer decision (2026-11-16): one actor per client with N = 50, HTTP
+  429 classified as the typed refusal `admission_limit`, and a race check that
+  accepts every typed definite refusal (`a6b690d`). The per-actor cap of 16 is
+  a documented boundary, and two refusal-type differences are OBSERVED
+  (Omnigraph blueprint, §12 amendment and §13).
+- [ ] Steps 2 to 8 (batch 2).
 
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write

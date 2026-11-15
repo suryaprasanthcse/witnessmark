@@ -22,7 +22,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from witnessmark import env as witnessmark_env
 from witnessmark.adapters import make_engine
+from witnessmark.history import FAIL, OK, UNKNOWN
+from witnessmark.timing import stamp
 
+from .capture import RunCapture, redact_text
 from .client import OmnigraphClient, OperationResult, Outcome
 from .runner_scenarios import SKILL, TASK
 from .workload import load_queries
@@ -95,12 +98,15 @@ class Stack:
     """One disposable Omnigraph compose project."""
 
     def __init__(self, repo: Path, project: str, build: dict, storage: str,
-                 lease_seconds: int = DEFAULT_LEASE_SECONDS):
+                 lease_seconds: int = DEFAULT_LEASE_SECONDS, capture: RunCapture | None = None,
+                 config: str = "/config"):
         self.lease_seconds = lease_seconds
         self.repo = repo
         self.project = project
         self.build = build
         self.storage = storage
+        self.capture = capture
+        self.config = config
         self.compose_file = repo / "targets" / "03-omnigraph" / "docker" / "compose.yml"
         self.root = "file:///var/lib/omnigraph" if storage == "local" else \
             f"s3://witnessmark/{project}"
@@ -124,17 +130,8 @@ class Stack:
     # /healthz answers while data requests still get 503 graph_unavailable
     # (deployment.md, S3 cluster serving text on /readyz).
     def _wait_url(self, url: str, timeout: float = 45) -> None:
-        deadline = time.monotonic() + timeout
-        last = "no response"
-        while time.monotonic() < deadline:
-            try:
-                with urllib.request.urlopen(url, timeout=2) as response:
-                    if response.status < 400:
-                        return
-            except (OSError, urllib.error.URLError) as exc:
-                last = str(exc)
-            time.sleep(0.25)
-        raise RuntimeError(f"service did not become ready at {url}: {last}")
+        if not _health(url, timeout, self.capture):
+            raise RuntimeError(f"service did not become ready at {url}")
 
     def _start_object_store(self) -> None:
         services = ["wm-minio"] + (["wm-object-proxy"] if self.storage == "proxy" else [])
@@ -154,28 +151,41 @@ class Stack:
             self._start_object_store()
         apply = self.compose("run", "--rm", "--no-deps", "--entrypoint", "/usr/local/bin/omnigraph",
                              "wm-omnigraph-a", "cluster", "apply", "--target", self.root,
-                             "--config", "/config", "--as", "witnessmark", "--json", timeout=600)
+                             "--config", self.config, "--as", "witnessmark", "--json", timeout=600)
         found = re.search(r"Admission lock:\s*([A-Z0-9]+)", apply.stdout)
         if not found:
             raise RuntimeError(f"cluster apply did not report its admission lock: {apply.stdout[-1500:]}")
         self.compose("run", "--rm", "--no-deps", "--entrypoint", "/usr/local/bin/omnigraph",
                      "wm-omnigraph-a", "cluster", "force-unlock", found.group(1), "--target", self.root)
-        self.compose("up", "-d", "--no-build", "wm-omnigraph-a")
+        self._action("start", "wm-omnigraph-a",
+                     lambda: self.compose("up", "-d", "--no-build", "wm-omnigraph-a"))
         self._wait_url("http://127.0.0.1:18080/readyz")
 
+    def _action(self, kind, target, invoke, **inputs):
+        return self.capture.action(kind, target, invoke, **inputs) if self.capture else invoke()
+
     def pause_a(self) -> None:
-        _command(["docker", "pause", "wm-omnigraph-a"], cwd=self.repo)
+        result = self._action("pause", "wm-omnigraph-a", lambda: _command(
+            ["docker", "pause", "wm-omnigraph-a"], cwd=self.repo, check=False))
+        if result.returncode:
+            raise RuntimeError(f"could not pause A: {result.stdout}")
 
     def resume_a(self) -> None:
-        _command(["docker", "unpause", "wm-omnigraph-a"], cwd=self.repo, check=False)
+        self._action("resume", "wm-omnigraph-a", lambda: _command(
+            ["docker", "unpause", "wm-omnigraph-a"], cwd=self.repo, check=False))
 
     def stop_a(self) -> None:
-        self.compose("stop", "wm-omnigraph-a", check=False)
+        result = self._action("stop", "wm-omnigraph-a",
+                              lambda: self.compose("stop", "wm-omnigraph-a", check=False))
+        if result.returncode:
+            raise RuntimeError(f"could not stop A: {result.stdout}")
 
     def start_b(self, *, check: bool = True) -> subprocess.CompletedProcess:
-        result = self.compose("--profile", "failover-b", "up", "-d", "--no-build", "wm-omnigraph-b",
-                              check=check)
+        result = self._action("start", "wm-omnigraph-b", lambda: self.compose(
+            "--profile", "failover-b", "up", "-d", "--no-build", "wm-omnigraph-b", check=False))
         if check:
+            if result.returncode:
+                raise RuntimeError(f"could not start B: {result.stdout}")
             self._wait_url("http://127.0.0.1:18081/readyz")
         return result
 
@@ -206,27 +216,8 @@ def _manifest(repo: Path, batch: str, build: dict, build_name: str, storage: str
     return record
 
 
-def write_manifest(repo: Path, evidence: Path, manifest: dict) -> Path:
-    component = manifest["components"][0]
-    storage = component["config"]["backend"]
-    scenario = manifest["scenario"]
-    destination = evidence / "omnigraph" / f"{component['version']}.{storage}" / \
-        f"{scenario['id']}.{scenario['mode']}" / manifest["run_id"]
-    destination.mkdir(parents=True, exist_ok=False)
-    (destination / "run.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-                                           encoding="utf-8", newline="\n")
-    return destination
-
-
-def update_manifest(destination: Path, manifest: dict) -> None:
-    (destination / "run.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-                                           encoding="utf-8", newline="\n")
-
-
 def redact_paths(text: str, repo: Path) -> str:
-    """Remove the repository location and anything under a user's home folder."""
-    text = text.replace(str(repo), "<repo>").replace(repo.as_posix(), "<repo>")
-    return re.sub(r"(?i)[A-Z]:[/\\]Users[/\\][^/\\\s]+(?:[/\\]AppData[^\s\"')]*)?", "<user-home>", text)
+    return redact_text(text, repo)
 
 
 def _error_note(destination: Path, repo: Path, exc: Exception) -> None:
@@ -257,10 +248,25 @@ def _local_store_bytes() -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _proxy(method: str, path: str) -> dict:
-    request = urllib.request.Request(f"http://127.0.0.1:19010{path}", method=method, data=b"" if method == "POST" else None)
-    with urllib.request.urlopen(request, timeout=10) as response:
-        return json.loads(response.read() or b"{}")
+def _probe(url: str, method: str, timeout: float, capture: RunCapture | None, *, parse_json=False):
+    request = urllib.request.Request(url, method=method, data=b"" if method == "POST" else None)
+    inv = stamp() if capture else None
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            result = json.loads(response.read() or b"{}") if parse_json else {"status": response.status}
+    except (OSError, ValueError) as exc:
+        if capture:
+            code = getattr(exc, "code", None)
+            error = {"type": type(exc).__name__, "message": str(exc)}
+            if isinstance(code, int):
+                error["code"] = code
+            capture.record("c00", "probe", {"method": method, "url": url}, inv, stamp(),
+                           FAIL if "code" in error else UNKNOWN, error=error, phase="observe")
+        raise
+    if capture:
+        capture.record("c00", "probe", {"method": method, "url": url}, inv, stamp(), OK,
+                       result=result, phase="observe")
+    return result
 
 
 def _padding_batches(client: OmnigraphClient, start: int, stop: int, batch_size: int = 4096) -> None:
@@ -310,9 +316,10 @@ class _Reader:
         self.thread.join(timeout=10)
 
 
-def _timed_branch_create(client: OmnigraphClient, queries: dict[str, str], name: str) -> dict:
+def _timed_branch_create(client: OmnigraphClient, queries: dict[str, str], name: str,
+                         capture: RunCapture) -> dict:
     rss_before = _rss_mb("wm-omnigraph-a")
-    with _Reader(OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=60), queries["q_task"]) as reader:
+    with _Reader(capture.client("http://127.0.0.1:18080", label="c01"), queries["q_task"]) as reader:
         time.sleep(0.25)
         split = time.perf_counter_ns()
         started = time.perf_counter_ns()
@@ -402,7 +409,8 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
             "i6b_isolation": isolation_ok, "main_visible": on_main, "branch_visible": on_branch}
 
 
-def run_i6(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str) -> tuple[dict, Path]:
+def run_i6(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
+           *, command: str) -> tuple[dict, Path]:
     """The I6a and I6b controls alone, on a graph without padding."""
     started = _utc()
     stack = Stack(repo, f"wm-m4-i6-{build_name.replace('.', '-')}-{storage}".lower(), build, storage)
@@ -411,28 +419,33 @@ def run_i6(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
     planned = _manifest(repo, batch, build, build_name, storage, "o1.i6_controls", "controls", started, [],
                         run_id=run_id, invariants=["I6a", "I6b"], cluster_lease_seconds=stack.lease_seconds,
                         status="planned-before-execution")
-    path = write_manifest(repo, evidence, planned)
+    capture = RunCapture(repo, evidence, planned, command)
+    stack.capture = capture
     try:
         stack.provision()
-        client = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=180)
+        capture.trial(1, "control")
+        client = capture.client("http://127.0.0.1:18080", timeout=180)
         _check(client.mutate(queries["m_reset"], {}, name="m_reset"), "reset I6 graph")
         _check(client.mutate(queries["m_o1_fixture"], {"task_id": TASK, "skill_id": SKILL},
                              name="m_o1_fixture"), "create I6 fixture")
         i6 = _i6_controls(client, queries)
+        trial = {"valid": True, **i6}
+        capture.final_state(trial, i6)
         manifest = _manifest(repo, batch, build, build_name, storage, "o1.i6_controls", "controls", started,
-                             [{"valid": True, **i6}], run_id=run_id, invariants=["I6a", "I6b"],
+                             [trial], run_id=run_id, invariants=["I6a", "I6b"],
                              cluster_lease_seconds=stack.lease_seconds, status="complete")
-        update_manifest(path, manifest)
-        return manifest, path
+        capture.write_manifest(manifest)
+        return manifest, capture.path
     except Exception as exc:
-        _error_note(path, repo, exc)
+        _error_note(capture.path, repo, exc)
         raise
     finally:
+        capture.close()
         stack.down()
 
 
 def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
-           *, include_falkor: bool = False) -> tuple[dict, Path]:
+           *, command: str, include_falkor: bool = False, smoke: bool = False) -> tuple[dict, Path]:
     started = _utc()
     run_id = _run_id(started)
     project = f"wm-m4-o1-{build_name.replace('.', '-')}-{storage}".lower()
@@ -440,37 +453,42 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
     trials: list[dict] = []
     copy_weight: list[dict] = []
     queries = load_queries()
-    sweep = {"nodes": list(SIZES), "edges_per_size": list(SIZES), "siblings": list(SIBLINGS),
-             "storage": storage, "warmups": WARMUPS, "measured_repetitions": REPETITIONS}
+    sizes, sibling_counts = ((8,), (0,)) if smoke else (SIZES, SIBLINGS)
+    warmups, repetitions = (0, 1) if smoke else (WARMUPS, REPETITIONS)
+    sweep = {"nodes": list(sizes), "edges_per_size": list(sizes), "siblings": list(sibling_counts),
+             "storage": storage, "warmups": warmups, "measured_repetitions": repetitions}
     planned = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started, [],
                         run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
-                        cluster_lease_seconds=stack.lease_seconds, status="planned-before-execution")
-    path = write_manifest(repo, evidence, planned)
+                        cluster_lease_seconds=stack.lease_seconds, status="planned-before-execution", smoke=smoke)
+    capture = RunCapture(repo, evidence, planned, command)
+    stack.capture = capture
     try:
         stack.provision()
-        client = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=180)
+        client = capture.client("http://127.0.0.1:18080", timeout=180)
         _check(client.mutate(queries["m_reset"], {}, name="m_reset"), "reset O1 graph")
         _check(client.mutate(queries["m_o1_fixture"], {"task_id": TASK, "skill_id": SKILL},
                              name="m_o1_fixture"), "create O1 fixture")
         previous = 0
-        for size in SIZES:
+        for size in sizes:
+            capture.trial(0, "setup")
             _padding_batches(client, previous, size)
             previous = size
-            for branch in [f"o1-sibling-{i:02d}" for i in range(max(SIBLINGS))]:
+            for branch in [f"o1-sibling-{i:02d}" for i in range(max(sibling_counts))]:
                 client.branch_delete(branch)
             live = 0
-            for siblings in SIBLINGS:
+            for siblings in sibling_counts:
+                capture.trial(len(trials) + 1)
                 while live < siblings:
                     _check(client.branch_create(f"o1-sibling-{live:02d}", from_branch="main"), "create sibling")
                     live += 1
-                for warmup in range(WARMUPS):
+                for warmup in range(warmups):
                     name = f"o1-warm-{size}-{siblings}-{warmup}"
                     _check(client.branch_create(name, from_branch="main"), "warm branch create")
                     _check(client.branch_delete(name), "warm branch delete")
                 measured = []
-                for repetition in range(REPETITIONS):
+                for repetition in range(repetitions):
                     name = f"o1-measure-{size}-{siblings}-{repetition}"
-                    sample = _timed_branch_create(client, queries, name)
+                    sample = _timed_branch_create(client, queries, name, capture)
                     begin = time.perf_counter_ns()
                     _check(client.merge(name, target="main"), "merge unchanged branch")
                     sample["merge_unchanged_ms"] = (time.perf_counter_ns() - begin) / 1e6
@@ -481,16 +499,22 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                     measured.append(sample)
                 counts = None
                 if storage == "proxy":
-                    _proxy("POST", "/__witnessmark__/reset")
+                    _probe("http://127.0.0.1:19010/__witnessmark__/reset", "POST", 10, capture, parse_json=True)
                     count_name = f"o1-count-{size}-{siblings}"
                     _check(client.branch_create(count_name, from_branch="main"), "count branch create")
                     _check(client.branch_delete(count_name), "count branch delete")
-                    counts = _proxy("GET", "/__witnessmark__/counts")
-                trials.append({"valid": True, "size": size, "siblings": siblings,
-                               "warmups": WARMUPS, "repetitions": REPETITIONS,
+                    counts = _probe("http://127.0.0.1:19010/__witnessmark__/counts", "GET", 10,
+                                    capture, parse_json=True)
+                trial = {"valid": True, "size": size, "siblings": siblings,
+                               "warmups": warmups, "repetitions": repetitions,
                                "timing_kind": "matched-counts" if storage == "proxy" else "timing",
                                "samples": measured, "object_store_counts": counts,
-                               "graph_store_bytes": _local_store_bytes() if storage == "local" else None})
+                               "graph_store_bytes": _local_store_bytes() if storage == "local" else None}
+                capture.trial(len(trials) + 1, "observe")
+                branches = _check(client.branch_list(detailed=True), "observe O1 branch heads")
+                capture.final_state(trial, {"branches": branches.data})
+                trials.append(trial)
+            capture.trial(0, "control")
             anchor = f"weight-anchor-{size}"
             anchor_row = json.dumps({"type": "Entry", "id": anchor, "data": {
                 "id": anchor, "seq": 0, "rule": "anchor", "hash": "0", "prev": "", "ts": 0,
@@ -511,13 +535,14 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
         manifest = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started,
                              trials, run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
                              cluster_lease_seconds=stack.lease_seconds, status="complete",
-                             copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor})
-        update_manifest(path, manifest)
-        return manifest, path
+                             copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor}, smoke=smoke)
+        capture.write_manifest(manifest)
+        return manifest, capture.path
     except Exception as exc:
-        _error_note(path, repo, exc)
+        _error_note(capture.path, repo, exc)
         raise
     finally:
+        capture.close()
         stack.down()
 
 
@@ -643,13 +668,12 @@ def run_falkor_curve(repo: Path) -> dict:
         admin.close()
 
 
-def _health(url: str, timeout: float = 8) -> bool:
+def _health(url: str, timeout: float = 8, capture: RunCapture | None = None) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=1) as response:
-                if response.status < 400:
-                    return True
+            _probe(url, "GET", 1, capture)
+            return True
         except (OSError, urllib.error.URLError):
             pass
         time.sleep(0.25)
@@ -693,6 +717,9 @@ def o4_integrity(client: OmnigraphClient, queries: dict[str, str], acknowledged:
     """Open the graph, scan it, and look for every acknowledged agent write."""
     branch_state = client.branch_list(detailed=True)
     task = client.query(queries["q_task"], {"task_id": TASK}, name="q_task")
+    task_data = task.data if isinstance(task.data, dict) else {}
+    snapshot = task_data.get("graph_commit_id")
+    holder = client.query(queries["q_task_holder"], {"task_id": TASK}, name="q_task_holder", snapshot=snapshot)
     eligible = client.query(queries["q_eligible"], {}, name="q_eligible")
     ledger = client.query(queries["q_ledger"], {"rule": "genesis"}, name="q_ledger")
     scans_ok = all(result.outcome is Outcome.OK for result in (task, eligible, ledger))
@@ -700,11 +727,28 @@ def o4_integrity(client: OmnigraphClient, queries: dict[str, str], acknowledged:
     present = sorted({row.get("agent") for row in rows if isinstance(row, dict)} - {None})
     missing = sorted(set(acknowledged) - set(present)) if eligible.outcome is Outcome.OK else None
     return {"scan_ok": scans_ok, "acknowledged_agents": sorted(acknowledged), "present_agents": present,
-            "acknowledged_missing": missing, "branch_list": _op_json(branch_state)}
+            "acknowledged_missing": missing, "branch_list": _op_json(branch_state),
+            "state": {"branches": branch_state.data, "task": task_data.get("rows"),
+                      "holders": holder.data.get("rows") if isinstance(holder.data, dict) else None,
+                      "eligible_agents": rows, "graph_commit_id": snapshot}}
 
 
 def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
-           seed: int = 20261115) -> tuple[dict, Path]:
+           seed: int = 20261115, *, command: str, smoke: bool = False) -> tuple[dict, Path]:
+    started = _utc()
+    planned = _manifest(repo, batch, build, build_name, storage, "o4.failover_acceptance", "matrix", started, [],
+                        status="planned-before-execution", smoke=smoke)
+    capture = RunCapture(repo, evidence, planned, command)
+    try:
+        return _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture)
+    except Exception as exc:
+        _error_note(capture.path, repo, exc)
+        raise
+    finally:
+        capture.close()
+
+
+def _run_o4_cells(repo, batch, build_name, build, storage, seed, smoke, started, capture):
     """Run the O4 topology and classify each cell from what it actually did.
 
     The edge pin documents that no CLI or HTTP route claims a branch; only a
@@ -719,19 +763,21 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
     * BOUNDARY: a failover took place on the stable release, whose documented
       deployment rule (one writer process) is its only protection.
     """
-    started = _utc()
     trials = []
     queries = load_queries()
-    offsets = {"p1": -1.0, "p2": 0.001, "p3": 0.005}
+    offsets = {"p1": -1.0} if smoke else {"p1": -1.0, "p2": 0.001, "p3": 0.005}
+    variants = ("b",) if smoke else ("a", "b")
     for phase, offset in offsets.items():
-        for variant in ("a", "b"):
+        for variant in variants:
+            capture.trial(len(trials) + 1)
             project = f"wm-m4-o4-{build_name.replace('.', '-')}-{storage}-{phase}-{variant}".lower()
-            stack = Stack(repo, project, build, storage, lease_seconds=LEASE_SECONDS)
+            stack = Stack(repo, project, build, storage, lease_seconds=LEASE_SECONDS, capture=capture)
             actions = []
             a_result: list[OperationResult] = []
+            thread = None
             try:
                 stack.provision()
-                a = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=60)
+                a = capture.client("http://127.0.0.1:18080", label="c00")
                 _check(a.mutate(queries["m_reset"], {}, name="m_reset"), "reset O4 graph")
                 _check(a.mutate(queries["m_fixture_base"], {"task_id": TASK, "skill_id": SKILL},
                                 name="m_fixture_base"), "create O4 fixture")
@@ -760,21 +806,22 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                 if storage != "local":
                     time.sleep(LEASE_SECONDS * 1.75)
                 start = stack.start_b(check=False)
-                b_ready = _health("http://127.0.0.1:18081/readyz", 10 if storage != "local" else 3)
+                b_ready = _health("http://127.0.0.1:18081/readyz", 10 if storage != "local" else 3, capture)
                 b_write = None
                 if b_ready and variant == "b":
-                    b = OmnigraphClient("http://127.0.0.1:18081", "witnessmark", timeout=30)
+                    b = capture.client("http://127.0.0.1:18081", timeout=30, label="c01")
                     b_write = b.mutate(queries["m_fixture_agent"],
                                        {"agent_id": f"b-{phase}-{variant}", "skill_id": SKILL},
                                        name="m_fixture_agent")
                 stack.resume_a()
                 actions.append({"client": "nemesis", "kind": "resume", "target": "wm-omnigraph-a",
                                 "assertion": "resume our stale A test container and observe its pending publication"})
-                thread.join(timeout=30)
+                thread.join()
                 # Score the graph through the server that now owns it. A server whose
                 # admission was taken over stops itself (documented lease behaviour),
                 # so scoring through A reported "not checked" for every S3 cell.
-                scanner = OmnigraphClient("http://127.0.0.1:18081", "witnessmark", timeout=30) if b_ready else a
+                capture.trial(len(trials) + 1, "observe")
+                scanner = capture.client("http://127.0.0.1:18081", timeout=30, label="c01") if b_ready else a
                 acknowledged = [agent for agent, result in (
                     (f"a-{phase}-{variant}", a_result[0] if a_result else None),
                     (f"b-{phase}-{variant}", b_write)) if result is not None and result.outcome is Outcome.OK]
@@ -783,7 +830,7 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                 stale_view = _op_json(a.branch_list(detailed=True))
                 fenced = bool(a_result and a_result[0].kind == "WriterFenced")
                 status, reason = classify_o4_cell(build_name, storage, b_ready)
-                trials.append({
+                trial = {
                     "valid": True, "phase": phase, "variant": variant, "seed": seed, "offset_s": offset,
                     "status": status, "reason": reason,
                     "fault_actions": actions, "successor_start_exit": start.returncode, "successor_ready": b_ready,
@@ -793,9 +840,13 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                     "graph_open_and_scan": integrity["scan_ok"],
                     "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
                     "single_epoch": "epoch_zero_unclaimed",
-                })
+                }
+                capture.final_state(trial, integrity.pop("state"))
+                trials.append(trial)
             finally:
                 stack.resume_a()
+                if thread is not None and thread.ident is not None:
+                    thread.join()
                 stack.down()
     boundary_probes = [
         {"operation": name, "status": "NOT_EXERCISED",
@@ -804,22 +855,29 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
     ]
     manifest = _manifest(repo, batch, build, build_name, storage, "o4.failover_acceptance", "matrix", started,
                          trials, invariants=["I1A", "I2"], seed=seed,
-                         matrix={"phases": list(offsets), "variants": ["a", "b"], "storage": storage,
+                         run_id=capture.run_id, smoke=smoke,
+                         matrix={"phases": list(offsets), "variants": list(variants), "storage": storage,
                                  "build": build_name}, boundary_probes=boundary_probes,
                          cluster_lease_seconds=LEASE_SECONDS, harness_gaps=O4_HARNESS_GAPS,
                          basis="documented", basis_ref="docs/user/operations/troubleshooting.md#writer-epoch")
-    return manifest, write_manifest(repo, evidence, manifest)
+    capture.write_manifest(manifest)
+    return manifest, capture.path
 
 
 def run_o5(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
-           storage: str = "local") -> tuple[dict, Path]:
+           storage: str = "local", *, command: str) -> tuple[dict, Path]:
     started = _utc()
     stack = Stack(repo, f"wm-m4-o5-{build_name.replace('.', '-')}-{storage}".lower(), build, storage)
     queries = load_queries()
     trials = []
+    planned = _manifest(repo, batch, build, build_name, storage, "o5.cross_process_ryw", "visibility",
+                        started, [], status="planned-before-execution")
+    capture = RunCapture(repo, evidence, planned, command)
+    stack.capture = capture
     try:
         stack.provision()
-        a = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=60)
+        capture.trial(1)
+        a = capture.client("http://127.0.0.1:18080")
         _check(a.mutate(queries["m_reset"], {}, name="m_reset"), "reset O5 graph")
         _check(a.mutate(queries["m_fixture_base"], {"task_id": TASK, "skill_id": SKILL},
                         name="m_fixture_base"), "create O5 fixture")
@@ -832,7 +890,8 @@ def run_o5(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
         acknowledged_at = time.perf_counter_ns()
         stack.stop_a()
         stack.start_b(check=True)
-        b = OmnigraphClient("http://127.0.0.1:18081", "witnessmark", timeout=30)
+        capture.trial(1, "observe")
+        b = capture.client("http://127.0.0.1:18081", timeout=30, label="c01")
         deadline = time.monotonic() + 30
         seen = False
         attempts = 0
@@ -852,8 +911,16 @@ def run_o5(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                        "write_ms": (acknowledged_at - before) / 1e6,
                        "staleness_ms": (observed_at - acknowledged_at) / 1e6,
                        "last_read": _op_json(last)})
+        task = b.query(queries["q_task"], {"task_id": TASK}, name="q_task")
+        capture.final_state(trials[0], {"task": task.data, "holders": last.data if last is not None else None})
         manifest = _manifest(repo, batch, build, build_name, storage, "o5.cross_process_ryw", "visibility",
-                             started, trials, invariants=["I3"], cluster_lease_seconds=stack.lease_seconds)
-        return manifest, write_manifest(repo, evidence, manifest)
+                             started, trials, invariants=["I3"], run_id=capture.run_id,
+                             cluster_lease_seconds=stack.lease_seconds)
+        capture.write_manifest(manifest)
+        return manifest, capture.path
+    except Exception as exc:
+        _error_note(capture.path, repo, exc)
+        raise
     finally:
+        capture.close()
         stack.down()

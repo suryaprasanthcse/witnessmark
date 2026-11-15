@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -102,3 +103,53 @@ def write_history(path: Path, ops: Iterable[Op]) -> int:
 def read_history(path: Path) -> list[dict]:
     with open(path, encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def validate_history(path: Path) -> int:
+    """Check the required operation fields in §9.3 and return the record count."""
+    required = {"run_id", "k", "phase", "op_id", "client", "kind", "input", "inv", "ret", "outcome"}
+    seen = set()
+
+    def check_stamp(value: object) -> None:
+        if not isinstance(value, dict) or type(value.get("mono_ns")) is not int:
+            raise ValueError("a timestamp needs an integer mono_ns")
+        wall, domain = value.get("wall"), value.get("domain")
+        if not isinstance(wall, str) or not isinstance(domain, str) or not domain:
+            raise ValueError("a timestamp needs wall and domain strings")
+        moment = datetime.fromisoformat(wall.replace("Z", "+00:00"))
+        if "T" not in wall or moment.utcoffset() is None:
+            raise ValueError("wall must be a date-time with a time zone")
+
+    with path.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, 1):
+            try:
+                record = json.loads(line)
+                if not isinstance(record, dict) or not required <= record.keys():
+                    raise ValueError("missing required operation fields")
+                if type(record["k"]) is not int or record["k"] < 0 or not isinstance(record["input"], dict):
+                    raise ValueError("invalid trial number or input")
+                if any(not isinstance(record[key], str) for key in ("run_id", "op_id", "client", "kind")):
+                    raise ValueError("operation identifiers must be strings")
+                if record["phase"] not in PHASES or record["outcome"] not in OUTCOMES:
+                    raise ValueError("invalid phase or outcome")
+                check_stamp(record["inv"])
+                if record["outcome"] == UNKNOWN:
+                    if record["ret"] is not None:
+                        raise ValueError("an unknown outcome requires a null ret")
+                else:
+                    check_stamp(record["ret"])
+                error = record.get("error")
+                if error is not None and (not isinstance(error, dict) or
+                                          any(not isinstance(error.get(key), str) for key in ("type", "message")) or
+                                          ("code" in error and type(error["code"]) not in (str, int))):
+                    raise ValueError("invalid error object")
+                token = record.get("token")
+                if token is not None and not isinstance(token, str):
+                    raise ValueError("invalid token")
+                key = record["run_id"], record["op_id"]
+                if key in seen:
+                    raise ValueError("duplicate operation id")
+                seen.add(key)
+            except ValueError as exc:
+                raise ValueError(f"history line {number}: {exc}") from exc
+    return len(seen)

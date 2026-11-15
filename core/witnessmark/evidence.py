@@ -61,9 +61,18 @@ class RunDir:
         self.path = Path(evidence_root) / target / scenario_id / run_id
         (self.path / "state").mkdir(parents=True, exist_ok=False)
 
-    def write_state(self, k: int, state: dict) -> str:
+    def write_state(self, k: int, state: dict, *, max_bytes: int | None = None) -> str:
         relative = f"state/{k}.json"
-        write_json(self.path / relative, {"k": k, "digest": digest(state), "state": state})
+        content = canonical(state).encode("utf-8")
+        record = {"k": k, "digest": "sha256:" + hashlib.sha256(content).hexdigest()}
+        if max_bytes is not None and len(content) > max_bytes:
+            sample_bytes = min(2048, max_bytes // 4)
+            record["sample"] = {"bytes": len(content),
+                                "first": content[:sample_bytes].decode("utf-8", errors="ignore"),
+                                "last": content[-sample_bytes:].decode("utf-8", errors="ignore") if sample_bytes else ""}
+        else:
+            record["state"] = state
+        write_json(self.path / relative, record)
         return relative
 
     def write_history(self, ops: Iterable[Op]) -> int:

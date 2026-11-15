@@ -12,12 +12,12 @@ sys.path[:0] = [str(REPO / "core"), str(HERE)]
 
 import argparse  # noqa: E402
 import json  # noqa: E402
-import shlex  # noqa: E402
 
 from witnessmark.runner import RunConfig, run, run_sequential_control  # noqa: E402
 from witnessmark.scenarios import Expectation  # noqa: E402
 
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
+from witnessmark_omnigraph.capture import repro_command  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
 from witnessmark_omnigraph.part2 import run_i6, run_o1, run_o4, run_o5  # noqa: E402
 from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
@@ -97,27 +97,33 @@ def main(argv: list[str] | None = None) -> int:
         sub.add_argument("--evidence", default=str(REPO / "evidence"))
         if name == "curve":
             sub.add_argument("--include-falkor", action="store_true")
+            sub.add_argument("--smoke", action="store_true", help="one tiny curve cell without a baseline benchmark")
         if name == "failover":
             sub.add_argument("--seed", type=int, default=20261115)
+            sub.add_argument("--smoke", action="store_true", help="one pause/resume cell")
     args = parser.parse_args(argv)
+    command = repro_command(REPO, argv if argv is not None else sys.argv[1:])
 
     if args.command in ("curve", "failover", "visibility", "i6"):
         build = BUILDS[args.build]
         evidence = Path(args.evidence)
         if args.command == "curve":
+            if args.smoke and args.include_falkor:
+                parser.error("the smoke curve cannot run the FalkorDB benchmark")
             manifest, path = run_o1(REPO, evidence, args.batch, args.build, build, args.storage,
-                                    include_falkor=args.include_falkor)
+                                    include_falkor=args.include_falkor, command=command, smoke=args.smoke)
             baseline = (manifest.get("controls", {}).get("falkordb") or {})
             if baseline and not baseline.get("sanity_band_met"):
                 print("FalkorDB S28 sanity band NOT MET; stop the batch before other findings")
                 print(f"evidence: {path}")
                 return 2
         elif args.command == "i6":
-            manifest, path = run_i6(REPO, evidence, args.batch, args.build, build, args.storage)
+            manifest, path = run_i6(REPO, evidence, args.batch, args.build, build, args.storage, command=command)
         elif args.command == "failover":
-            manifest, path = run_o4(REPO, evidence, args.batch, args.build, build, args.storage, args.seed)
+            manifest, path = run_o4(REPO, evidence, args.batch, args.build, build, args.storage, args.seed,
+                                    command=command, smoke=args.smoke)
         else:
-            manifest, path = run_o5(REPO, evidence, args.batch, args.build, build, args.storage)
+            manifest, path = run_o5(REPO, evidence, args.batch, args.build, build, args.storage, command=command)
         print(f"{manifest['scenario']['id']}: {len(manifest['trials'])} trial(s)")
         print(f"evidence: {path}")
         return 0
@@ -153,8 +159,6 @@ def main(argv: list[str] | None = None) -> int:
 
     scenario = ClaimScenario(args.scenario == "o2a")
     expectation = Expectation("negative", "documented", scenario.basis_ref)
-    command = shlex.join(["python", "targets/03-omnigraph/wm_omnigraph.py",
-                          *(argv if argv is not None else sys.argv[1:])])
     config = RunConfig(engine=engine, scenario=scenario, shape="thread", clients=args.clients,
                        trials=args.trials, seed=args.seed, evidence_root=Path(args.evidence), repo_root=REPO,
                        evidence_dir=f"omnigraph/{args.build}.{args.storage}", batch=args.batch,

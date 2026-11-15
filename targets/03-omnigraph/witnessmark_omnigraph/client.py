@@ -19,6 +19,8 @@ from enum import Enum
 from typing import Any
 from urllib.parse import quote, urlencode, urlsplit
 
+from witnessmark.timing import stamp
+
 
 class Outcome(str, Enum):
     """The three operation outcomes from master blueprint section 5.0."""
@@ -115,6 +117,7 @@ class OmnigraphClient:
         *,
         bearer_token: str | None = None,
         timeout: float = 60.0,
+        observed=None,
     ):
         parsed = urlsplit(endpoint)
         if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -128,6 +131,7 @@ class OmnigraphClient:
         self.graph = graph
         self.bearer_token = bearer_token
         self.timeout = timeout
+        self._observed = observed
 
     def _connection(self) -> http.client.HTTPConnection:
         cls = http.client.HTTPSConnection if self._scheme == "https" else http.client.HTTPConnection
@@ -139,6 +143,15 @@ class OmnigraphClient:
     def _request(self, method: str, path: str, body: dict | bytes | None = None, *, protected: bool = True,
                  extra_headers: dict[str, str] | None = None,
                  content_type: str = "application/json") -> OperationResult:
+        inv = stamp() if self._observed is not None else None
+        result = self._send(method, path, body, protected=protected, extra_headers=extra_headers,
+                            content_type=content_type)
+        if self._observed is not None:
+            self._observed(method, path, body, inv, stamp(), result)
+        return result
+
+    def _send(self, method: str, path: str, body: dict | bytes | None, *, protected: bool,
+              extra_headers: dict[str, str] | None, content_type: str) -> OperationResult:
         headers = {"Accept": "application/json", **(extra_headers or {})}
         if protected:
             headers["Omnigraph-Http-Api"] = "0.14"

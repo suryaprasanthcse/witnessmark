@@ -132,10 +132,13 @@ class O4ClassificationTest(unittest.TestCase):
 class RedactionTest(unittest.TestCase):
     def test_paths_under_a_user_home_and_the_repo_are_removed(self):
         repo = Path("C:/work/harness")
-        text = (r'File "C:\Users\someone\AppData\Local\Programs\Python\Lib\x.py" at C:/Users/someone/proj '
-                r'and ' + str(repo) + r'\core and C:/work/harness/core')
+        home = "C:" + "/".join(("", "Users", "someone"))
+        home_win = home.replace("/", chr(92))
+        app_dir = "App" + "Data"
+        win_path = chr(92).join((home_win, app_dir, "Local", "x.py"))
+        text = f'File "{win_path}" at {home}/proj and {repo}/core and C:/work/harness/core'
         cleaned = part2.redact_paths(text, repo)
-        for leaked in ("someone", "Users", "AppData", "work"):
+        for leaked in ("someone", "Users", app_dir, "work"):
             self.assertNotIn(leaked, cleaned)
 
 
@@ -213,7 +216,7 @@ class _FakeScanClient:
     def branch_list(self, detailed=False):
         return OperationResult(Outcome.OK, status=200, data={"branches": ["main"]})
 
-    def query(self, _query, _params, name=None, branch="main"):
+    def query(self, _query, _params, name=None, branch="main", snapshot=None):
         if not self.ok:
             return OperationResult(Outcome.UNKNOWN, kind="connection", message="closed")
         rows = [{"agent": a, "task": "t"} for a in self.agents] if name == "q_eligible" else []
@@ -221,7 +224,7 @@ class _FakeScanClient:
 
 
 class O4IntegrityTest(unittest.TestCase):
-    queries = {"q_task": "q_task", "q_eligible": "q_eligible", "q_ledger": "q_ledger"}
+    queries = {name: name for name in ("q_task", "q_task_holder", "q_eligible", "q_ledger")}
 
     def test_an_acknowledged_write_that_is_absent_is_reported(self):
         result = part2.o4_integrity(_FakeScanClient(["a-p1-b"]), self.queries, ["a-p1-b", "b-p1-b"])

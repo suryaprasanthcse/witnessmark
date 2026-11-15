@@ -242,7 +242,7 @@ The tracker was checked on 2026-11-13 (read-only).
 | Question | Settled in |
 |---|---|
 | Is running several MCP server processes against one database supported? | Ask, if G1 `process` results go upstream |
-| When do Neo4j fulltext and vector indexes reflect a committed write? | G4 on Neo4j |
+| When do Neo4j fulltext and vector indexes reflect a committed write? | Answered in M2 by Graphiti G4 on Neo4j 5.26.2. Both the writing instance and a second instance saw 10 of 10 writes on the first search [measured: `20261113T175059Z-738c7f37`]. |
 | Do main and #1867 keep the same prompt set? | Answered in M2: yes. The stubs ran unchanged on both. |
 
 ## 11. Results (M2)

@@ -132,7 +132,11 @@ A target's adapter imports the target's own package, so it runs in that build's 
 
 - M1: `thread`.
 - M2 (Graphiti): `asyncio`, `queue` and `process`.
-- M4 (Omnigraph): `container`.
+- M4 (Omnigraph): `container` mode was not built. O1, O4 and O5 run without
+  a client race barrier [code: `core/witnessmark/runner.py`,
+  `core/witnessmark/memory.py` and
+  `targets/03-omnigraph/witnessmark_omnigraph/part2.py` @ `69d0cd3`].
+  The mode is an open decision for M5 (§12.1).
 
 **Invocation time.** In every mode, an operation's invocation is stamped when the client calls. A request waiting in a queue is already in flight.
 
@@ -382,7 +386,7 @@ Every verdict also carries an expectation basis and a reference for it. The basi
    | `thread` | `threading.Barrier` |
    | `asyncio` | `asyncio.Barrier` |
    | `process` | `multiprocessing.Barrier` |
-   | `container` | a TCP start gun: the coordinator accepts N connections, then writes one byte to all of them |
+   | `container` | For the TCP start gun the coordinator accepts N connections, then writes one byte to each. Not built yet (section 3.4). |
 
 5. **Act.** Each client records `inv`, sends its operation, then records `ret`, the outcome, the result, any error and the commit token. Per-operation timeout τ_op; per-trial timeout τ_trial.
 6. **Quiesce.** Call `quiesce()` and record how long it took.
@@ -411,7 +415,7 @@ A trial is valid only if every one of these holds:
 - The precondition digest matched.
 - Δ ≤ δ.
   - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
-  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). `container` keeps its provisional 50 ms.
+  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). The provisional `container` gate is 50 ms. The mode is not built yet (section 3.4).
 
     | Mode | Trials | p50 | p99 | δ |
     |---|---|---|---|---|
@@ -976,7 +980,7 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 - Six batches. The false start `m4-20261115T153532Z` has one planned manifest at `46adb1d` and no results [measured: `20261115T153548Z-45dc303e`]. The five reported batches are `m4-20261115T153804Z` (`46adb1d`), `m4b-20261115T164749Z` (`48737aa`), `m4c-20261115T165831Z` (`8f7bb3b`), `m4d-20261115T172246Z` (`2a02bd8`, the main batch) and `m4e-20261115T183929Z` (`8bc5fd3`) [measured: `20261115T154356Z-9ebd8e7e`, `20261115T164756Z-236def5c`, `20261115T165838Z-b4925bd5`, `20261115T172253Z-0adb5788`, `20261115T183931Z-fa543284`]. The Omnigraph blueprint's §10 records the batch history.
 - reports in `evidence/M4_OMNIGRAPH.md` and `evidence/M4_OMNIGRAPH_B1.md` to `_B4.md`; results in the Omnigraph blueprint, §10;
 - O4 recorded unclaimed epochs and fixed pause offsets without staging or publish-phase verification. In `m4e` the stable MinIO cells were BOUNDARY and the edge cells were NOT_EXERCISED [measured: `20261115T183001Z-3dcbea3c`, `20261115T184233Z-3a4a4f31`, `20261115T184523Z-2ae7e967`]. At the edge pin an epoch claim requires an embedding program [docs: Omnigraph troubleshooting.md, "Writer epoch" @ `b2dbaff`]. The epoch-claim test waits for an upstream release with a claim route.
-- M4 evidence lacks `history.jsonl` and `REPRO.md` (the Omnigraph blueprint, §10) [measured: the M4 run directories in `evidence/omnigraph/`, including `20261115T153548Z-45dc303e` through `20261115T184523Z-2ae7e967`]. The M5 decisions, including the O2, O3 and O6 work and O5 on MinIO, are in the Omnigraph blueprint's §11.
+- M4 evidence lacks `history.jsonl`, `state/` and `REPRO.md` (the Omnigraph blueprint, §10) [measured: the M4 run directories in `evidence/omnigraph/`, including `20261115T153548Z-45dc303e` through `20261115T184523Z-2ae7e967`]. The M5 decisions, including the O2, O3 and O6 work and O5 on MinIO, are in the Omnigraph blueprint's §11.
 - commit `bfdec20` carries a `Co-Authored-By` trailer by mistake; it is kept because the evidence records harness commit hashes.
 
 **Review, M4.** Reviewed and signed off by the maintainer on 2026-11-16, after the independent second-reader audit and the correction commit `387b2cf`. The decisions on the open items are in the Omnigraph blueprint, §11. M4 is closed, and M5 may start.
@@ -985,11 +989,17 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 
 #### Omnigraph
 
-- [ ] Write `history.jsonl` and `REPRO.md` for the Omnigraph runs, following §9.1.
+- [ ] Write `history.jsonl`, `state/<k>.json` and `REPRO.md` for the Omnigraph
+  runs, following §9.1.
+- [ ] Pin the MinIO and proxy images by digest in `compose.yml` before the
+  M5 reruns.
 - [ ] Before repeating O4, record wall-clock timestamps for the pause, resume,
   successor readiness and each acknowledgement. Capture server logs on failure.
 - [ ] Add an unrelated-graph reader and a writer to the Omnigraph side of O1
   before any public FalkorDB comparison. Follow §11.5 for publication.
+- [ ] Decide before the O2 and O3 races whether to build `container` mode
+  with its TCP start gun or run the races in `thread` mode and amend
+  sections 3.4 and 6.1. The maintainer makes this decision.
 - [ ] Run the O2 claim races, the O3 merge races and O6 traversal parity beyond
   the Part 1 sequential controls. Run O5 on MinIO.
 - [ ] Exercise O4 local ownership transfer. Stop A, obtain its exact lock ID
@@ -1001,7 +1011,8 @@ qualification versus RustFS remain deferred. [Omnigraph decisions (§11)](target
 
 #### Graphiti
 
-- [ ] G6. Check index readiness at startup.
+- [ ] G6. Check index readiness at startup, including what FalkorDB fulltext
+  search returns while an index is `UNDER CONSTRUCTION` (§13).
 - [ ] G7. Check persistence across restarts in the root and MCP FalkorDB
   Compose configurations.
 - [ ] G8. Check deletion permanence under I5 (§5.5).
@@ -1033,8 +1044,8 @@ R3 stand as documented. The C3 fixture variant on R3 remains an open question.
 |---|---|
 | Can the release-spread bounds be met on Windows with Docker Desktop? | Answered for `thread` mode in M1: 50 threads cannot meet 5 ms (p50 7.88 ms), so δ is 40 ms (section 6.3). The other modes are measured when they land. |
 | Should clients run inside the Docker network rather than on the Windows host? | Still open: M1 ran every client on the Windows host |
-| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | M2 |
-| When do Neo4j fulltext and vector indexes reflect a committed write? | M2 |
+| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Deferred to G6 in M5 (§12.1) [unmeasured: G6]. |
+| When do Neo4j fulltext and vector indexes reflect a committed write? | Answered in M2 by Graphiti G4 on Neo4j 5.26.2. Both the writing instance and a second instance saw 10 of 10 writes on the first search [measured: `20261113T175059Z-738c7f37`]. |
 | Which Neo4j release breaks ties (section 7.4)? | Pinned when first needed |
 
 ## Appendix A. Glossary

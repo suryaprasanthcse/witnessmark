@@ -2,11 +2,11 @@
 
 Witnessmark checks seven concurrency and temporal invariants, I1 to I7, on graph databases and agent-memory layers. Every verdict comes with a witness: the raw, replayable record of the operations that produced it.
 
-> **Status: milestone M4, awaiting review.**
+> **M1 to M4 are reviewed and signed off. M5 is next.**
 > - M1 calibrated the core runner and the two baseline adapters against FalkorDB 6.0.4 and Neo4j 5.26.2.
 > - M2 added the memory-layer runner and the Graphiti adapter. Results: [evidence/M2_GRAPHITI.md](evidence/M2_GRAPHITI.md), and the Graphiti blueprint's §11.
-> - M3 adds the Cognee adapter and its HTTP stub endpoint. Results: [evidence/M3_COGNEE.md](evidence/M3_COGNEE.md) (with three re-run reports), and the Cognee blueprint's §12.
-> - M4 adds the Omnigraph adapter and its cost, failover-boundary and visibility runs. Results: [evidence/M4_OMNIGRAPH.md](evidence/M4_OMNIGRAPH.md) (with four more reports for the earlier batches and the re-run), and the Omnigraph blueprint's §10.
+> - M3 added the Cognee adapter and its HTTP stub endpoint. Results: [evidence/M3_COGNEE.md](evidence/M3_COGNEE.md) (with three re-run reports), and the Cognee blueprint's §12.
+> - M4 added the Omnigraph adapter and its cost, failover-boundary and visibility runs. Results: [evidence/M4_OMNIGRAPH.md](evidence/M4_OMNIGRAPH.md) (with four more reports for the earlier batches and the re-run), and the Omnigraph blueprint's §10.
 >
 > The blueprints below are the contract the code is built against.
 

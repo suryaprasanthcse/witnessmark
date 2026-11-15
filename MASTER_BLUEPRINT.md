@@ -132,11 +132,13 @@ A target's adapter imports the target's own package, so it runs in that build's 
 
 - M1: `thread`.
 - M2 (Graphiti): `asyncio`, `queue` and `process`.
-- M4 (Omnigraph): `container` mode was not built. O1, O4 and O5 run without
-  a client race barrier [code: `core/witnessmark/runner.py`,
+- M5 (maintainer decision, 2026-11-16): Run the O2 claim races and O3 merge
+  races in `thread` mode on the Windows host, using the existing runner for
+  concurrent HTTP requests to Omnigraph. `container` mode was not built.
+  M4's O1, O4 and O5 ran without a client race barrier
+  [code: `core/witnessmark/runner.py`,
   `core/witnessmark/memory.py` and
   `targets/03-omnigraph/witnessmark_omnigraph/part2.py` @ `69d0cd3`].
-  The mode is an open decision for M5 (§12.1).
 
 **Invocation time.** In every mode, an operation's invocation is stamped when the client calls. A request waiting in a queue is already in flight.
 
@@ -386,7 +388,7 @@ Every verdict also carries an expectation basis and a reference for it. The basi
    | `thread` | `threading.Barrier` |
    | `asyncio` | `asyncio.Barrier` |
    | `process` | `multiprocessing.Barrier` |
-   | `container` | For the TCP start gun the coordinator accepts N connections, then writes one byte to each. Not built yet (section 3.4). |
+   | `container` | For the TCP start gun the coordinator accepts N connections, then writes one byte to each. The mode is unimplemented and outside M5 (section 3.4). |
 
 5. **Act.** Each client records `inv`, sends its operation, then records `ret`, the outcome, the result, any error and the commit token. Per-operation timeout τ_op; per-trial timeout τ_trial.
 6. **Quiesce.** Call `quiesce()` and record how long it took.
@@ -414,8 +416,11 @@ A trial is valid only if every one of these holds:
 
 - The precondition digest matched.
 - Δ ≤ δ.
-  - **`thread` mode: δ = 40 ms.** This is 1.5 × the 99th-percentile spread of the 240 race trials in the M1 calibration, which used 50 clients: p50 7.88 ms, p99 26.65 ms, max 32.53 ms [measured: `evidence/M1_CALIBRATION.md`].
-  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). The provisional `container` gate is 50 ms. The mode is not built yet (section 3.4).
+  - **`thread` mode.** M1 calibrated δ = 40 ms on this host against FalkorDB and Neo4j with 50 clients. It used 1.5 × p99 rounded up over 240 race trials (p50 7.88 ms, p99 26.65 ms, max 32.53 ms) [measured: `evidence/M1_CALIBRATION.md`].
+    For Omnigraph, 40 ms is provisional. The first O2 batch records Δ for
+    every trial without a spread gate. Set Omnigraph's δ by the same
+    1.5 × p99 rule before reporting any O2 or O3 result (§12.1, Phase B).
+  - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). The provisional 50 ms `container` gate is unused (section 3.4).
 
     | Mode | Trials | p50 | p99 | δ |
     |---|---|---|---|---|
@@ -985,65 +990,107 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 
 **Review, M4.** Reviewed and signed off by the maintainer on 2026-11-16, after the independent second-reader audit and the correction commit `387b2cf`. The decisions on the open items are in the Omnigraph blueprint, §11. M4 is closed, and M5 may start.
 
-### 12.1 Draft M5 checklist
+### 12.1 M5 plan
 
-#### Omnigraph
+Each phase has its own prompt and starts after the maintainer gives that phase the go-ahead.
 
-- [ ] Write `history.jsonl`, `state/<k>.json` and `REPRO.md` for the Omnigraph
-  runs, following §9.1.
+- [x] **Maintainer decision (2026-11-16).** Run O2 and O3 in `thread` mode
+  on the Windows host (§3.4). `container` mode is out of scope for M5.
+
+The existing thread runner releases clients together through a barrier, with
+one connection per client [code: `core/witnessmark/runner.py` @ `2e0dbd7`].
+M1 calibrated the 40 ms gate on this host with 50 clients, using FalkorDB and
+Neo4j [measured: `evidence/M1_CALIBRATION.md`]. Omnigraph serves HTTP, so
+either client layout can send the same concurrent operations to its server
+concurrency controls [inference from the workload and §3.4]. O4 pauses A's
+test server container and fails over to B independently of the client mode
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py` @ `2e0dbd7`].
+O4's planned local transfer likewise stops the test server container.
+Network partitions are outside v0.1 (§3.4), so these tests can use the
+existing runner.
+
+#### 1. Phase A — Harness gaps
+
+Phase A follows M4 sign-off and ends when selftest passes and one smoke run per Omnigraph scenario under `.state/scratch/` writes all four §9.1 artifacts, with each history validating against §9.3.
+
+Implement the harness changes and cover them with unit tests. Run only the smoke checks in the exit criterion.
+
+- [ ] Write `history.jsonl`, `state/<k>.json` and `REPRO.md` with each
+  `run.json`, following §9.1. In `history.jsonl`, record fault-injector
+  actions as client `nemesis` with wall-clock times in `inv` and `ret`,
+  following §9.3.
 - [ ] Pin the MinIO and proxy images by digest in `compose.yml` before the
-  M5 reruns.
-- [ ] Before repeating O4, record wall-clock timestamps for the pause, resume,
-  successor readiness and each acknowledgement. Capture server logs on failure.
-- [ ] Add an unrelated-graph reader and a writer to the Omnigraph side of O1
-  before any public FalkorDB comparison. Follow §11.5 for publication.
-- [ ] Decide before the O2 and O3 races whether to build `container` mode
-  with its TCP start gun or run the races in `thread` mode and amend
-  sections 3.4 and 6.1. The maintainer makes this decision.
-- [ ] Run the O2 claim races, the O3 merge races and O6 traversal parity beyond
-  the Part 1 sequential controls. Run O5 on MinIO.
-- [ ] Exercise O4 local ownership transfer. Stop A, obtain its exact lock ID
-  from `cluster status --json`, and run `cluster force-unlock` before starting B.
+  M5 reruns. Record the proxy image ID in the run manifests.
+- [ ] Capture O4 wall-clock times for pause, resume, successor readiness and
+  each acknowledgement. Capture server logs on failure.
+
+#### 2. Phase B — Omnigraph runs
+
+Phase B depends on Phase A and ends when the calibrated gate is recorded and the runs and their controls are checked and recorded in evidence.
+
+Run these in order. Use `thread` mode for the O2 and O3 races, and run each
+scenario with its sequential control and the applicable controls in §6.2.
+
+1. Use the first O2 batch to record Δ for every trial. Treat 40 ms as
+   provisional for Omnigraph, and set its δ using the 1.5 × p99 rule in §6.3
+   before reporting O2 or O3 results.
+2. Run the O2 claim races with the calibrated gate.
+3. Run the O3 merge races with the calibrated gate.
+4. Run O6 traversal parity beyond the Part 1 sequential control.
+5. Run O5 on MinIO.
+6. Exercise O4 local ownership transfer. Stop A, obtain its exact lock ID
+   from `cluster status --json`, and run `cluster force-unlock` before starting B.
+7. Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
+   before any public FalkorDB comparison. Follow §6.5 for the cost curve
+   and §11.5 for publication.
 
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write
 qualification versus RustFS remain deferred. [Omnigraph decisions (§11)](targets/03-omnigraph/MASTER_BLUEPRINT.md#11-open-questions-and-decisions-after-the-m4-audit)
 
-#### Graphiti
+#### 3. Phase C — Graphiti
 
-- [ ] G6. Check index readiness at startup, including what FalkorDB fulltext
-  search returns while an index is `UNDER CONSTRUCTION` (§13).
-- [ ] G7. Check persistence across restarts in the root and MCP FalkorDB
-  Compose configurations.
-- [ ] G8. Check deletion permanence under I5 (§5.5).
+Phase C follows Phase B and ends when G6, G7 and G8 have recorded outcomes and evidence.
+
+1. G6. Check index readiness at startup, including what FalkorDB fulltext
+   search returns while an index is `UNDER CONSTRUCTION` (§13).
+2. G7. Check persistence across restarts in the root and MCP FalkorDB
+   Compose configurations.
+3. G8. Check deletion permanence under I5 (§5.5).
 
 [Graphiti scenarios (§5)](targets/01-zep-graphiti/MASTER_BLUEPRINT.md#5-scenarios)
 
-#### Cognee
+#### 4. Phase D — Cognee
 
-- [ ] Revisit C1 on R4 (Ladybug, LanceDB and PostgreSQL). Pin the PostgreSQL
-  baseline. The advisory-lock case depends on the #4167 code path. Testing its
-  pull-request build requires the maintainer's explicit approval.
-- [ ] Revisit C2's deferred `memify` case through its replacement `improve`.
+Phase D follows Phase C and ends when C2 and any approved R4 runs have recorded outcomes and evidence.
+
+- [ ] Run C2's deferred `memify` case through its replacement `improve`.
   Script the required prompts with the deterministic stub before measuring it.
+- R4 (Ladybug, LanceDB and PostgreSQL) stays blocked until the maintainer
+  approves pinning the PostgreSQL baseline and separately approves any
+  #4167 pull-request build needed for the C1 advisory-lock case.
 
 The GLiNER check stays permanently skipped. The M3 C27 findings for C2 and C3 on
 R3 stand as documented. The C3 fixture variant on R3 remains an open question.
 [Cognee decisions (§10)](targets/02-cognee/MASTER_BLUEPRINT.md#10-open-questions)
 
-#### Closeout
+#### 5. Phase E — Closeout
 
-- [ ] Complete the planned reruns and regenerate their reports from evidence.
-  Verify that every reported number traces to a run ID (§9.6).
-- [ ] Prepare contribution drafts under §11.1 and record the maintainer's M5
-  review in this section.
+Phase E follows Phase D and ends with the maintainer's M5 review recorded in this section.
+
+1. Rerun only where a harness fix requires it.
+2. Regenerate reports from evidence and verify that every reported number
+   traces to a run ID (§9.6).
+3. Prepare contribution drafts in `drafts/` under §11.1 for the
+   maintainer to review and send. Tooling never sends them.
+4. Record the maintainer's M5 review.
 
 ## 13. Open questions
 
 | Question | Settled in |
 |---|---|
 | Can the release-spread bounds be met on Windows with Docker Desktop? | Answered for `thread` mode in M1: 50 threads cannot meet 5 ms (p50 7.88 ms), so δ is 40 ms (section 6.3). The other modes are measured when they land. |
-| Should clients run inside the Docker network rather than on the Windows host? | Still open: M1 ran every client on the Windows host |
+| Should clients run inside the Docker network rather than on the Windows host? | Still open. M1 ran its clients on the Windows host, and M5 keeps them on the host (§3.4). |
 | What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Deferred to G6 in M5 (§12.1) [unmeasured: G6]. |
 | When do Neo4j fulltext and vector indexes reflect a committed write? | Answered in M2 by Graphiti G4 on Neo4j 5.26.2. Both the writing instance and a second instance saw 10 of 10 writes on the first search [measured: `20261113T175059Z-738c7f37`]. |
 | Which Neo4j release breaks ties (section 7.4)? | Pinned when first needed |

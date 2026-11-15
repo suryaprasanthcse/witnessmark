@@ -154,7 +154,7 @@ maps that documented constraint message to the definite typed refusal
 ### O2. Fifty agents claim on main (I1 Form A, and the cost of false conflicts)
 
 - **O2a, conditional claims on one task.**
-  - 50 agents, each a separate client process or a thread with its own HTTP connection, read the task (`q_task` plus the commit id) and submit `m_claim_cond`. A barrier releases them together. T = 20.
+  - 50 agents, each a thread with its own HTTP connection, read the task (`q_task` plus the commit id) and submit `m_claim_cond`. A barrier releases them together. T = 20.
   - Expected [docs]: exactly one success and 49 `precondition_failure` replies. After re-reading, all 50 agents see the same holder.
   - Checked: I1 Form A, rules (a) to (d).
 - **O2b, conditional claims on disjoint tasks.**
@@ -170,17 +170,18 @@ maps that documented constraint message to the definite typed refusal
   - Negative: the same race on FalkorDB 6.0.4, using a naive guarded Cypher claim.
   - Positive: Neo4j 5.26.2 with the naive claim (master §6.2).
 
-**Runner wiring.** Omnigraph is a network server, so O2 uses the core thread
-runner. Every client owns a distinct `OmnigraphClient`/HTTP connection and the
-core barrier releases their requests together; this models independent network
-clients without process-start noise [code:
+**Runner wiring.** The O2 adapter gives each client a distinct
+`OmnigraphClient` and HTTP connection. The core thread barrier releases
+their requests together [code:
 `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py` and
-`core/witnessmark/runner.py`].
+`core/witnessmark/runner.py`]. The O2 and O3 races will use this thread
+runner on the Windows host (master §3.4) and the Omnigraph release-spread
+gate calibrated in master §6.3.
 
 ### O3. One branch per agent, then merge (I1 at merge)
 
 - **Setup.** 50 branches `agent/<i>`. On each, an agent claims the same task by inserting `HeldBy(task → agent_i)`.
-- **Procedure.** Merge every branch into main: first one after another, then concurrently from separate clients.
+- **Procedure.** Merge every branch into main one after another, then repeat concurrently from separate client threads (see O2 runner wiring).
 - **Expected [docs].** The first merge lands. Every later merge reports a typed conflict, `CardinalityViolation` or a divergence conflict, and writes nothing. No merge picks a winner silently (O-K5).
 - **Also measured.** Merge throughput against the number of live branches, reported as a curve (#643's axis).
 

@@ -72,7 +72,7 @@ The questions it answers:
 | Checkers | One per invariant; pure functions of the history and the final state | `core/` |
 | Oracle comparator | Normalises and compares results across engines (section 7) | `core/` |
 | Stubs | Deterministic LLM, embedder and reranker (section 8) | `core/` |
-| Nemesis | Fault actions: pause, resume, kill, restart (section 3.4) | `core/` |
+| Fault injector | Fault actions on the harness's own test containers: pause, resume, stop, restart (section 3.4); recorded under the schema name `nemesis` | `core/` |
 | Evidence writer | Writes `run.json`, `history.jsonl` and state dumps (section 9) | `core/` |
 | Reporter | Builds every table from evidence alone (section 10) | `core/` |
 | Baseline adapters | FalkorDB 6.0.4 and Neo4j 5.26.2 (section 7) | `core/` |
@@ -84,7 +84,7 @@ The questions it answers:
 ```text
  scenario + fixtures ──► runner ──► N clients ──► adapter ──► system under test
                           │   ▲                                    │
-                  nemesis │   │ barrier                  final-state read
+                  faults  │   │ barrier                  final-state read
                           ▼   │                                    ▼
                     history.jsonl                           state/<k>.json
                           │                                        │
@@ -126,7 +126,7 @@ A target's adapter imports the target's own package, so it runs in that build's 
 | `asyncio` | coroutines on one event loop | the target library is async, and the question is in-process concurrency |
 | `queue` | coroutines on one event loop, with one FIFO per group | the question is whether a per-group queue, such as Graphiti's MCP server keeps, removes the race |
 | `process` | OS processes (spawn start method), each building its own client and library instance and working through its share in order | per-process locks or queues are part of the question |
-| `container` | clients or servers in separate containers | pauses, kills and takeovers |
+| `container` | clients or servers in separate containers | pausing, stopping and failing over test containers |
 
 **Which milestone adds each mode.**
 
@@ -136,12 +136,12 @@ A target's adapter imports the target's own package, so it runs in that build's 
 
 **Invocation time.** In every mode, an operation's invocation is stamped when the client calls. A request waiting in a queue is already in flight.
 
-Nemesis actions are recorded in the history as operations whose client is `nemesis`:
+Fault-injection actions are recorded in the history as operations whose client is `nemesis`, the schema's name for the fault injector. The schema values below are kept as they are, so recorded evidence stays readable:
 
 | Action | Mechanism | Notes |
 |---|---|---|
-| `pause` / `resume` | `docker pause` / `docker unpause` | Uses the cgroup freezer. A frozen process cannot run, observe time or react. |
-| `kill` | SIGKILL | |
+| `pause` / `resume` | `docker pause` / `docker unpause` | Docker suspends the container's processes (the cgroup freezer); a paused process cannot run, observe time or react. |
+| `kill` | immediate stop of the test container (SIGKILL) | |
 | `stop` / `start` | graceful stop, then start | |
 | `restart` | restart of the same container | |
 
@@ -893,6 +893,7 @@ The reporter produces every number in a report, an issue comment or a draft from
 
 - Only measured claims, each with its tag (section 9.4) and its scope.
 - Plain words. Say what happened ("two clients were told they won"), not adjectives ("broken", "unsafe").
+- Neutral test vocabulary (adopted 2026-11-15). Prose says loopback-only network patch, fault injector, pause/resume the test container, stop, fail over to the second test server, and stale writer from the previous epoch. Schema values (`nemesis`, `kill`) and code identifiers keep their names, so recorded evidence and code stay readable.
 - Keep documented behaviour apart from defects, and say which documentation applies.
 - Peer tone: no flattery, no requests for work, no prices in public threads.
 
@@ -962,6 +963,8 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 - batches `m3-20261114T131136Z` (harness `1fd4dd0`), `m3b-20261114T204628Z` (`f3dbe98`), `m3c-20261114T221140Z` (`84dcdb7`) and `m3d-20261114T233706Z` (`5747966`); the later batches re-ran what a harness fix or a crash spoiled, and the target blueprint's §12 says which and why;
 - reports in `evidence/M3_COGNEE.md`, `evidence/M3_COGNEE_B2.md`, `evidence/M3_COGNEE_B3.md` and `evidence/M3_COGNEE_B4.md`; results in the Cognee blueprint, §12;
 - deferred: R4 (PostgreSQL) and the GLiNER check; no pull-request build was installed or run.
+
+**Review, M3.** Reviewed and signed off by the maintainer on 2026-11-15, after the closeout commits `4675786` to `57e0049` (support-boundary reporting, the two-node gap, the C0 cause, unit tests, the single-file repros, and the boundary-table fix) and an independent second-reader audit. The C0 repro was re-run for the sign-off and reproduced (exit 0). The decisions on the open items are in the Cognee blueprint, §10 and §11. M3 is closed, and M4 may start.
 
 ## 13. Open questions
 

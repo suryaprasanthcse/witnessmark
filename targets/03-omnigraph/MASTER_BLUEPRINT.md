@@ -14,6 +14,8 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 Documentation links point at main `9fb5b48e65d09db5ca8206ced437a0e4ec07cef6` (2026-11-13).
 
+**Vocabulary (2026-11-15, master §11.4).** This document says fault injector, pause/resume the test container, fail over to the second test server, and stale writer from the previous epoch. The history schema still records fault actions under client `nemesis`.
+
 ## 1. What is already known
 
 | # | Fact | Tag |
@@ -25,7 +27,7 @@ Documentation links point at main `9fb5b48e65d09db5ca8206ced437a0e4ec07cef6` (20
 | O-K5 | A merge reports typed conflicts: `DivergentInsert`, `DivergentUpdate`, `DeleteVsUpdate`, `OrphanEdge`, `UniqueViolation`, `CardinalityViolation` and `ValueConstraintViolation`. The docs state that a merge never silently picks a winner ([merge.md](https://github.com/ModernRelay/omnigraph/blob/9fb5b48e65d09db5ca8206ced437a0e4ec07cef6/docs/dev/merge.md)). | [docs] |
 | O-K6 | The writer epoch fence. The RFC ([2026-11-09-writer-epoch-fence.md](https://github.com/ModernRelay/omnigraph/blob/9fb5b48e65d09db5ca8206ced437a0e4ec07cef6/docs/rfcs/2026-11-09-writer-epoch-fence.md)) was merged as text by [#1328](https://github.com/ModernRelay/omnigraph/pull/1328) on 2026-11-09, and implemented by [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11. The RFC's frontmatter on main still says `draft` / `not-started`. `writes.md` now documents the writer epoch and the error `WriterFenced { held, read, current }`, which is not retried. | [docs] [gh] |
 | O-K7 | The gap the RFC closes. Writer exclusion across processes used to rest on a deployment rule (one mutation-capable writer process per cluster) and on admission locks. A server that stalled, was replaced and then woke up could still publish while its head precondition held, which left two writers on one branch. The RFC adds that no lock timeout closes this gap. | [docs] |
-| O-K8 | What the fence covers. It fences publications through the publisher only. Branch creation and deletion, and cleanup, keep the single-writer-process boundary. Lance ref metadata puts, ref unlinks and deletes, collector deletes and optimize's configuration commit are not fenced. The stated freshness bound: after a takeover, the old owner's reads may miss the successor's publishes until the old owner's next publish is refused, or until it is stopped. | [docs] |
+| O-K8 | What the fence covers. It fences publications through the publisher only. Branch creation and deletion, and cleanup, keep the single-writer-process boundary. Lance ref metadata puts, ref unlinks and deletes, collector deletes and optimize's configuration commit are not fenced. The stated freshness bound: after a failover, the old owner's reads may miss the successor's publishes until the old owner's next publish is refused, or until it is stopped. | [docs] |
 | O-K9 | How the fence is tested in-repo. A child-process helper parks a publish before its put (`failpoints.rs`). A DST oracle also runs, but its actors share one process registry; the RFC says this exercises the check, not the fence between two processes. | [docs] |
 | O-K10 | Other in-repo instruments:<br>• RFC 0031, comparative cost harness (draft, not started): two builds × two access paths.<br>• RFC 0032, adversarial correctness harness (draft, not started): write-cut sweeps that kill a child process, op-sequence fuzzing, parser fuzzing, scoped schedule exploration.<br>• RFC 0037, deterministic simulation (accepted, in progress).<br>• RFC 0039, end-to-end benchmark (accepted, in progress).<br>• Graph shallow clone RFC (draft, in progress), whose first user is that benchmark. | [docs] |
 | O-K11 | Open issues on branching:<br>• [#642](https://github.com/ModernRelay/omnigraph/issues/642): fork and delete work grows with the number of live sibling branches (0.10.0, a 121-table catalog, MinIO with 17 ms added per request).<br>• [#643](https://github.com/ModernRelay/omnigraph/issues/643): merges into independent targets serialise behind graph-wide guards.<br>• [#1355](https://github.com/ModernRelay/omnigraph/issues/1355): branch create and delete return 413 while an export is in flight.<br>• [#1094](https://github.com/ModernRelay/omnigraph/issues/1094): cleanup leaves a table version's manifest readable after deleting its files. | [gh] |
@@ -34,7 +36,7 @@ Documentation links point at main `9fb5b48e65d09db5ca8206ced437a0e4ec07cef6` (20
 **What Witnessmark adds to the in-repo instruments.**
 
 1. **A second engine.** It measures another engine's branching primitive, FalkorDB `GRAPH.COPY`, on the same host and the same graph shape.
-2. **A real zombie writer.** It freezes whole processes at arbitrary instants and performs a real takeover, against a real object store. Kill-based write cuts cannot produce a zombie, and a DST whose actors share one registry does not model one.
+2. **A real stale writer from a previous epoch.** It pauses whole test containers at chosen points in a write and performs a real failover to a second server, against a real object store. Write cuts that stop a child process cannot produce a writer that resumes later, and a DST whose actors share one registry does not model one.
 3. **Many independent clients.** Many separate client processes drive the server over HTTP.
 
 ## 2. Workload model
@@ -120,35 +122,35 @@ These are specifications, not source. The `.pg` and `.gq` files are written in M
 - **Expected [docs].** The first merge lands. Every later merge reports a typed conflict, `CardinalityViolation` or a divergence conflict, and writes nothing. No merge picks a winner silently (O-K5).
 - **Also measured.** Merge throughput against the number of live branches, reported as a curve (#643's axis).
 
-### O4. Zombie writer: an acceptance test for the writer epoch fence (I1 and I2 across a takeover)
+### O4. Stale writer after failover: an acceptance test for the writer epoch fence (I1 and I2 across a failover)
 
 - **Topology.** Two `omnigraph-server` processes, A and B, on one graph root, in separate containers. Storage is a shared local volume, then MinIO.
 - **Sequence for each trial.**
   1. A serves main and holds its writer epoch. A client asks A to write.
-  2. The nemesis freezes A's container (`docker pause`) at one of three phases:
+  2. The fault injector pauses A's container (`docker pause`) at one of three phases:
      - p1, before staging;
      - p2, after staging and before publish;
      - p3, during publish retries.
 
      A seeded schedule picks the phase. It uses server-side progress markers where they exist, and otherwise a declared sweep of time offsets across the write.
-  3. B starts and takes over main the documented way, by acquiring the lease and claiming the epoch. In variant (b), B also publishes P_B.
-  4. The nemesis unfreezes A, and A carries on with its write.
+  3. B starts and becomes main's writer the documented way, by acquiring the lease and claiming the epoch. In variant (b), B also publishes P_B.
+  4. The fault injector resumes A (`docker unpause`), and A carries on with its write.
 - **Pass criteria on the edge build** [docs: writes.md and the RFC].
-  - A's publish is refused with `WriterFenced` and is not retried.
+  - A's publish is rejected with `WriterFenced` and is not retried.
   - Nothing A staged is reachable from main's head, and A's staging is unreferenced and collectable.
   - B's publications are intact.
-  - Until the refusal, A's reads return the snapshot from before the claim; afterwards they see B's rows. This is the RFC's stated freshness bound.
+  - Until the rejection, A's reads return the snapshot from before the claim; afterwards they see B's rows. This is the RFC's stated freshness bound.
   - `branch list --detailed` shows a single epoch.
 - **Baseline on v0.15.0, before the fence.** The same sequence documents the behaviour the RFC describes: a stale writer's publish can land while its head precondition holds (O-K7). It is reported as BOUNDARY, because the deployment rule is documented, and not as FAIL.
-- **Boundary probes on the edge build.** After the takeover, A runs branch create or delete, cleanup, or optimize. The RFC puts all of these outside the fence (O-K8). The run records what happens, then checks integrity:
+- **Boundary probes on the edge build.** After the failover, A runs branch create or delete, cleanup, or optimize. The RFC puts all of these outside the fence (O-K8). The run records what happens, then checks integrity:
   - every object main's head references exists;
   - the graph opens;
   - a full scan succeeds.
 
   Results are reported as BOUNDARY.
 - **Variants.**
-  - A frozen for longer than the admission or lease timeout; the RFC says no timeout closes the gap.
-  - Several takeovers in a row.
+  - A paused for longer than the admission or lease timeout; the RFC says no timeout closes the gap.
+  - Several failovers in a row.
   - A and B claiming at once. Expected: one claim succeeds, and a single epoch is listed.
 
 ### O5. Read your writes across processes (I3)
@@ -193,7 +195,7 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 1. **No pull requests.** Issues are the only inbound channel, and a pull request needs an accepted issue or RFC (O-K12). Witnessmark opens no pull request here.
 2. **Data on open issues.** Post measured data, stated factually, on the open issues it bears on: #642, #643, #1355 and #1094.
-3. **The fence.** If O4 finds a FAIL on the edge build, file a bug with a minimal repro: two containers, one freeze, one takeover. If O4 passes, report it in the public artefact, and offer it to the maintainers in a short note (draft first) as external, process-level confirmation of #1350.
+3. **The fence.** If O4 finds a FAIL on the edge build, file a bug with a minimal repro: two containers, one pause, one failover. If O4 passes, report it in the public artefact, and offer it to the maintainers in a short note (draft first) as external, process-level confirmation of #1350.
 4. **Benchmarks against FalkorDB** follow master §11.5: the maintainers of both Omnigraph and FalkorDB see the numbers first.
 5. **If a pull request is ever invited,** use the commit types in their CONTRIBUTING; there is no `chore`.
 
@@ -206,7 +208,7 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 | Question | Settled in |
 |---|---|
-| How does a takeover work on a local-filesystem root and on S3: what form do the admission lock and main's lease take, and what is the timeout? Read `deployment.md` and the cross-process writes RFC at the pins. | M4 |
+| How does a writer failover work on a local-filesystem root and on S3: what form do the admission lock and main's lease take, and what is the timeout? Read `deployment.md` and the cross-process writes RFC at the pins. | M4 |
 | Does the server expose counts of object-store requests, or is a counting proxy needed? | M4 |
 | Do the HTTP conditional routes take the commit id as a header or as a body field? (`operations/server.md`) | M4 |
 | Can `.gq` express a guarded update in one statement, or only through `--if-commit`? | M4 |

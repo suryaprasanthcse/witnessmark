@@ -6,8 +6,11 @@ state. It never talks to an engine.
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from decimal import Decimal
+import re
 
 from .history import OK, UNKNOWN, Op
 
@@ -63,8 +66,13 @@ def check_claim_state(ops: list[Op], task: dict) -> Check:
     return Check("I1A", not problems, len(winners), "winners", detail, witnesses)
 
 
-def check_claim_lease(ops: list[Op], holders: list[str]) -> Check:
-    """I1 Form A for a lease held as an edge: (a)–(c) as above, plus (d) at most one live lease."""
+def check_claim_lease(ops: list[Op], holders: list[str], lease_records: list[dict] | None = None) -> Check:
+    """I1 Form A for edge leases, including historical interval overlap.
+
+    ``lease_records`` use half-open commit-order intervals: ``from_seq`` is
+    inclusive and ``until_seq`` is exclusive; ``None`` means still live.
+    Records for different tasks are independent.
+    """
     winners = _winners(ops)
     problems = []
     if len(winners) > 1:
@@ -75,10 +83,91 @@ def check_claim_lease(ops: list[Op], holders: list[str]) -> Check:
         problems.append(f"the winner {winners[0].input.get('agent')} does not hold the only lease (holders {holders})")
     if not winners and holders and not set(holders) <= _unknown_agents(ops):
         problems.append(f"no client won, yet leases are held by {holders}")
-    witnesses = [op.op_id for op in winners] if problems else []
-    magnitude = max(len(winners), len(holders))
+
+    malformed = []
+    overlaps = []
+    records = lease_records or []
+    for record in records:
+        if record.get("from_seq") is None:
+            malformed.append(str(record.get("id", "?")))
+    valid = [record for record in records if record.get("from_seq") is not None]
+    for index, first in enumerate(valid):
+        for second in valid[index + 1:]:
+            if first.get("task") != second.get("task"):
+                continue
+            start_1, end_1 = first["from_seq"], first.get("until_seq")
+            start_2, end_2 = second["from_seq"], second.get("until_seq")
+            before_end_2 = end_2 is None or start_1 < end_2
+            before_end_1 = end_1 is None or start_2 < end_1
+            if before_end_2 and before_end_1:
+                overlaps.append((str(first.get("id", "?")), str(second.get("id", "?"))))
+    if malformed:
+        problems.append(f"lease records without from_seq: {malformed}")
+    if overlaps:
+        problems.append(f"overlapping lease-record pairs: {overlaps}")
+
+    witnesses = [op.op_id for op in winners]
+    witnesses += malformed
+    witnesses += [record_id for pair in overlaps for record_id in pair]
+    witnesses = list(dict.fromkeys(witnesses)) if problems else []
+    magnitude = max(len(winners), len(holders), 2 if overlaps else 0)
     detail = "; ".join(problems) if problems else f"{len(winners)} winner(s); lease holders {holders}"
-    return Check("I1A", not problems, magnitude, "winners", detail, witnesses)
+    return Check("I1A", not problems, magnitude, "competing claims or leases", detail, witnesses)
+
+
+_ISO_INSTANT = re.compile(r"^\d{4}-\d\d-\d\d[Tt ]\d\d:\d\d:\d\d(?:\.\d+)?(?:[Zz]|[+-]\d\d:\d\d)$")
+
+
+def _canonical(value):
+    """A sortable, hashable representation for an I4 result cell."""
+    if value is None:
+        return ("null",)
+    if isinstance(value, bool):
+        return ("bool", value)
+    if isinstance(value, (int, float, Decimal)):
+        try:
+            number = Decimal(str(value))
+            if number.is_finite():
+                return ("number", number.normalize())
+        except (ValueError, ArithmeticError):
+            pass
+        return ("number", str(value))
+    if isinstance(value, str) and _ISO_INSTANT.match(value):
+        try:
+            instant = datetime.fromisoformat(value.replace("Z", "+00:00").replace("z", "+00:00"))
+            return ("instant", instant.astimezone(timezone.utc).isoformat(timespec="microseconds"))
+        except ValueError:
+            pass
+    if isinstance(value, dict):
+        return ("object", tuple(sorted((str(key), _canonical(item)) for key, item in value.items())))
+    if isinstance(value, (list, tuple)):
+        return ("list", tuple(_canonical(item) for item in value))
+    return (type(value).__name__, str(value))
+
+
+def normalize_rows(rows: list[dict], *, ordered: bool = False):
+    """Apply master section 5.4 normalisation to result rows.
+
+    Row order is ignored as a multiset unless the query has an ordering clause;
+    duplicate multiplicity always counts. Numbers and timestamp instants are
+    canonicalised, recursively, before comparison.
+    """
+    canonical = [_canonical(row) for row in rows]
+    return tuple(canonical) if ordered else Counter(canonical)
+
+
+def check_equivalent_rows(results: dict[str, list[dict]], *, ordered: bool = False) -> Check:
+    """I4 comparison for named engines after result normalisation."""
+    if not results:
+        return Check("I4", False, 0, "engine results", "no engine results were supplied")
+    names = list(results)
+    reference = names[0]
+    expected = normalize_rows(results[reference], ordered=ordered)
+    different = [name for name in names[1:] if normalize_rows(results[name], ordered=ordered) != expected]
+    held = not different
+    detail = (f"identical normalised results from {', '.join(names)}" if held else
+              f"silently different normalised result: {', '.join(different)} differs from {reference}")
+    return Check("I4", held, len(different), "different engines", detail, different)
 
 
 def check_counter(ops: list[Op], value: int) -> Check:

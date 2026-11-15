@@ -2,7 +2,8 @@
 
 import unittest
 
-from witnessmark.checkers import check_claim_lease, check_claim_state, check_counter, check_disjoint
+from witnessmark.checkers import (check_claim_lease, check_claim_state, check_counter, check_disjoint,
+                                  check_equivalent_rows, normalize_rows)
 from witnessmark.history import FAIL, OK, UNKNOWN, Op
 from witnessmark.timing import Stamp
 
@@ -55,6 +56,29 @@ class ClaimLeaseTest(unittest.TestCase):
     def test_no_lease_and_no_winner(self):
         self.assertTrue(check_claim_lease([op(0, FAIL)], []).held)
 
+    def test_adjacent_historical_leases_do_not_overlap(self):
+        leases = [
+            {"id": "l0", "task": "t0", "from_seq": 1, "until_seq": 4},
+            {"id": "l1", "task": "t0", "from_seq": 4, "until_seq": 8},
+        ]
+        self.assertTrue(check_claim_lease([op(0, OK)], ["c00"], leases).held)
+
+    def test_overlapping_historical_leases_violate(self):
+        leases = [
+            {"id": "l0", "task": "t0", "from_seq": 1, "until_seq": 5},
+            {"id": "l1", "task": "t0", "from_seq": 4, "until_seq": 8},
+        ]
+        check = check_claim_lease([op(0, OK)], ["c00"], leases)
+        self.assertFalse(check.held)
+        self.assertEqual(check.witnesses, ["1-c00-0", "l0", "l1"])
+
+    def test_intervals_on_different_tasks_are_independent(self):
+        leases = [
+            {"id": "l0", "task": "t0", "from_seq": 1, "until_seq": None},
+            {"id": "l1", "task": "t1", "from_seq": 1, "until_seq": None},
+        ]
+        self.assertTrue(check_claim_lease([op(0, OK)], ["c00"], leases).held)
+
 
 class CounterTest(unittest.TestCase):
     def test_all_increments_survive(self):
@@ -86,6 +110,29 @@ class DisjointTest(unittest.TestCase):
         self.assertFalse(check.held)
         self.assertEqual(check.magnitude, 2)
         self.assertEqual(check.witnesses, ["1-c01-0", "1-c02-0"])
+
+
+class EquivalenceTest(unittest.TestCase):
+    def test_unordered_rows_are_a_multiset(self):
+        first = [{"n": 1}, {"n": 2}, {"n": 2}]
+        second = [{"n": 2.0}, {"n": 1.0}, {"n": 2}]
+        self.assertEqual(normalize_rows(first), normalize_rows(second))
+        self.assertTrue(check_equivalent_rows({"omnigraph": first, "neo4j": second}).held)
+
+    def test_duplicate_multiplicity_counts(self):
+        check = check_equivalent_rows({"omnigraph": [{"n": 1}, {"n": 1}], "neo4j": [{"n": 1}]})
+        self.assertFalse(check.held)
+        self.assertEqual(check.witnesses, ["neo4j"])
+
+    def test_timestamps_are_compared_as_instants(self):
+        first = [{"at": "2026-11-15T12:00:00Z"}]
+        second = [{"at": "2026-11-15T17:30:00+05:30"}]
+        self.assertTrue(check_equivalent_rows({"omnigraph": first, "neo4j": second}).held)
+
+    def test_order_counts_only_when_requested(self):
+        first, second = [{"n": 1}, {"n": 2}], [{"n": 2}, {"n": 1}]
+        self.assertTrue(check_equivalent_rows({"a": first, "b": second}).held)
+        self.assertFalse(check_equivalent_rows({"a": first, "b": second}, ordered=True).held)
 
 
 if __name__ == "__main__":

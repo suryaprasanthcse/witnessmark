@@ -43,6 +43,7 @@ class RunConfig:
     spread_gate_ms: float | None = THREAD_SPREAD_GATE_MS  # None records the spread without gating on it
     evidence_root: Path = Path("evidence")
     evidence_dir: str | None = None
+    additional_components: tuple[dict, ...] = ()
     repo_root: Path = Path(".")
     batch: str | None = None
     command: str = ""
@@ -169,6 +170,8 @@ def _race_trial(config: RunConfig, k: int, admin: Session, sessions: list[Sessio
 
 
 def _repro(config: RunConfig, run_id: str, component: dict, harness: dict) -> str:
+    additional = "".join(f"- {item['name']}: `{item['image']}` (digest: `{item['digest']}`)\n"
+                         for item in config.additional_components)
     return (
         f"# Reproduce run {run_id}\n\n"
         "Start the pinned baselines, then run the same configuration:\n\n"
@@ -180,6 +183,7 @@ def _repro(config: RunConfig, run_id: str, component: dict, harness: dict) -> st
         f"- Engine: {component.get('name')} {component.get('version')}\n"
         f"- Image: `{component.get('image', 'unknown')}`\n"
         f"- Digest: `{component.get('digest', 'unknown')}`\n"
+        f"{additional}"
         f"- Clients: {config.clients}; trials: {config.trials}; seed: {config.seed}\n"
     )
 
@@ -213,7 +217,7 @@ def run(config: RunConfig) -> dict:
     header = {
         "harness": harness,
         "target": target,
-        "components": [component],
+        "components": [component, *config.additional_components],
         "host": host,
         "scenario": {
             "id": config.scenario_id,

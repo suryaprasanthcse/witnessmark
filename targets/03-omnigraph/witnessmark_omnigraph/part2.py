@@ -41,8 +41,20 @@ REPETITIONS = 5
 LEASE_SECONDS = 2
 DEFAULT_LEASE_SECONDS = 30
 I6_BRANCH_AFTER = 5  # the I6a branch is cut once this many ledger appends have landed
-MINIO_IMAGE = "witnessmark/minio:RELEASE.2025-09-07T16-13-09Z"
 MINIO_DIGEST = "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899"
+MINIO_IMAGE = f"witnessmark/minio@{MINIO_DIGEST}"
+PROXY_DIGEST = "sha256:a865395be1e245d04d4e0b5a8bcc0813272a8e056f18b2cd94cb5a7230fc3e23"
+PROXY_IMAGE = f"witnessmark/proxy@{PROXY_DIGEST}"
+
+
+def storage_components(storage: str) -> list[dict]:
+    components = [{"role": "object-store", "name": "minio", "version": "RELEASE.2025-09-07T16-13-09Z",
+                   "image": MINIO_IMAGE, "digest": MINIO_DIGEST, "image_id": MINIO_DIGEST,
+                   "config": {"in_use": storage != "local"}}]
+    if storage == "proxy":
+        components.append({"role": "proxy", "name": "delay-proxy", "version": "17ms",
+                           "image": PROXY_IMAGE, "digest": PROXY_DIGEST, "image_id": PROXY_DIGEST})
+    return components
 
 
 def _utc() -> datetime:
@@ -116,7 +128,6 @@ class Stack:
             "WM_OMNIGRAPH_CLUSTER": self.root,
             "WM_S3_ENDPOINT": "http://wm-object-proxy:9010" if storage == "proxy" else "http://wm-minio:9000",
             "WM_CLUSTER_LEASE_SECONDS": str(lease_seconds),
-            "WM_MINIO_IMAGE": MINIO_IMAGE,
         })
 
     def compose(self, *args: str, timeout: float = 300, check: bool = True) -> subprocess.CompletedProcess:
@@ -205,10 +216,7 @@ def _manifest(repo: Path, batch: str, build: dict, build_name: str, storage: str
                    "digest": build["digest"]},
         "components": [{"role": "sut", "name": "omnigraph-server", "version": build_name,
                         "image": build["image"], "digest": build["digest"],
-                        "config": {"backend": storage}},
-                       {"role": "object-store", "name": "minio",
-                        "version": "RELEASE.2025-09-07T16-13-09Z", "image": MINIO_IMAGE,
-                        "digest": MINIO_DIGEST}],
+                        "config": {"backend": storage}}, *storage_components(storage)],
         "scenario": {"id": scenario, "mode": mode, "invariants": extra.pop("invariants", [])},
         "trials": trials,
         **extra,

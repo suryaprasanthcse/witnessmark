@@ -19,7 +19,7 @@ from witnessmark.scenarios import Expectation  # noqa: E402
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
 from witnessmark_omnigraph.capture import repro_command  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
-from witnessmark_omnigraph.part2 import run_i6, run_o1, run_o4, run_o5  # noqa: E402
+from witnessmark_omnigraph.part2 import run_i6, run_o1, run_o4, run_o5, storage_components  # noqa: E402
 from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
 
 BUILDS = {
@@ -162,7 +162,8 @@ def main(argv: list[str] | None = None) -> int:
     config = RunConfig(engine=engine, scenario=scenario, shape="thread", clients=args.clients,
                        trials=args.trials, seed=args.seed, evidence_root=Path(args.evidence), repo_root=REPO,
                        evidence_dir=f"omnigraph/{args.build}.{args.storage}", batch=args.batch,
-                       command=command, expectation=expectation)
+                       command=command, expectation=expectation,
+                       additional_components=tuple(storage_components(args.storage)))
     manifest = run(config)
     print(f"{manifest['scenario']['id']}: {manifest['verdicts'][0]['status']}")
     print(f"evidence: {manifest['path']}")

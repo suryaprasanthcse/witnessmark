@@ -276,6 +276,23 @@ def invalid_table(runs: list[dict]) -> str | None:
     return "\n".join(lines) if found else None
 
 
+def incomplete_table(runs: list[dict]) -> str | None:
+    """Omnigraph runs whose manifest never left its planned state, with the reason their ERROR.md gives."""
+    lines = ["| Build | Storage | Scenario | Error | Run |", "|---|---|---|---|---|"]
+    for run in runs:
+        if run.get("status") != "planned-before-execution":
+            continue
+        build, storage = _where(run)
+        reason = "no ERROR.md"
+        note = Path(run.get("_dir", ".")) / "ERROR.md"
+        if note.is_file():
+            found = [line[len("- Error: "):] for line in note.read_text(encoding="utf-8").splitlines()
+                     if line.startswith("- Error: ")]
+            reason = (found[0] if found else "see ERROR.md").strip("`")[:420]
+        lines.append(f"| {build} | {storage} | {run['scenario']['id']} | {reason.replace('|', '/')} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
 def omnigraph_cost_table(runs: list[dict]) -> str:
     lines = [
         "| Build | Storage | Nodes / edges | Siblings | Create median [IQR] (ms) | Stall median (ms) | Reader p99 before / during (ms) | Merge / delete median (ms) | Object requests / bytes, one create + delete | Run |",
@@ -463,6 +480,11 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         run_summary,
         "",
     ]
+    incomplete = incomplete_table(runs)
+    if incomplete:
+        lines += ["## Runs that did not complete", "",
+                  "[measured] These runs wrote their planned manifest and then stopped; no result was inferred from them.",
+                  "", incomplete, ""]
     boundaries = support_boundaries_table(runs)
     if boundaries:
         lines += ["## Support boundaries reached", "",

@@ -1,6 +1,7 @@
 """Reporter gates for M4-only sections."""
 
 import unittest
+from pathlib import Path
 
 from witnessmark.report import memory_markdown
 
@@ -72,6 +73,17 @@ class M4ReportTest(unittest.TestCase):
         text = memory_markdown([curve], "m4", "M4: Omnigraph")
         self.assertIn("`appendfsync always`", text)
         self.assertIn("Unrelated writer stall", text)
+
+    def test_a_run_that_never_finished_is_listed_with_its_error(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "ERROR.md").write_text("# Run error\n\n- Error: `RuntimeError: it broke`\n",
+                                                   encoding="utf-8")
+            planned = run("curve", "o1.branch_cost", [])
+            planned.update({"status": "planned-before-execution", "_dir": directory})
+            text = memory_markdown([planned], "m4", "M4: Omnigraph")
+        self.assertIn("## Runs that did not complete", text)
+        self.assertIn("RuntimeError: it broke", text)
 
 if __name__ == "__main__":
     unittest.main()

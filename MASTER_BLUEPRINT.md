@@ -1030,6 +1030,12 @@ Implement the harness changes and cover them with unit tests. Run only the smoke
   parity evidence, O4 clean-stop local transfer, O1 unrelated reader and
   writer, and the O2 calibration option.
 - [x] Validate the scratch smoke runs, including O5 evidence on MinIO.
+- [x] **Addendum (2026-11-16).** Add the O2b cost curve, `costcurve` for
+  both engines, with its declared sweep, and document the
+  `Scenario.precondition()` hook (§6.3 and the Omnigraph blueprint, O2b and
+  O2 runner wiring). One scratch smoke run of each side wrote all four
+  §9.1 files with valid histories. [code:
+  `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py` @ `6e2d1af`]
 
 The maintainer approved a clean-stop transfer on 2026-11-16. Start B after
 status confirms A released admission. A retained lock or an unclean exit

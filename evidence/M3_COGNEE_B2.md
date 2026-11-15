@@ -7,6 +7,14 @@ Regenerated from `evidence/` by `python wm.py report --memory`. Do not edit by h
 - Docker: 29.9.3; VM limits 8 CPUs, 11.6 GB
 - Runs: 5 (5 races, 0 case suites, 0 visibility)
 
+## Support boundaries reached
+
+[measured] These runs declared a support boundary, recorded ERR classes, and had no valid trials.
+
+| Build | Backend | Scenario | Valid trials | Dominant ERR class | Run |
+|---|---|---|---|---|---|
+| v1.6.8 | R2 (access control off) | c1.k8.process | 0 of 20 | AfterRunHookError | `20261114T204652Z-d5f2e1c9` |
+
 ## Races
 
 | Build | Backend | Scenario | Sequential control | Overlap control | Verdicts | Run |

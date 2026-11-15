@@ -120,6 +120,23 @@ def _trial(valid, checks, reason=None):
 
 
 class ReportTablesTest(unittest.TestCase):
+    def test_support_boundaries_require_a_boundary_and_no_valid_trials(self):
+        err = {"invariant": "ERR", "held": False, "detail": "busy x1; lock x3"}
+        other = {"invariant": "ERR", "held": False, "detail": "busy x3"}
+        run = _run_record([_trial(False, [err]), _trial(False, [other])])
+        run["expectation"] = {"support": "boundary"}
+        report = memory_markdown([run], "b", "T")
+        self.assertLess(report.index("## Support boundaries reached"), report.index("## Races"))
+        self.assertIn("| 0 of 2 | busy | `20261114T000000Z-abcdef01` |", report)
+        run["trials"][0]["valid"] = True
+        self.assertNotIn("## Support boundaries reached", memory_markdown([run], "b", "T"))
+        run["trials"][0]["valid"] = False
+        run["expectation"]["support"] = "supported"
+        self.assertNotIn("## Support boundaries reached", memory_markdown([run], "b", "T"))
+        run["expectation"]["support"] = "boundary"
+        run["trials"] = [_trial(False, [])]
+        self.assertNotIn("## Support boundaries reached", memory_markdown([run], "b", "T"))
+
     def test_invariants_table_counts_valid_trials_by_unit(self):
         entity = {"invariant": "I1B", "held": True, "unit": "records per key", "detail": "", "magnitude": 1}
         vector = {"invariant": "I1B", "held": False, "unit": "rows per vector id", "detail": "", "magnitude": 2}

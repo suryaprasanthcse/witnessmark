@@ -320,6 +320,8 @@ Installing or running third-party pull-request code needs the maintainer's expli
 
 Earlier in the session the harness also gained, before any batch: the `SummarizedContent` stub handler for cognee 1.6.1 (C25), APOC for Neo4j and the `neo4j` driver in the v1.6.8 environment (C26), and a fix to C3's I5 check on shared stores (`1fd4dd0`).
 
+**Ladybug support boundary.** [measured] Every multi-process run here that put concurrent workers on one Ladybug store reached a BOUNDARY. Each had 0 of 20 valid trials and ERR class `ladybug file lock`. In scenario order `c1.k2`, `c1.k4`, `c1.k8`, then `c2.writers` (access control off), the runs were R1 `20261114T131228Z-5b47435a`, `20261114T132931Z-134a3280`, `20261114T134920Z-186e234c`, `20261114T143808Z-c442cc14` and R1i `20261114T182011Z-03b8761e`, `20261114T183831Z-97e05ac3`, `20261114T185431Z-95507ca8`, `20261114T193043Z-188df5a9`. The reports show `INVALID` because the lock errors took the unknown-outcome rate above the 5% validity gate. [code] Cognee's performance guide scopes open-source use against one store to one process (C21, `.agents/skills/cognee-performance/SKILL.md:118–125@069f3cc`).
+
 ### Controls
 
 The sequential control is the exit criterion (master §9): with nothing racing, the fixture graph comes out exactly as specified.

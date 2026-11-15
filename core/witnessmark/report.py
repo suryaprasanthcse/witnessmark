@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections import Counter
 from pathlib import Path
 
 from .verdicts import percentile
@@ -230,6 +231,33 @@ def extra_checks_table(runs: list[dict]) -> str | None:
     return "\n".join(lines) if found else None
 
 
+def support_boundaries_table(runs: list[dict]) -> str | None:
+    lines = ["| Build | Backend | Scenario | Valid trials | Dominant ERR class | Run |",
+             "|---|---|---|---|---|---|"]
+    for run in runs:
+        trials = run.get("trials", [])
+        if run.get("expectation", {}).get("support") != "boundary" or not trials:
+            continue
+        if any(trial.get("valid") for trial in trials):
+            continue
+        errors: Counter[str] = Counter()
+        for trial in trials:
+            for check in trial.get("checks", []):
+                if check["invariant"] != "ERR" or check["held"]:
+                    continue
+                for entry in check["detail"].split("; "):
+                    label, _, count = entry.rpartition(" x")
+                    if label and count.isdecimal():
+                        errors[label] += int(count)
+        if not errors:
+            continue
+        dominant = errors.most_common(1)[0][0].replace("|", "/")
+        build, backend = _where(run)
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | 0 of {len(trials)} | "
+                     f"{dominant} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
 def invalid_table(runs: list[dict]) -> str | None:
     lines = ["| Backend | Scenario | Invalid trials | Reasons (distinct, first three) | Run |", "|---|---|---|---|---|"]
     found = False
@@ -293,6 +321,11 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)",
         "",
     ]
+    boundaries = support_boundaries_table(runs)
+    if boundaries:
+        lines += ["## Support boundaries reached", "",
+                  "[measured] These runs declared a support boundary, recorded ERR classes, and had no valid trials.",
+                  "", boundaries, ""]
     if races:
         sequential = sum(1 for run in races if (_control(run, "sequential") or {}).get("met"))
         lines += ["## Races", "", race_table(races), "",

@@ -1015,22 +1015,24 @@ Phase A follows M4 sign-off and ends when selftest passes and one smoke run per 
 
 Implement the harness changes and cover them with unit tests. Run only the smoke checks in the exit criterion.
 
-- [ ] Write `history.jsonl`, `state/<k>.json` and `REPRO.md` with each
+- [x] Write `history.jsonl`, `state/<k>.json` and `REPRO.md` with each
   `run.json`, following §9.1. In `history.jsonl`, record fault-injector
   actions as client `nemesis` with wall-clock times in `inv` and `ret`,
   following §9.3.
 - [x] Pin the MinIO and proxy images by digest in `compose.yml` before the
   M5 reruns. Record the proxy image ID in the run manifests.
-- [ ] Capture O4 wall-clock times for pause, resume, successor readiness and
+- [x] Capture O4 wall-clock times for pause, resume, successor readiness and
   each acknowledgement. Capture server logs on failure.
-- [ ] Make the Phase B entry points available. Add the O3 thread race, O6
-  parity evidence, O4 local transfer, and O1 unrelated reader and writer.
-  Check O5 evidence on MinIO and expose the O2 calibration option.
+- [x] Make the Phase B entry points available. Add the O3 thread race, O6
+  parity evidence, O4 clean-stop local transfer, O1 unrelated reader and
+  writer, and the O2 calibration option.
+- [ ] Validate the scratch smoke runs, including O5 evidence on MinIO.
 
-Part 2 evidence and O4 diagnostics passed the offline unit tests. The smoke
-checks are pending. The requested O4 local transfer needs a defined case in
-which A retains its lock after stopping and its I/O can be shown to have
-settled. [Omnigraph Phase A blocker](targets/03-omnigraph/MASTER_BLUEPRINT.md#11-open-questions-and-decisions-after-the-m4-audit)
+The maintainer approved a clean-stop transfer on 2026-11-16. Start B after
+status confirms A released admission. A retained lock or an unclean exit
+leaves the cell NOT_EXERCISED. The bootstrap exception applies to fresh
+disposable roots only.
+[Omnigraph ownership procedure](targets/03-omnigraph/MASTER_BLUEPRINT.md#o4-clean-stop-local-transfer)
 
 #### 2. Phase B — Omnigraph runs
 
@@ -1039,15 +1041,17 @@ Phase B depends on Phase A and ends when the calibrated gate is recorded and the
 Run these in order. Use `thread` mode for the O2 and O3 races, and run each
 scenario with its sequential control and the applicable controls in §6.2.
 
-1. Use the first O2 batch to record Δ for every trial. Treat 40 ms as
+1. Use `--no-spread-gate` for the first O2 batch to record Δ for every trial. Treat 40 ms as
    provisional for Omnigraph, and set its δ using the 1.5 × p99 rule in §6.3
    before reporting O2 or O3 results.
 2. Run the O2 claim races with the calibrated gate.
 3. Run the O3 merge races with the calibrated gate.
 4. Run O6 traversal parity beyond the Part 1 sequential control.
 5. Run O5 on MinIO.
-6. Exercise O4 local ownership transfer. Stop A, obtain its exact lock ID
-   from `cluster status --json`, and run `cluster force-unlock` before starting B.
+6. Exercise O4 local ownership transfer with `failover --variant clean-stop`.
+   Stop A gracefully and read `cluster status --json`. Start B only after
+   a clean exit and confirmed release. Mark retained or unclean cells
+   NOT_EXERCISED and capture their logs.
 7. Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
    before any public FalkorDB comparison. Follow §6.5 for the cost curve
    and §11.5 for publication.

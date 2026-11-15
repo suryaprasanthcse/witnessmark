@@ -289,7 +289,7 @@ while Neo4j's naive claim had 20/20 [measured:
 | Omnigraph edge-20261113-b2dbaff | Source commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `6b5b449cd4c292eae37ebd8d61a667b293714a5ad573b43a97a2299607297b8d`; local image `witnessmark/omnigraph:edge-b2dbaff`, digest `sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792` [measured: Docker build output, 2026-11-15]. |
 | Image build | `targets/03-omnigraph/docker/Dockerfile` uses digest-pinned Debian trixie-slim `sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` and installs the distribution's `ca-certificates` (20250419+deb13u1), as upstream's own Dockerfile does: without a trust store the binaries cannot build their S3 client and every S3 root fails with `storage_root_invalid`, even for a plain-HTTP endpoint [measured: MinIO smoke runs, `.state/scratch/m4-p2-smoke.json`, before and after]. The two image digests above are the rebuilt ones; batch 1 ran on the earlier, certificate-less images `sha256:32caa4e848b2…` (v0.15.0) and `sha256:9fd617ad5d75…` (edge). `build.ps1` downloads only the two pinned release archives, verifies each checksum, and labels the image with its exact source commit [code: `targets/03-omnigraph/docker/`]. The published-binary alternative is used, so a Rust toolchain and `protobuf-compiler` are not part of this image path. |
 | MinIO | Built locally from MinIO's official, GitHub-verified signed tag `RELEASE.2025-09-07T16-13-09Z`, which dereferences to commit `07c3a429bfed433e49018cb0f78a52145d4bedeb`. `Dockerfile.minio` verifies that dereference before compiling with the release's own `buildscripts/gen-ldflags.go`; its Go and Debian stages are pinned to `sha256:79390b5e5af9ee6e7b1173ee3eac7fadf6751a545297672916b59bfa0ecf6f71` and `sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc`. M4 used the local build tagged `witnessmark/minio:RELEASE.2025-09-07T16-13-09Z`. Its local image ID is `sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899` (verified by `docker image inspect`, 2026-11-16). The configured digest in the M4 manifests matches this ID [measured: `20261115T173716Z-d303435d`, `20261115T181001Z-adf60896`]. `minio --version` reports the exact tag, commit and Go 1.24.2 [code: `targets/03-omnigraph/docker/Dockerfile.minio`] [measured: source build and loopback readiness smoke, 2026-11-15]. |
-| Delay proxy | Standard-library forwarding proxy `core/witnessmark/proxy.py`; fixed 17 ms before each forwarded request, matching #642's method. `GET /__witnessmark__/counts` returns request count, request bytes and response bytes per HTTP method; `POST /__witnessmark__/reset` starts a matched repetition from zero. Its control calls are not counted. M4 used the local build tagged `witnessmark/proxy:17ms`. The rebuilt proxy's local image ID is `sha256:a865395be1e245d04d4e0b5a8bcc0813272a8e056f18b2cd94cb5a7230fc3e23` (verified by `docker image inspect`, 2026-11-16). The Python base is digest-pinned at `sha256:3fe1a0b6c2d6b2ebb572906cdabeca75aeb558c0c17db5ffefbcf8094871c32b` [code: `targets/03-omnigraph/docker/Dockerfile.proxy:1` @ `69d0cd3`]. It runs only in separate matched repetitions, never timing repetitions. Its first build rewrote the `Content-Length` of every `HEAD` reply to 0, so the object-store client saw empty objects (`Range started at 0 and ended at 0`); a reply to `HEAD` now keeps the upstream length (`core/tests/test_proxy.py`) [code: `core/witnessmark/proxy.py`] [measured: loopback MinIO smoke, 2026-11-15]. |
+| Delay proxy | Standard-library forwarding proxy `core/witnessmark/proxy.py`; fixed 17 ms before each forwarded request, matching #642's method. `GET /__witnessmark__/counts` returns request count, request bytes and response bytes per HTTP method; `POST /__witnessmark__/reset` starts a matched repetition from zero. Its control calls are not counted. M4 used the local build tagged `witnessmark/proxy:17ms`. The rebuilt proxy's local image ID is `sha256:a865395be1e245d04d4e0b5a8bcc0813272a8e056f18b2cd94cb5a7230fc3e23` (verified by `docker image inspect`, 2026-11-16). The Python base is digest-pinned at `sha256:3fe1a0b6c2d6b2ebb572906cdabeca75aeb558c0c17db5ffefbcf8094871c32b` [code: `targets/03-omnigraph/docker/Dockerfile.proxy:1` @ `69d0cd3`]. It runs only in separate matched repetitions, never timing repetitions. Its first build rewrote the `Content-Length` of every `HEAD` reply to 0, so the object-store client saw empty objects (`Range started at 0 and ended at 0`); a reply to `HEAD` now keeps the upstream length (`core/tests/test_proxy.py`) [code: `core/witnessmark/proxy.py`] [measured: loopback MinIO smoke, 2026-11-15]. Rebuild with `docker/build-proxy.ps1` when the pinned local image is missing. A rebuild yields a new image ID. Update the digest in `compose.yml` and `part2.py` together [code: `targets/03-omnigraph/docker/build-proxy.ps1:1–11` @ `29356b0`]. |
 | S3 settings and readiness | `compose.yml` passes `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=us-east-1`, `AWS_ENDPOINT_URL_S3`, `AWS_S3_FORCE_PATH_STYLE=true` and `AWS_ALLOW_HTTP=true` for the local, disposable endpoints [docs: [storage.md, "S3 configuration"](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/concepts/storage.md#s3-configuration), [deployment.md](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#s3-compatible-storage)]. The binary derives plain-HTTP transport from the endpoint scheme and refuses an `AWS_ALLOW_HTTP` that disagrees [code: `crates/omnigraph-storage/src/binding.rs` L128 and L338–342@b2dbaff]. The harness waits on `GET /readyz`, never `/healthz`: the listener opens before graphs load, and a data request sent in between returns 503 `graph_unavailable` [docs: [deployment.md, "Use `GET /healthz`…" paragraph](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md)] [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py`]. The S3 cluster lease is the documented 30 s default everywhere except O4, which shortens it to 2 s so that a paused owner can be replaced within the test; each run records `cluster_lease_seconds`. An owner stops every storage write once no heartbeat is answered for two thirds of a lease [docs: [storage-failures.md](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/storage-failures.md#restart-after-a-failure)], and with the 2 s lease the proxy run of batch `m4c-20261115T165831Z` failed at 205,824 of 512,000 padding edges with `storage mutation admission is closed` [measured: `20261115T171130Z-e052669e`]. |
 | FalkorDB | 6.0.4 by digest (master §7.2). The O1 `GRAPH.COPY` curve runs with `appendonly yes` and `appendfsync always`, the conditions S28 was measured under, and restores the container's own settings afterwards; the run records both. Batch 2's first attempt ran on the baseline's `appendonly no` and came out 61%, 49% and 57% faster than S28 at 32k, 128k and 512k (64.3, 279.2 and 1,025.1 ms against 165, 546 and 2,400), outside the ±50% band at two of three sizes, so the batch stopped [measured: `20261115T164756Z-236def5c`]. A scratch check of the same curve under S28's persistence gave 106.9, 359.3 and 1,600.3 ms, inside the band at all three [measured: scratch, not part of a batch]. The difference is the persistence setting [inference from that check]. |
 | Neo4j | 5.26.2 (master §7.3) |
@@ -637,10 +637,12 @@ build, image digests and storage
 
 | Scenario | Final state in `state/<k>.json` |
 |---|---|
-| O1 curve | The detailed branch list and commit IDs after each size and sibling cell [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:537` @ `a064bb1`] |
+| O1 curve | The detailed branch lists and commit IDs for the source graph and the unrelated graph after each size and sibling cell [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:685` @ `9e755b6`] |
 | Standalone I6 | The ledger sequences on main and the branch, plus the branch-only and main-only visibility results [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:455` @ `a064bb1`] |
 | O4 matrix | Branch heads, task and holder rows at the observed commit, and the eligible agents from the integrity scan [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:740` @ `a064bb1`] |
+| O4 clean-stop | A's Docker exit state, root admission status, and, if B starts, the branch heads, task and holder rows, and eligible agents read through B [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:926` @ `9e755b6`] |
 | O5 | The task read from B and the holder response from B's final visibility poll [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:952` @ `a064bb1`] |
+| O6 | Per-engine rows and read errors for the sequential control and the parity trial [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:567` @ `9e755b6`] |
 
 Each state file includes a digest. States above 5 MiB retain the digest,
 total byte count, and bounded excerpts from the canonical JSON
@@ -655,6 +657,28 @@ carry their own return timestamps in `history.jsonl`
 [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:203,274,874`
 and `targets/03-omnigraph/witnessmark_omnigraph/capture.py:148` @ `a064bb1`].
 
+O1 runs a reader and a writer with separate HTTP clients on the unrelated
+graph during branch creation. It adds `unrelated_reader_stall_ms` and
+`unrelated_writer_stall_ms`, both longest completion gaps over the create
+window. The M4 main-reader fields retain their calculation
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:423–466` @ `9e755b6`].
+
+`race --scenario o3` uses the core thread runner and shares its merge fixture
+with the O3 sequential control. In O2 and O3, the reset check compares
+logical task and lease state because setup publishes a fresh commit ID on
+each reset. The full state retains those IDs. `race --no-spread-gate` keeps
+per-trial Δ and records `spread_gate_ms: null` for calibration. The default
+stays 40 ms [code: `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py:18,111`,
+`targets/03-omnigraph/wm_omnigraph.py:92–103` and
+`core/witnessmark/runner.py:149,232` @ `9e755b6`].
+
+`parity` writes the four §9.1 artifacts for O6. It records Neo4j as the
+primary reference and FalkorDB as the second, including the no-holder
+case. A disagreement between references is recorded separately from a
+difference in Omnigraph's result
+[code: `targets/03-omnigraph/witnessmark_omnigraph/controls.py:85`
+and `targets/03-omnigraph/witnessmark_omnigraph/part2.py:567` @ `9e755b6`].
+
 ### M5
 
 - Add `history.jsonl` and `REPRO.md` for Omnigraph runs to meet master §9.1.
@@ -667,17 +691,31 @@ and `targets/03-omnigraph/witnessmark_omnigraph/capture.py:148` @ `a064bb1`].
 - Run the O2 claim races, O3 merge races and O6 traversal parity beyond the
   Part 1 sequential controls, and run O5 on MinIO [unmeasured: O2, O3, O6
   and O5 on MinIO].
-- Add an O4 local transfer variant that stops A, obtains its exact lock ID
-  with `cluster status --json`, and runs `cluster force-unlock` before
-  starting B [unmeasured: O4 local transfer] [docs: deployment.md, "Writer
-  topology" @ `b2dbaff`].
+- Exercise the [O4 clean-stop local transfer](#o4-clean-stop-local-transfer)
+  variant in Phase B [unmeasured: O4 local transfer].
 
-  **Phase A blocker.** The pinned versions release admission after a clean
-  server shutdown. If A retains its lock, the operator must establish that
-  its graph and control-store I/O are terminal before unlocking that exact
-  ID. The variant needs a defined retained-lock case with that evidence.
-  [docs: [v0.15.0 writer topology](https://github.com/ModernRelay/omnigraph/blob/v0.15.0/docs/user/deployment.md#writer-topology),
-  [b2dbaff writer topology](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#writer-topology)]
+### O4 clean-stop local transfer
+
+`failover --variant clean-stop` stops A with a 40-second Docker timeout.
+Both pinned binaries default to a 25-second bounded server shutdown. The
+variant records A's exit code and Docker's kill indicators, then reads
+root-addressed `cluster status --json`. It starts B only if A exited cleanly
+and status confirms admission was released. Otherwise it records
+NOT_EXERCISED and saves the trial logs
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:256,926` @ `9e755b6`].
+[docs: [v0.15.0 shutdown](https://github.com/ModernRelay/omnigraph/blob/v0.15.0/docs/user/deployment.md#binary),
+[b2dbaff shutdown](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#binary)]
+
+The maintainer's fresh-root bootstrap exception allows one exact-ID
+`cluster force-unlock` immediately after successful `cluster apply`.
+Initial direct apply leaves a lock on the disposable root. Before A first
+starts, `cluster status --json` must report the same lock ID as apply.
+The apply, status read and unlock are timed setup records with client
+`nemesis`. An apply failure or mismatched holder stops the run. Ownership
+transfer from A to B uses only the clean-stop path
+[code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:190–236` @ `9e755b6`].
+[docs: [v0.15.0 writer topology](https://github.com/ModernRelay/omnigraph/blob/v0.15.0/docs/user/deployment.md#writer-topology),
+[b2dbaff writer topology](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#writer-topology)]
 
 ### Awaiting an upstream release
 

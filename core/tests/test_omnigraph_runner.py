@@ -48,9 +48,16 @@ class _FakeFalkorSession:
     def __init__(self, log):
         self.log = log
 
+    config = {"appendonly": "no", "appendfsync": "everysec"}
+
     def call(self, *args):
         self.log.append(args)
         time.sleep(0.001)
+        if args[:2] == ("CONFIG", "GET"):
+            return [args[2], self.config[args[2]]]
+        if args[:2] == ("CONFIG", "SET"):
+            self.config[args[2]] = args[3]
+            return "OK"
         return "aof_current_size:7\n" if args[0] == "INFO" else []
 
     def close(self):
@@ -75,6 +82,10 @@ class FalkorCurveTest(unittest.TestCase):
         with mock.patch.object(part2, "make_engine", lambda *a, **k: _FakeFalkorEngine()),                 mock.patch.object(part2, "_rss_mb", lambda _container: 10.0),                 mock.patch.object(part2, "SIZES", (32_000,)),                 mock.patch.object(part2, "WARMUPS", 2),                 mock.patch.object(part2, "REPETITIONS", 3):
             result = part2.run_falkor_curve(Path.cwd())
 
+        # The curve runs under S28's persistence, records it, and puts back what it found.
+        self.assertEqual(result["persistence_during_curve"], {"appendonly": "yes", "appendfsync": "always"})
+        self.assertEqual(result["persistence_found"], {"appendonly": "no", "appendfsync": "everysec"})
+        self.assertEqual(_FakeFalkorSession.config, {"appendonly": "no", "appendfsync": "everysec"})
         row = result["rows"][0]
         self.assertEqual(len(row["samples"]), 3)
         for sample in row["samples"]:

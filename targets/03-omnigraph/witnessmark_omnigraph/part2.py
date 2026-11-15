@@ -491,12 +491,28 @@ def _falkor_reader(session, graph: str, stop: threading.Event, samples: list[int
             return
 
 
+# The S28 figures were measured with `appendfsync always` (master 7.2). The baseline
+# container runs with appendonly off, where GRAPH.COPY is 40 to 60% faster and the
+# sanity band cannot be compared, so the curve sets S28's persistence for its own
+# duration, records it, and restores what it found.
+S28_PERSISTENCE = {"appendonly": "yes", "appendfsync": "always"}
+
+
+def _config_get(session, key: str) -> str | None:
+    pair = session.call("CONFIG", "GET", key)
+    return str(pair[1]) if isinstance(pair, list) and len(pair) > 1 else None
+
+
 def run_falkor_curve(repo: Path) -> dict:
     engine = make_engine("falkordb", host="127.0.0.1", port=16380)
     admin = engine.session(timeout=300)
     source, other = "o1source", "o1other"
     rows = []
+    found = {key: _config_get(admin, key) for key in S28_PERSISTENCE}
     try:
+        for key, value in S28_PERSISTENCE.items():
+            admin.call("CONFIG", "SET", key, value)
+        persistence = {key: _config_get(admin, key) for key in S28_PERSISTENCE}
         for graph in (source, other):
             try:
                 admin.call("GRAPH.DELETE", graph)
@@ -568,8 +584,15 @@ def run_falkor_curve(repo: Path) -> dict:
             rows.append({"size": size, "warmups": WARMUPS, "repetitions": REPETITIONS,
                          "samples": samples, "copy_ms": _summary([s["copy_ms"] for s in samples]),
                          "s28_reference_ms": reference, "inside_50_percent_band": reference * .5 <= median_ms <= reference * 1.5})
-        return {"rows": rows, "sanity_band_met": all(row["inside_50_percent_band"] for row in rows)}
+        return {"rows": rows, "sanity_band_met": all(row["inside_50_percent_band"] for row in rows),
+                "persistence_during_curve": persistence, "persistence_found": found}
     finally:
+        for key, value in found.items():
+            if value is not None:
+                try:
+                    admin.call("CONFIG", "SET", key, value)
+                except Exception:
+                    pass
         admin.close()
 
 

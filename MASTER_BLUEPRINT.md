@@ -1026,7 +1026,7 @@ Implement the harness changes and cover them with unit tests. Run only the smoke
 - [x] Make the Phase B entry points available. Add the O3 thread race, O6
   parity evidence, O4 clean-stop local transfer, O1 unrelated reader and
   writer, and the O2 calibration option.
-- [ ] Validate the scratch smoke runs, including O5 evidence on MinIO.
+- [x] Validate the scratch smoke runs, including O5 evidence on MinIO.
 
 The maintainer approved a clean-stop transfer on 2026-11-16. Start B after
 status confirms A released admission. A retained lock or an unclean exit

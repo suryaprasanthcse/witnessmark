@@ -223,11 +223,89 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 ## 9. Open questions
 
-| Question | Settled in |
-|---|---|
-| How does a writer failover work on a local-filesystem root and on S3: what form do the admission lock and main's lease take, and what is the timeout? Read `deployment.md` and the cross-process writes RFC at the pins. | M4 |
-| Does the server expose counts of object-store requests, or is a counting proxy needed? | M4 |
-| Do the HTTP conditional routes take the commit id as a header or as a body field? (`operations/server.md`) | M4 |
-| Can `.gq` express a guarded update in one statement, or only through `--if-commit`? | M4 |
-| How does the S3 commit path use conditional writes, and does MinIO behave like S3 there? | M4 |
-| Does catalog width (121 tables in #642) matter more than n for creation time? If the first curve is flat in n, add a width axis. | After the first O1 curve |
+### Answers from the pinned documentation (2026-11-15)
+
+1. **Admission, leases and failover.** A cluster has one exclusive admission
+   lock shared by the server, direct writes, deployments, branch controls and
+   maintenance. A local-filesystem lock is unleased and has no timeout or safe
+   automatic takeover: after establishing that the previous owner's graph and
+   control-store work is terminal, an operator uses the exact lock id to unlock
+   it. An S3 server lock is leased. Its owner writes heartbeats below
+   `__cluster/lease/` every one third of the lease, stops storage writes after
+   two thirds of a lease without an answered heartbeat, and a successor takes
+   over after one and a half leases of silence. The lease defaults to 30 seconds,
+   is configurable from 2 through 600 seconds with
+   `OMNIGRAPH_CLUSTER_LEASE_SECONDS`, and therefore makes the default takeover
+   wait about 45 seconds. Direct CLI and deployment locks are unleased even on
+   S3 and require exact-id recovery. [docs: [deployment](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/deployment.md#writer-topology),
+   [storage failure and restart](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/storage-failures.md#restart-after-a-failure)]
+
+   On the edge pin, a server claims `main`'s persistent writer epoch after it
+   wins cluster admission and before it serves. The epoch row itself has no
+   expiry: a successor claim increments it, and a stale writer from the previous
+   epoch is refused with `WriterFenced` at its next publication. v0.15.0 has the
+   admission lock but predates this writer-epoch fence. [docs:
+   [writer-epoch RFC](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/rfcs/2026-11-09-writer-epoch-fence.md#main-and-the-lease),
+   [write protocol](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/dev/writes.md#writer-epoch)]
+
+2. **Object-store request counts.** The documented server surface exposes
+   health, readiness, logs and traces, but no object-store request counter or
+   metrics route. O1 therefore uses a counting proxy in separate matched runs,
+   as required by master §6.5. [docs: [server route families](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/server.md#route-families),
+   [server observability](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/observability.md)]
+
+3. **HTTP routes and payloads.** Every protected call carries
+   `Omnigraph-Http-Api: 0.14`. Inline reads use
+   `POST /graphs/{graph_id}/query` with body `{query, name?, params?, branch?,
+   snapshot?, settings?}`. Unconditional inline writes use
+   `POST /graphs/{graph_id}/mutate` with `{query, name?, params?, branch?,
+   settings?}`. A conditional inline write uses
+   `POST /graphs/{graph_id}/mutate/if-graph-commit` with the same mutation body
+   and the raw commit id in the required `Omnigraph-If-Graph-Commit` header,
+   not in the body. A stored conditional mutation uses
+   `POST /graphs/{graph_id}/queries/{query_name}/if-graph-commit` and the same
+   header. Ordinary mutation routes reject that header instead of ignoring it.
+   [docs: [HTTP conditional mutations](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/server.md#conditional-mutations),
+   [edge OpenAPI](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/openapi.json)]
+
+   Dedicated branch routes are: create,
+   `POST /graphs/{graph_id}/branches` with `{name, from?}` or
+   `{name, from_commit?}`; delete,
+   `DELETE /graphs/{graph_id}/branches/{branch_name}` with no body; list,
+   `GET /graphs/{graph_id}/branches` with optional `?detailed=true`; and merge,
+   `POST /graphs/{graph_id}/branches/merge` with `{source, target?,
+   delete_branch?, dry_run?, as_commit?, settings?}`. `from` and `from_commit`
+   are mutually exclusive, `target` defaults to `main`, and `source` is required.
+   The same route and request shapes are present at both test pins. [docs:
+   [stable OpenAPI](https://github.com/ModernRelay/omnigraph/blob/373834b4c1c4b29cf0ddd64bee9565f98c60cc26/openapi.json),
+   [edge OpenAPI](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/openapi.json)]
+
+4. **Guards in GQ.** `.gq` can express a row-local guarded update in one
+   statement: `update Type set { ... } where ...`; the predicate may read that
+   type's properties, ids, parameters and `now()`. It cannot use a binding,
+   traversal, aggregate or search call in the mutation `where`. A guard against
+   the graph state that a prior read observed is not GQ syntax: it uses
+   `--if-commit` or the HTTP header and conditional route above. [docs:
+   [mutation statements](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/index.md#statements),
+   [conditional mutations](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/conditional.md)]
+
+5. **S3 conditional publication.** A graph-content write stages detached Lance
+   commits, then makes them visible together with one conditional
+   `__manifest` publication. The next manifest version is created only if
+   absent: local storage uses a failing hard link, while S3 sends
+   `If-None-Match: *`; updates of reused control objects use `If-Match`. An
+   ambiguous manifest request is re-issued unchanged up to four times with
+   about three seconds of pauses in total, then its attempted version is read
+   back to distinguish this commit, another commit, or an unknown outcome.
+   [docs: [write protocol](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/dev/writes.md),
+   [cross-process write RFC](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/rfcs/2026-10-16-graph-access-serving-and-cross-process-writes.md#engine-control-facts-on-the-version-cas),
+   [storage failures](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/operations/storage-failures.md#publication-outcomes)]
+
+   The storage guide says every S3 binding requires correct `If-None-Match` and
+   `If-Match` behavior, says the project's suite qualifies RustFS, and requires
+   every other S3-compatible service to be qualified before production. It does
+   not settle MinIO's behavior. That remains [unmeasured: O4 on MinIO]. [docs:
+   [S3 configuration](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/concepts/storage.md#s3-configuration)]
+
+The catalog-width question remains [unmeasured: O1]. Per the declared design,
+the first O1 curve decides whether to add width as an axis.

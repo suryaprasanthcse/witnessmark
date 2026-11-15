@@ -31,7 +31,12 @@ SIZES = (32_000, 128_000, 512_000)
 SIBLINGS = (0, 4, 16, 64)
 WARMUPS = 3
 REPETITIONS = 5
+# O4 shortens the S3 cluster lease so a paused owner can be replaced within the test.
+# Everything else runs on the documented default: an owner stops every storage write
+# once no heartbeat is answered for two thirds of a lease (storage-failures.md), and
+# a 2 s lease closed admission under load in O1 (batch m4c, proxy run).
 LEASE_SECONDS = 2
+DEFAULT_LEASE_SECONDS = 30
 MINIO_IMAGE = "witnessmark/minio:RELEASE.2025-09-07T16-13-09Z"
 MINIO_DIGEST = "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899"
 
@@ -88,7 +93,9 @@ def _command(args: list[str], *, cwd: Path, environ: dict[str, str] | None = Non
 class Stack:
     """One disposable Omnigraph compose project."""
 
-    def __init__(self, repo: Path, project: str, build: dict, storage: str):
+    def __init__(self, repo: Path, project: str, build: dict, storage: str,
+                 lease_seconds: int = DEFAULT_LEASE_SECONDS):
+        self.lease_seconds = lease_seconds
         self.repo = repo
         self.project = project
         self.build = build
@@ -101,7 +108,7 @@ class Stack:
             "WM_OMNIGRAPH_IMAGE": f"{build['image']}@{build['digest']}",
             "WM_OMNIGRAPH_CLUSTER": self.root,
             "WM_S3_ENDPOINT": "http://wm-object-proxy:9010" if storage == "proxy" else "http://wm-minio:9000",
-            "WM_CLUSTER_LEASE_SECONDS": str(LEASE_SECONDS),
+            "WM_CLUSTER_LEASE_SECONDS": str(lease_seconds),
             "WM_MINIO_IMAGE": MINIO_IMAGE,
         })
 
@@ -397,7 +404,7 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
              "storage": storage, "warmups": WARMUPS, "measured_repetitions": REPETITIONS}
     planned = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started, [],
                         run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
-                        status="planned-before-execution")
+                        cluster_lease_seconds=stack.lease_seconds, status="planned-before-execution")
     path = write_manifest(repo, evidence, planned)
     try:
         stack.provision()
@@ -463,7 +470,7 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
         falkor = run_falkor_curve(repo) if include_falkor else None
         manifest = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started,
                              trials, run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
-                             status="complete",
+                             cluster_lease_seconds=stack.lease_seconds, status="complete",
                              copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor})
         update_manifest(path, manifest)
         return manifest, path
@@ -665,7 +672,7 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
     for phase, offset in offsets.items():
         for variant in ("a", "b"):
             project = f"wm-m4-o4-{build_name.replace('.', '-')}-{storage}-{phase}-{variant}".lower()
-            stack = Stack(repo, project, build, storage)
+            stack = Stack(repo, project, build, storage, lease_seconds=LEASE_SECONDS)
             actions = []
             a_result: list[OperationResult] = []
             try:
@@ -740,7 +747,7 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                          trials, invariants=["I1A", "I2"], seed=seed,
                          matrix={"phases": list(offsets), "variants": ["a", "b"], "storage": storage,
                                  "build": build_name}, boundary_probes=boundary_probes,
-                         harness_gaps=O4_HARNESS_GAPS,
+                         cluster_lease_seconds=LEASE_SECONDS, harness_gaps=O4_HARNESS_GAPS,
                          basis="documented", basis_ref="docs/user/operations/troubleshooting.md#writer-epoch")
     return manifest, write_manifest(repo, evidence, manifest)
 
@@ -787,7 +794,7 @@ def run_o5(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                        "staleness_ms": (observed_at - acknowledged_at) / 1e6,
                        "last_read": _op_json(last)})
         manifest = _manifest(repo, batch, build, build_name, storage, "o5.cross_process_ryw", "visibility",
-                             started, trials, invariants=["I3"])
+                             started, trials, invariants=["I3"], cluster_lease_seconds=stack.lease_seconds)
         return manifest, write_manifest(repo, evidence, manifest)
     finally:
         stack.down()

@@ -137,5 +137,14 @@ class RedactionTest(unittest.TestCase):
             self.assertNotIn(leaked, cleaned)
 
 
+class LeaseTest(unittest.TestCase):
+    def test_only_o4_shortens_the_cluster_lease(self):
+        build = {"image": "x", "digest": "sha256:0"}
+        default = part2.Stack(Path.cwd(), "wm-m4-unit", build, "minio")
+        shortened = part2.Stack(Path.cwd(), "wm-m4-unit", build, "minio", lease_seconds=part2.LEASE_SECONDS)
+        self.assertEqual(default.environ["WM_CLUSTER_LEASE_SECONDS"], "30")
+        self.assertEqual(shortened.environ["WM_CLUSTER_LEASE_SECONDS"], "2")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -5,7 +5,10 @@ declares one isolated database client per item, ``check`` consumes only history
 and final state, and ``sequential_expected`` describes the phase-2 control.
 
 For claim checks, ``states["main"]`` has ``holders`` (task id to agent-id list)
-and ``lease_records`` (I1A half-open commit-sequence intervals). O6 states are
+and ``lease_records`` (I1A half-open harness-sequence intervals). A final-state
+reader must pass the ``graph_commit_id`` returned by ``q_task`` as the snapshot
+parameter to both ``q_task_holder`` and ``q_lease_events``; those observations
+then describe one state even when another client is writing. O6 states are
 engine to query to either ``{"outcome": "ok", "rows": [...]}`` or a rejected
 observation. Phase 2 runner wiring will produce these canonical observations.
 """
@@ -43,7 +46,7 @@ def _typed_refusals(ops, allowed: set[str]) -> Check:
     for op in ops:
         if op.outcome == OK:
             continue
-        kind = (op.error or {}).get("kind")
+        kind = (op.error or {}).get("type")
         if op.outcome != FAIL or kind not in allowed:
             bad.append(op)
     expected = ", ".join(sorted(allowed))

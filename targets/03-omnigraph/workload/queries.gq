@@ -23,6 +23,20 @@ query q_task_holder($task_id: String) {
   return { $holder.id as holder }
 }
 
+query q_lease_events($task_id: String) {
+  match {
+    $lease: LeaseEvent { task: $task_id }
+  }
+  return {
+    $lease.id as id,
+    $lease.task as task,
+    $lease.agent as agent,
+    $lease.from_seq as from_seq,
+    $lease.until_seq as until_seq
+  }
+  order { from_seq asc, id asc }
+}
+
 // Send this mutation through the conditional route with the graph commit id
 // from q_task in Omnigraph-If-Graph-Commit. The precondition is transport
 // metadata, not part of GQ.
@@ -41,6 +55,12 @@ query m_claim_cond(
     from_seq: $from_seq,
     until_pt: $until_pt,
     rw: $rw
+  }
+  insert LeaseEvent {
+    id: $rw,
+    task: $task_id,
+    agent: $agent_id,
+    from_seq: $from_seq
   }
 }
 
@@ -61,6 +81,26 @@ query m_claim_card(
     until_pt: $until_pt,
     rw: $rw
   }
+  insert LeaseEvent {
+    id: $rw,
+    task: $task_id,
+    agent: $agent_id,
+    from_seq: $from_seq
+  }
+}
+
+// Close the historical interval in the same mutation that removes the live
+// edge. until_seq is exclusive.
+query m_release(
+  $task_id: String,
+  $lease_id: String,
+  $until_seq: I64
+) {
+  delete HeldBy where from = $task_id
+  update LeaseEvent set { until_seq: $until_seq }
+    where id = $lease_id
+  update Task set { state: "open" }
+    where id = $task_id
 }
 
 // Aggregate-only returns produce one row and count 0 when no edge matches.

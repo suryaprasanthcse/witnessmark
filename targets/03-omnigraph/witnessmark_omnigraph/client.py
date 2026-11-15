@@ -10,6 +10,7 @@ reconcile.
 from __future__ import annotations
 
 import http.client
+import errno
 import json
 import re
 import socket
@@ -56,6 +57,13 @@ _TYPED_NAME = re.compile(
 )
 
 
+def _conflict_kinds(payload: Any) -> list[str]:
+    if not isinstance(payload, dict) or not isinstance(payload.get("merge_conflicts"), list):
+        return []
+    return [str(conflict["kind"]) for conflict in payload["merge_conflicts"]
+            if isinstance(conflict, dict) and conflict.get("kind")]
+
+
 def _error_kind(payload: Any, status: int) -> str:
     if not isinstance(payload, dict):
         return f"http_{status}"
@@ -63,11 +71,9 @@ def _error_kind(payload: Any, status: int) -> str:
         return "precondition_failure"
     if payload.get("writer_fenced") is not None:
         return "WriterFenced"
-    conflicts = payload.get("merge_conflicts")
-    if isinstance(conflicts, list):
-        for conflict in conflicts:
-            if isinstance(conflict, dict) and conflict.get("kind"):
-                return str(conflict["kind"])
+    conflicts = _conflict_kinds(payload)
+    if conflicts:
+        return conflicts[0]
     match = _TYPED_NAME.search(str(payload.get("error", "")))
     if match:
         return match.group(1)
@@ -113,8 +119,9 @@ class OmnigraphClient:
     def _graph_path(self, suffix: str) -> str:
         return f"{self._prefix}/graphs/{quote(self.graph, safe='')}{suffix}"
 
-    def _request(self, method: str, path: str, body: dict | None = None, *, protected: bool = True) -> OperationResult:
-        headers = {"Accept": "application/json"}
+    def _request(self, method: str, path: str, body: dict | None = None, *, protected: bool = True,
+                 extra_headers: dict[str, str] | None = None) -> OperationResult:
+        headers = {"Accept": "application/json", **(extra_headers or {})}
         if protected:
             headers["Omnigraph-Http-Api"] = "0.14"
             if self.bearer_token is not None:
@@ -132,7 +139,15 @@ class OmnigraphClient:
             status = response.status
         except (TimeoutError, socket.timeout) as exc:
             return OperationResult(Outcome.UNKNOWN, kind="timeout", message=str(exc) or "timed out")
-        except (http.client.HTTPException, OSError) as exc:
+        except OSError as exc:
+            # Windows reports WSAECONNREFUSED as a plain OSError. In either
+            # form the TCP handshake failed before an HTTP request was sent.
+            if isinstance(exc, ConnectionRefusedError) or exc.errno in (errno.ECONNREFUSED, 10061) \
+                    or getattr(exc, "winerror", None) == 10061:
+                return OperationResult(Outcome.REFUSAL, kind="unavailable",
+                                       message=str(exc) or "connection refused")
+            return OperationResult(Outcome.UNKNOWN, kind="connection", message=str(exc) or type(exc).__name__)
+        except http.client.HTTPException as exc:
             return OperationResult(
                 Outcome.UNKNOWN,
                 kind="connection",
@@ -162,6 +177,10 @@ class OmnigraphClient:
         fallback = f"HTTP {status}"
         disposition = payload.get("disposition") if isinstance(payload, dict) else None
         effects = disposition.get("effects") if isinstance(disposition, dict) else None
+        kinds = _conflict_kinds(payload)
+        if kinds:
+            payload = dict(payload)
+            payload["conflict_kinds"] = kinds
         kind = _error_kind(payload, status)
         message = _message(payload, fallback)
         if status >= 500 or effects in ("partial", "unknown") or kind == "outcome_unknown":
@@ -206,42 +225,8 @@ class OmnigraphClient:
 
     def _request_with_commit(self, method: str, path: str, body: dict, commit_id: str) -> OperationResult:
         """Send the dedicated conditional route with its required raw header."""
-        headers = {"Accept": "application/json", "Content-Type": "application/json",
-                   "Omnigraph-Http-Api": "0.14", "Omnigraph-If-Graph-Commit": commit_id}
-        if self.bearer_token is not None:
-            headers["Authorization"] = f"Bearer {self.bearer_token}"
-        encoded = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        return self._request_encoded(method, path, encoded, headers)
-
-    def _request_encoded(self, method: str, path: str, encoded: bytes, headers: dict[str, str]) -> OperationResult:
-        """The request classifier shared by the conditional-header path."""
-        connection = self._connection()
-        try:
-            connection.request(method, path, body=encoded, headers=headers)
-            response = connection.getresponse()
-            raw = response.read()
-            status = response.status
-        except (TimeoutError, socket.timeout) as exc:
-            return OperationResult(Outcome.UNKNOWN, kind="timeout", message=str(exc) or "timed out")
-        except (http.client.HTTPException, OSError) as exc:
-            return OperationResult(Outcome.UNKNOWN, kind="connection", message=str(exc) or type(exc).__name__)
-        finally:
-            connection.close()
-        try:
-            payload = json.loads(raw) if raw else None
-        except (UnicodeDecodeError, ValueError):
-            payload = {"error": raw.decode("utf-8", errors="replace")[:300]}
-            if status < 300:
-                return OperationResult(Outcome.UNKNOWN, status, "protocol", message="successful response was not JSON")
-        if 200 <= status < 300:
-            return OperationResult(Outcome.OK, status=status, data=payload)
-        disposition = payload.get("disposition") if isinstance(payload, dict) else None
-        effects = disposition.get("effects") if isinstance(disposition, dict) else None
-        kind = _error_kind(payload, status)
-        message = _message(payload, f"HTTP {status}")
-        if status >= 500 or effects in ("partial", "unknown") or kind == "outcome_unknown":
-            return OperationResult(Outcome.UNKNOWN, status, kind, payload, message)
-        return OperationResult(Outcome.REFUSAL, status, kind, payload, message)
+        return self._request(method, path, body,
+                             extra_headers={"Omnigraph-If-Graph-Commit": commit_id})
 
     def branch_create(
         self,

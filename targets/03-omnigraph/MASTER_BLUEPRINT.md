@@ -70,9 +70,21 @@ These are specifications, not source. The `.pg` and `.gq` files are written in M
 | `HasSkill` | edge `Agent → Skill` | none | eligibility |
 | `Needs` | edge `Task → Skill` | none | eligibility |
 | `HeldBy` | edge `Task → Agent`, `@card(0..1)` | `from_seq: I64`, `until_pt: I64`, `rw: String` | the lease; the schema itself allows at most one live holder per task |
-| `LeaseEvent` | node | `id @key`, `task`, `agent`, `from_seq`, `until_seq` | history of closed leases, for the overlap check in I1 Form A (d) |
+| `LeaseEvent` | node | `id @key`, `task`, `agent`, `from_seq`, optional `until_seq` | history of live and closed leases, for the overlap check in I1 Form A (d) |
 | `Entry` | node | `id @key`, `seq: I64`, `rule: String`, `hash: String`, `prev: String`, `ts: I64` | padding to reach I6 graph sizes |
 | `Next` | edge `Entry → Entry`, `@card(0..1)` | none | the padding chain |
+
+**Lease history choice (F2).** The workload uses choice (a): each claim mutation
+inserts its `HeldBy` edge and a `LeaseEvent` in the same atomic mutation; the
+release mutation deletes the edge and sets that event's exclusive `until_seq`
+in the same atomic mutation. Omnigraph's HTTP response exposes an opaque
+`graph_commit_id`, not an ordered graph-commit sequence. Therefore `from_seq`
+and `until_seq` are deterministic, monotonically increasing harness lease-event
+sequence numbers allocated before the corresponding mutation. They are not
+presented as an engine commit order. This is sufficient for O2/O3's overlap
+assertion because every simultaneously live lease has no `until_seq`, while the
+opaque server commit id is retained separately in history for reconciliation
+[code: `targets/03-omnigraph/workload/queries.gq`] [unmeasured].
 
 **Padding shape.** n `Entry` nodes and n `Next` edges form a log-like chain. The shape is close to the one behind the published FalkorDB numbers (equal node and edge counts, log-like properties; master §7.2). The S28 band therefore applies only approximately.
 
@@ -80,12 +92,19 @@ These are specifications, not source. The `.pg` and `.gq` files are written in M
 
 | Name | Does |
 |---|---|
-| `q_task` | Reads a task's state, with the response's `graph_commit_id`; `q_task_holder` reads its at-most-one holder. The pinned [query](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md) and [traversal](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md) guides do not document an optional traversal/projection that can return both when no holder exists, so phase 2 checks whether these can be collapsed [docs] [unmeasured: O2]. |
-| `m_claim_cond` | Sets `state = claimed` and inserts `HeldBy`, under `--if-commit` (over HTTP, the conditional route) |
-| `m_claim_card` | Inserts `HeldBy` with no condition, relying on `@card(0..1)` |
+| `q_task` | Reads a task's state, with the response's `graph_commit_id`; `q_task_holder` reads its at-most-one holder and `q_lease_events` reads its lease history. A final-state dump passes the same `graph_commit_id` as the `snapshot` parameter to the latter two queries, so all three describe one state. The pinned [query](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md) and [traversal](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md) guides do not document an optional traversal/projection that can return both when no holder exists [docs] [unmeasured: O2]. |
+| `m_claim_cond` | Sets `state = claimed`, inserts `HeldBy` and its `LeaseEvent`, under `--if-commit` (over HTTP, the conditional route) |
+| `m_claim_card` | Inserts `HeldBy` and its `LeaseEvent` with no condition, relying on `@card(0..1)` |
+| `m_release` | Deletes `HeldBy`, reopens the task and sets the matching `LeaseEvent.until_seq` in one atomic mutation |
 | `q_live` | Counts `HeldBy` per task |
 | `q_eligible` | Traverses `Agent → HasSkill → Skill ← Needs ← Task`; compared with the same Cypher on FalkorDB and Neo4j (I4) |
 | `m_ledger` | Appends an `Entry` with the next `seq` (the I6a ledger) |
+
+**No-match semantics (F3).** Both claim mutations contain an `update Task ...
+where state = "open"` followed by unconditional inserts. Whether a zero-row
+update prevents the inserts, lets them run, or causes the whole mutation to be
+refused is [unmeasured]. Task 4's syntax smoke and sequential controls settle
+this against both pinned builds before any concurrent finding is accepted.
 
 ## 3. Scenarios
 
@@ -193,7 +212,7 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 | Check | How |
 |---|---|
-| I1 Form A | Built from `HeldBy`, `LeaseEvent` and the acknowledged replies |
+| I1 Form A | Built from `HeldBy`, `LeaseEvent` and the acknowledged replies. Claim and release write the live edge and historical interval atomically; final reads use one snapshot across task, holder and event queries [code: `targets/03-omnigraph/workload/queries.gq`] [unmeasured]. |
 | I6a | The ledger prefix is gapless |
 | O4 integrity | The graph opens; a full scan succeeds; every object the head references exists; error types match the documentation |
 | I4 | Normalised row multisets, compared across the three engines (master §5.4) |

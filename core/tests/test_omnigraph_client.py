@@ -9,6 +9,7 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 from urllib.parse import urlsplit
 
 TARGET = Path(__file__).resolve().parents[2] / "targets" / "03-omnigraph"
@@ -79,6 +80,15 @@ class _Handler(BaseHTTPRequestHandler):
         if parsed.path.endswith("/mutate") and body["query"] == "slow":
             time.sleep(0.15)
             return self._send(200, {"commit": {"graph_commit_id": "late"}})
+        if parsed.path.endswith("/branches/merge") and body["source"] == "conflict":
+            return self._send(409, {
+                "error": "merge conflict",
+                "merge_conflicts": [
+                    {"kind": "CardinalityViolation", "item": "HeldBy"},
+                    {"kind": "DivergentUpdate", "item": "Task"},
+                ],
+                "disposition": {"effects": "none", "action": "fix"},
+            })
         if "/branches" in parsed.path:
             return self._send(200, {"ok": True})
         return self._send(404, {
@@ -139,6 +149,25 @@ class OmnigraphClientTest(unittest.TestCase):
         result = client.mutate("slow")
         self.assertIs(result.outcome, Outcome.UNKNOWN)
         self.assertEqual(result.kind, "timeout")
+
+    def test_connection_refused_before_send_is_a_definite_unavailable_refusal(self):
+        class RefusedConnection:
+            def request(self, *_args, **_kwargs):
+                raise ConnectionRefusedError("refused before send")
+
+            def close(self):
+                pass
+
+        with patch.object(self.client, "_connection", return_value=RefusedConnection()):
+            result = self.client.health()
+        self.assertIs(result.outcome, Outcome.REFUSAL)
+        self.assertEqual(result.kind, "unavailable")
+
+    def test_merge_refusal_keeps_every_conflict_kind(self):
+        result = self.client.merge("conflict")
+        self.assertIs(result.outcome, Outcome.REFUSAL)
+        self.assertEqual(result.kind, "CardinalityViolation")
+        self.assertEqual(result.data["conflict_kinds"], ["CardinalityViolation", "DivergentUpdate"])
 
     def test_branch_routes_and_health(self):
         self.assertTrue(self.client.branch_create("review/a", from_branch="main").ok)

@@ -9,7 +9,8 @@ from witnessmark.checkers import Check
 from witnessmark.history import OK, Op
 from witnessmark.memory import (SPREAD_GATE_MS, MemoryRunConfig, MemoryTarget, RaceScenario, TargetSpec, run_race,
                                 stub_errors)
-from witnessmark.report import extra_checks_table, invalid_table, invariants_table, ladder_table, memory_markdown
+from witnessmark.report import (extra_checks_table, invalid_table, invariants_table, ladder_table, memory_markdown,
+                                support_boundaries_table)
 from witnessmark.timing import Stamp
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -120,6 +121,14 @@ def _trial(valid, checks, reason=None):
 
 
 class ReportTablesTest(unittest.TestCase):
+    def test_support_boundaries_exclude_failed_sequential_controls(self):
+        err = {"invariant": "ERR", "held": False, "detail": "lock x1"}
+        run = _run_record([_trial(False, [err])])
+        run["expectation"] = {"support": "boundary"}
+        self.assertIn("`20261114T000000Z-abcdef01`", support_boundaries_table([run]))
+        run["controls"][0]["met"] = False
+        self.assertIsNone(support_boundaries_table([run]))
+
     def test_support_boundaries_require_a_boundary_and_no_valid_trials(self):
         err = {"invariant": "ERR", "held": False, "detail": "busy x1; lock x3"}
         other = {"invariant": "ERR", "held": False, "detail": "busy x3"}

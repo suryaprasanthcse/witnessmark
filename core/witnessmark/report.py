@@ -238,6 +238,9 @@ def support_boundaries_table(runs: list[dict]) -> str | None:
         trials = run.get("trials", [])
         if run.get("expectation", {}).get("support") != "boundary" or not trials:
             continue
+        sequential = _control(run, "sequential")
+        if sequential is not None and sequential.get("met") is False:
+            continue
         if any(trial.get("valid") for trial in trials):
             continue
         errors: Counter[str] = Counter()

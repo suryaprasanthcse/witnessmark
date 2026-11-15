@@ -19,7 +19,6 @@ Regenerated from `evidence/` by `python wm.py report --memory`. Do not edit by h
 | v1.6.8 | R1 (access control off) | c2.writers.process | 0 of 20 | ladybug file lock | `20261114T143808Z-c442cc14` |
 | v1.6.8 | R1i | c1.k2.process | 0 of 20 | ladybug file lock | `20261114T182011Z-03b8761e` |
 | v1.6.8 | R1i | c1.k4.process | 0 of 20 | ladybug file lock | `20261114T183831Z-97e05ac3` |
-| v1.6.1 | R3 (access control off) | c3.cross_process.process | 0 of 36 | DocumentSubgraphNotFoundError | `20261114T185051Z-97edaf64` |
 | v1.6.8 | R1i | c1.k8.process | 0 of 20 | ladybug file lock | `20261114T185431Z-95507ca8` |
 | v1.6.8 | R1i (access control off) | c2.writers.process | 0 of 20 | ladybug file lock | `20261114T193043Z-188df5a9` |
 

@@ -49,6 +49,9 @@ services:
 
   wm-object-proxy:
     image: witnessmark/proxy:17ms
+    build:
+      context: ../../..
+      dockerfile: targets/03-omnigraph/docker/Dockerfile.proxy
     container_name: wm-object-proxy
     environment:
       WM_PROXY_BIND: 0.0.0.0:9010

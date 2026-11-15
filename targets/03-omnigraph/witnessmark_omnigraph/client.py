@@ -136,8 +136,9 @@ class OmnigraphClient:
     def _graph_path(self, suffix: str) -> str:
         return f"{self._prefix}/graphs/{quote(self.graph, safe='')}{suffix}"
 
-    def _request(self, method: str, path: str, body: dict | None = None, *, protected: bool = True,
-                 extra_headers: dict[str, str] | None = None) -> OperationResult:
+    def _request(self, method: str, path: str, body: dict | bytes | None = None, *, protected: bool = True,
+                 extra_headers: dict[str, str] | None = None,
+                 content_type: str = "application/json") -> OperationResult:
         headers = {"Accept": "application/json", **(extra_headers or {})}
         if protected:
             headers["Omnigraph-Http-Api"] = "0.14"
@@ -145,8 +146,8 @@ class OmnigraphClient:
                 headers["Authorization"] = f"Bearer {self.bearer_token}"
         encoded = None
         if body is not None:
-            encoded = json.dumps(body, separators=(",", ":")).encode("utf-8")
-            headers["Content-Type"] = "application/json"
+            encoded = body if isinstance(body, bytes) else json.dumps(body, separators=(",", ":")).encode("utf-8")
+            headers["Content-Type"] = content_type
 
         connection = self._connection()
         try:
@@ -241,6 +242,12 @@ class OmnigraphClient:
         if commit_id is None:
             return self._request("POST", self._graph_path(suffix), body)
         return self._request_with_commit("POST", self._graph_path(suffix), body, commit_id)
+
+    def load_ndjson(self, payload: bytes, *, branch: str = "main", mode: str = "append") -> OperationResult:
+        """Send one strict graph-batch payload to the bounded raw load route."""
+        query = urlencode({"branch": branch, "mode": mode})
+        return self._request("POST", self._graph_path(f"/load/ndjson?{query}"), payload,
+                             content_type="application/x-ndjson")
 
     def _request_with_commit(self, method: str, path: str, body: dict, commit_id: str) -> OperationResult:
         """Send the dedicated conditional route with its required raw header."""

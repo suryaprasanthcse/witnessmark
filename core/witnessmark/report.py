@@ -276,6 +276,91 @@ def invalid_table(runs: list[dict]) -> str | None:
     return "\n".join(lines) if found else None
 
 
+def omnigraph_cost_table(runs: list[dict]) -> str:
+    lines = [
+        "| Build | Storage | Nodes / edges | Siblings | Create median [IQR] (ms) | Stall median (ms) | Reader p99 before / during (ms) | Merge / delete median (ms) | Object requests / bytes | Run |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for run in runs:
+        build, storage = _where(run)
+        for trial in run.get("trials", []):
+            samples = trial.get("samples", [])
+            create = [s["create_ms"] for s in samples if s.get("create_ms") is not None]
+            stalls = [s["stall_ms"] for s in samples if s.get("stall_ms") is not None]
+            before = [s["reader_p99_before_ms"] for s in samples if s.get("reader_p99_before_ms") is not None]
+            during = [s["reader_p99_during_ms"] for s in samples if s.get("reader_p99_during_ms") is not None]
+            merges = [s["merge_unchanged_ms"] for s in samples if s.get("merge_unchanged_ms") is not None]
+            deletes = [s["delete_ms"] for s in samples if s.get("delete_ms") is not None]
+            timing = "–"
+            if create and trial.get("timing_kind") == "timing":
+                timing = f"{_fmt(percentile(create, 50))} [{_fmt(percentile(create, 25))}–{_fmt(percentile(create, 75))}]"
+            counts = trial.get("object_store_counts") or {}
+            methods = counts.get("methods", counts)
+            requests = sum(v.get("requests", 0) for v in methods.values() if isinstance(v, dict))
+            byte_count = sum(v.get("request_bytes", 0) + v.get("response_bytes", 0)
+                             for v in methods.values() if isinstance(v, dict))
+            count_cell = f"{requests} / {byte_count}" if counts else "–"
+            lines.append(f"| {build} | {storage} | {trial.get('size')} / {trial.get('size')} | {trial.get('siblings')} | "
+                         f"{timing} | {_fmt(percentile(stalls, 50))} | {_fmt(percentile(before, 50))} / "
+                         f"{_fmt(percentile(during, 50))} | {_fmt(percentile(merges, 50))} / "
+                         f"{_fmt(percentile(deletes, 50))} | {count_cell} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def falkor_copy_table(runs: list[dict]) -> str | None:
+    baseline = next(((run.get("controls") or {}).get("falkordb") for run in runs
+                     if (run.get("controls") or {}).get("falkordb")), None)
+    if not baseline:
+        return None
+    lines = ["| Nodes / edges | Copy median [IQR] (ms) | S28 reference (ms) | Inside ±50% band |",
+             "|---|---|---|---|"]
+    for row in baseline.get("rows", []):
+        value = row.get("copy_ms", {})
+        lines.append(f"| {row.get('size')} / {row.get('size')} | {_fmt(value.get('median'))} "
+                     f"[{_fmt(value.get('q1'))}–{_fmt(value.get('q3'))}] | {row.get('s28_reference_ms')} | "
+                     f"{'yes' if row.get('inside_50_percent_band') else 'NO'} |")
+    return "\n".join(lines)
+
+
+def copy_weight_table(runs: list[dict]) -> str:
+    lines = ["| Build | Storage | Nodes / edges | Create + claim + score + discard (ms) | Run |",
+             "|---|---|---|---|---|"]
+    for run in runs:
+        build, storage = _where(run)
+        for row in run.get("copy_weight", []):
+            lines.append(f"| {build} | {storage} | {row.get('size')} / {row.get('size')} | "
+                         f"{_fmt(row.get('cycle_ms'))} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def omnigraph_failover_table(runs: list[dict]) -> str:
+    lines = ["| Build | Storage | Phase | Variant | Successor ready | A result | B result | Fence | Integrity scan | Classification | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, storage = _where(run)
+        for trial in run.get("trials", []):
+            a, b = trial.get("a_write") or {}, trial.get("b_write") or {}
+            lines.append(f"| {build} | {storage} | {trial.get('phase')} | {trial.get('variant')} | "
+                         f"{'yes' if trial.get('successor_ready') else 'no'} | {a.get('kind') or a.get('outcome') or '–'} | "
+                         f"{b.get('kind') or b.get('outcome') or '–'} | "
+                         f"{'WriterFenced' if trial.get('writer_fenced_observed') else 'not engaged'} | "
+                         f"{'ok' if trial.get('graph_open_and_scan') else 'NOT checked'} | {trial.get('status')} | "
+                         f"`{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def omnigraph_visibility_table(runs: list[dict]) -> str:
+    lines = ["| Build | Storage | Second process | Write acknowledged | Seen | Attempts | Staleness (ms) | Run |",
+             "|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, storage = _where(run)
+        for trial in run.get("trials", []):
+            lines.append(f"| {build} | {storage} | {trial.get('second_process')} | "
+                         f"{'yes' if trial.get('write_acknowledged') else 'no'} | {'yes' if trial.get('seen') else 'NO'} | "
+                         f"{trial.get('attempts')} | {_fmt(trial.get('staleness_ms'))} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
 def ladder_table(run: dict) -> str:
     build, backend = _where(run)
     lines = [f"**{build} {backend}**, run `{run['run_id']}`", "",
@@ -310,8 +395,16 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     ladders = [run for run in runs if run.get("ladder")]
     visibility = [run for run in runs if run["scenario"]["mode"] == "sequential" and run not in suites
                   and run not in ladders]
+    omnigraph_curves = [run for run in runs if run["scenario"]["mode"] == "curve"]
+    omnigraph_failovers = [run for run in runs if run["scenario"]["mode"] == "matrix"]
+    omnigraph_visibility = [run for run in runs if run["scenario"]["mode"] == "visibility"]
     first = runs[0]
     host, harness = first.get("host", {}), first.get("harness", {})
+    run_summary = f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)"
+    if omnigraph_curves or omnigraph_failovers or omnigraph_visibility:
+        run_summary = (f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, "
+                       f"{len(visibility) + len(omnigraph_visibility)} visibility, {len(omnigraph_curves)} cost curves, "
+                       f"{len(omnigraph_failovers)} failover matrices)")
     lines = [
         f"# {title}: batch `{batch}`",
         "",
@@ -321,7 +414,7 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         f"- Host: {host.get('os')}; {host.get('cpu')}; {host.get('cores')} logical cores; {host.get('memory_gb')} GB",
         f"- Docker: {host.get('docker', 'unknown')}; VM limits {host.get('vm_cpus', '?')} CPUs, "
         f"{host.get('vm_memory_gb', '?')} GB",
-        f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)",
+        run_summary,
         "",
     ]
     boundaries = support_boundaries_table(runs)
@@ -346,6 +439,17 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
                   "", cases_table(suites), ""]
     if visibility:
         lines += ["## Read your writes", "", visibility_table(visibility), ""]
+    if omnigraph_curves:
+        lines += ["## O1 branch-creation cost", "", omnigraph_cost_table(omnigraph_curves), ""]
+        lines += ["### Copy weight", "", copy_weight_table(omnigraph_curves), ""]
+        copy_table = falkor_copy_table(omnigraph_curves)
+        if copy_table:
+            lines += ["### FalkorDB `GRAPH.COPY` sanity curve", "", copy_table, ""]
+    if omnigraph_failovers:
+        lines += ["## O4 failover acceptance matrix", "", omnigraph_failover_table(omnigraph_failovers), "",
+                  "Every BOUNDARY cell reflects the pinned release's documented lack of an HTTP/CLI branch-writer claim route; epoch 0 is not reported as a fence pass.", ""]
+    if omnigraph_visibility:
+        lines += ["## O5 cross-process read your writes", "", omnigraph_visibility_table(omnigraph_visibility), ""]
     if ladders:
         lines += ["## Scale ladder", ""]
         for run in ladders:

@@ -34,9 +34,12 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, _format, *_args):
         pass
 
-    def _read_json(self):
+    def _read_body(self):
         size = int(self.headers.get("Content-Length", "0"))
-        return json.loads(self.rfile.read(size)) if size else None
+        raw = self.rfile.read(size) if size else b""
+        if self.headers.get("Content-Type") == "application/x-ndjson":
+            return raw
+        return json.loads(raw) if raw else None
 
     def _send(self, status, payload):
         body = json.dumps(payload).encode("utf-8")
@@ -51,11 +54,13 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _handle(self):
         parsed = urlsplit(self.path)
-        body = self._read_json()
+        body = self._read_body()
         self.server.requests.append((self.command, self.path, dict(self.headers), body))
 
         if parsed.path == "/healthz":
             return self._send(200, {"status": "ok"})
+        if parsed.path.endswith("/load/ndjson"):
+            return self._send(200, {"graph_commit_id": "load-commit", "entities_loaded": 1})
         if parsed.path.endswith("/query"):
             return self._send(200, {"rows": [{"task": "t1", "state": "open"}], "graph_commit_id": "c1"})
         if parsed.path.endswith("/mutate/if-graph-commit"):
@@ -139,6 +144,15 @@ class OmnigraphClientTest(unittest.TestCase):
         method, path, headers, _body = self.server.requests[-1]
         self.assertEqual((method, path), ("POST", "/graphs/knowledge/mutate/if-graph-commit"))
         self.assertEqual(headers["Omnigraph-If-Graph-Commit"], "c1")
+
+    def test_raw_ndjson_load_uses_one_classifier_path(self):
+        result = self.client.load_ndjson(b'{"type":"Entry","id":"e0","data":{}}\n')
+        self.assertIs(result.outcome, Outcome.OK)
+        method, path, headers, body = self.server.requests[-1]
+        self.assertEqual(method, "POST")
+        self.assertIn("/load/ndjson?", path)
+        self.assertEqual(headers["Content-Type"], "application/x-ndjson")
+        self.assertIn(b'"Entry"', body)
 
     def test_cardinality_violation_is_a_typed_refusal(self):
         result = self.client.mutate("cardinality")

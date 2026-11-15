@@ -19,6 +19,7 @@ from witnessmark.scenarios import Expectation  # noqa: E402
 
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
+from witnessmark_omnigraph.part2 import run_o1, run_o4, run_o5  # noqa: E402
 from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
 
 BUILDS = {
@@ -83,7 +84,41 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--seed", type=int, default=0)
             sub.add_argument("--batch", default=None)
             sub.add_argument("--evidence", default=str(REPO / "evidence"))
+    for name, help_text, storages in (
+        ("curve", "run the declared O1 cost curve", ["local", "minio", "proxy"]),
+        ("failover", "run the O4 phase/variant matrix", ["local", "minio"]),
+        ("visibility", "run O5 across two server processes", ["local", "minio"]),
+    ):
+        sub = commands.add_parser(name, help=help_text)
+        sub.add_argument("--build", choices=sorted(BUILDS), required=True)
+        sub.add_argument("--storage", choices=storages, default="local")
+        sub.add_argument("--batch", required=True)
+        sub.add_argument("--evidence", default=str(REPO / "evidence"))
+        if name == "curve":
+            sub.add_argument("--include-falkor", action="store_true")
+        if name == "failover":
+            sub.add_argument("--seed", type=int, default=20261115)
     args = parser.parse_args(argv)
+
+    if args.command in ("curve", "failover", "visibility"):
+        build = BUILDS[args.build]
+        evidence = Path(args.evidence)
+        if args.command == "curve":
+            manifest, path = run_o1(REPO, evidence, args.batch, args.build, build, args.storage,
+                                    include_falkor=args.include_falkor)
+            baseline = (manifest.get("controls", {}).get("falkordb") or {})
+            if baseline and not baseline.get("sanity_band_met"):
+                print("FalkorDB S28 sanity band NOT MET; stop the batch before other findings")
+                print(f"evidence: {path}")
+                return 2
+        elif args.command == "failover":
+            manifest, path = run_o4(REPO, evidence, args.batch, args.build, build, args.storage, args.seed)
+        else:
+            manifest, path = run_o5(REPO, evidence, args.batch, args.build, build, args.storage)
+        print(f"{manifest['scenario']['id']}: {len(manifest['trials'])} trial(s)")
+        print(f"evidence: {path}")
+        return 0
+
     engine = _engine(args)
 
     if args.command == "smoke":

@@ -1,6 +1,6 @@
 """Witnessmark's standard-library client and scenario scaffolding for Omnigraph.
 
-Phase 2 TODO: implement O1, O4 and O5 and wire O2, O3 and O6 to runners.
+The package contains the network adapter plus the O1–O6 controls and runners.
 """
 
 from .client import OmnigraphClient, OperationResult, Outcome

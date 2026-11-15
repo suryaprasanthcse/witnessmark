@@ -17,8 +17,8 @@ class OmnigraphRunnerTest(unittest.TestCase):
     def test_workload_loader_finds_every_checked_in_declaration(self):
         self.assertEqual(set(load_queries()), {
             "m_reset", "m_fixture_base", "m_fixture_agent", "m_fixture_task",
-            "q_task", "q_task_holder", "q_live", "q_eligible", "m_claim_cond",
-            "m_claim_card", "m_ledger",
+            "m_o1_fixture", "q_task", "q_task_holder", "q_live", "q_eligible",
+            "m_claim_cond", "m_claim_card", "m_ledger", "q_ledger",
         })
 
     def test_dump_uses_one_snapshot_and_derives_live_lease_record(self):

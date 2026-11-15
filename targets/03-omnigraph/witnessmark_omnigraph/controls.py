@@ -27,6 +27,13 @@ def run_query_smoke(engine: OmnigraphEngine) -> dict:
 
     try:
         run("m_reset")
+        run("m_o1_fixture", {"task_id": TASK, "skill_id": SKILL})
+        run("q_ledger", {"rule": "absent"}, write=False)
+        OmnigraphSession._raise(session.client.load_ndjson(
+            b'{"type":"Entry","id":"raw-smoke","data":{"id":"raw-smoke","seq":1,'
+            b'"rule":"smoke","hash":"1","prev":"","ts":1}}\n'))
+        executed.append("load_ndjson")
+        run("m_reset")
         run("m_fixture_base", {"task_id": TASK, "skill_id": SKILL})
         run("m_fixture_agent", {"agent_id": "c00", "skill_id": SKILL})
         run("m_fixture_task", {"task_id": "task-1", "skill_id": SKILL})

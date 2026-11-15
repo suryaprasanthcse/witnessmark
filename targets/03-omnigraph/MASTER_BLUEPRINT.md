@@ -133,6 +133,11 @@ maps that documented constraint message to the definite typed refusal
 - **Copy weight.** w(n) for GNOMON's decision cycle: create, apply one claim, score with one read, discard. A decision with four candidates makes five such cycles.
 - **I6a.** Create a branch while `m_ledger` appends at a fixed rate. The branch must hold a gapless prefix of the ledger.
 - **I6b.** Writes on the branch must be invisible on main, and the reverse, until a merge.
+- **Runner.** Padding is loaded through the strict bounded NDJSON route in
+  4,096-entity commits. For every `(n, s)` cell, three create/delete warm-ups
+  precede five measured repetitions. One closed-loop `q_task` reader owns its
+  own connection; object-store request counts are taken in a separate matched
+  proxy repetition [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
 - **Expected.**
   - FalkorDB: inside the S28 band [ours].
   - Omnigraph: [unmeasured]. The hypothesis [inference, from #642's description of lazy forks] is that creation time barely depends on n, and grows with s and with catalog width.
@@ -189,6 +194,16 @@ clients without process-start noise [code:
   - B's publications are intact.
   - Until the rejection, A's reads return the snapshot from before the claim; afterwards they see B's rows. This is the RFC's stated freshness bound.
   - `branch list --detailed` shows a single epoch.
+
+**Pinned-surface boundary.** The edge pin's troubleshooting guide explicitly
+says that no CLI command or HTTP route claims a branch writer; only an embedding
+process can call `Omnigraph::claim_branch_writer`. An unclaimed branch remains
+at epoch 0 and accepts writers as before. The containerized server topology can
+therefore exercise leased root takeover and every pause/resume phase, but it
+cannot engage the epoch fence. Those cells are reported as BOUNDARY, never as
+PASS, and retain the actual A/B outcomes and integrity scan [docs:
+`docs/user/operations/troubleshooting.md#writer-epoch`] [code:
+`targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
 - **Baseline on v0.15.0, before the fence.** The same sequence documents the behaviour the RFC describes: a stale writer's publish can land while its head precondition holds (O-K7). It is reported as BOUNDARY, because the deployment rule is documented, and not as FAIL.
 - **Boundary probes on the edge build.** After the failover, A runs branch create or delete, cleanup, or optimize. The RFC puts all of these outside the fence (O-K8). The run records what happens, then checks integrity:
   - every object main's head references exists;
@@ -204,6 +219,11 @@ clients without process-start noise [code:
 ### O5. Read your writes across processes (I3)
 
 A write acknowledged by server A is read back by a second process, either the CLI or another server, on the same root. The run measures the staleness window, on both builds.
+
+The implemented local-root control cleanly stops A after its acknowledgement,
+starts server B on the same root, and polls B with `q_task_holder`; the measured
+window begins at A's acknowledgement and includes process turnover [code:
+`targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
 
 ### O6. Traversal parity (I4)
 

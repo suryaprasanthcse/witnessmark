@@ -36,6 +36,14 @@ query m_fixture_task($task_id: String, $skill_id: String) {
   insert Needs { from: $task_id, to: $skill_id }
 }
 
+// O1 reader fixture without a ledger Entry, so the declared padding count is
+// exactly n nodes and n edges.
+query m_o1_fixture($task_id: String, $skill_id: String) {
+  insert Skill { id: $skill_id }
+  insert Task { id: $task_id, state: "open" }
+  insert Needs { from: $task_id, to: $skill_id }
+}
+
 // The response envelope supplies graph_commit_id. The pinned docs do not
 // document an optional traversal/projection, so q_task returns the state row
 // and q_task_holder separately returns the at-most-one live holder. Phase 2
@@ -139,4 +147,10 @@ query m_ledger(
     ts: $ts
   }
   insert Next { from: $prev, to: $id }
+}
+
+query q_ledger($rule: String) {
+  match { $entry: Entry { rule: $rule } }
+  return { $entry.seq as seq }
+  order { seq asc }
 }

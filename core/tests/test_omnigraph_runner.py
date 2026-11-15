@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+import threading
 import time
 import unittest
 from unittest import mock
@@ -12,6 +13,7 @@ TARGET = Path(__file__).resolve().parents[2] / "targets" / "03-omnigraph"
 sys.path.insert(0, str(TARGET))
 
 from witnessmark_omnigraph import part2  # noqa: E402
+from witnessmark_omnigraph.client import OperationResult, Outcome  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphSession  # noqa: E402
 from witnessmark_omnigraph.workload import load_queries  # noqa: E402
 
@@ -144,6 +146,96 @@ class LeaseTest(unittest.TestCase):
         shortened = part2.Stack(Path.cwd(), "wm-m4-unit", build, "minio", lease_seconds=part2.LEASE_SECONDS)
         self.assertEqual(default.environ["WM_CLUSTER_LEASE_SECONDS"], "30")
         self.assertEqual(shortened.environ["WM_CLUSTER_LEASE_SECONDS"], "2")
+
+
+class _FakeLedgerClient:
+    """Branch create copies a ledger; appends land on whichever branch they name."""
+
+    def __init__(self):
+        self.rows = {"main": []}
+        self.lock = threading.Lock()
+
+    def _ok(self, data=None):
+        return OperationResult(Outcome.OK, status=200, data=data)
+
+    def branch_delete(self, name):
+        self.rows.pop(name, None)
+        return self._ok()
+
+    def load_ndjson(self, _payload):
+        return self._ok()
+
+    def branch_create(self, name, from_branch="main"):
+        with self.lock:
+            self.rows[name] = list(self.rows[from_branch])
+        return self._ok()
+
+    def mutate(self, _query, params, name=None, branch="main"):
+        with self.lock:
+            self.rows[branch].append({"seq": params["seq"], "rule": params["rule"]})
+        return self._ok()
+
+    def query(self, _query, params, name=None, branch="main"):
+        with self.lock:
+            rows = [{"seq": r["seq"]} for r in self.rows[branch] if r["rule"] == params["rule"]]
+        return self._ok({"rows": rows})
+
+
+class I6ControlTest(unittest.TestCase):
+    def test_the_branch_is_cut_after_appends_landed_so_the_prefix_is_not_empty(self):
+        # Regression: a fixed sleep cut the branch before the first append on a slow store,
+        # and an empty prefix passed I6a trivially.
+        queries = {"m_ledger": "m_ledger", "q_ledger": "q_ledger"}
+        result = part2._i6_controls(_FakeLedgerClient(), queries)
+        self.assertTrue(result["i6a_exercised"])
+        self.assertTrue(result["i6a_gapless_prefix"])
+        self.assertGreaterEqual(result["i6a_prefix_length"], part2.I6_BRANCH_AFTER)
+        self.assertEqual(result["branch_prefix_seq"], list(range(1, result["i6a_prefix_length"] + 1)))
+        self.assertTrue(result["i6b_isolation"])
+
+    def test_an_empty_prefix_is_not_a_pass(self):
+        class Slow(_FakeLedgerClient):
+            def branch_create(self, name, from_branch="main"):
+                result = super().branch_create(name, from_branch)
+                if name == "i6-prefix":
+                    self.rows[name] = []  # a branch that holds none of the ledger
+                return result
+
+        result = part2._i6_controls(Slow(), {"m_ledger": "m_ledger", "q_ledger": "q_ledger"})
+        self.assertFalse(result["i6a_exercised"])
+        self.assertFalse(result["i6a_gapless_prefix"])
+
+
+class _FakeScanClient:
+    def __init__(self, agents, ok=True):
+        self.agents, self.ok = agents, ok
+
+    def branch_list(self, detailed=False):
+        return OperationResult(Outcome.OK, status=200, data={"branches": ["main"]})
+
+    def query(self, _query, _params, name=None, branch="main"):
+        if not self.ok:
+            return OperationResult(Outcome.UNKNOWN, kind="connection", message="closed")
+        rows = [{"agent": a, "task": "t"} for a in self.agents] if name == "q_eligible" else []
+        return OperationResult(Outcome.OK, status=200, data={"rows": rows})
+
+
+class O4IntegrityTest(unittest.TestCase):
+    queries = {"q_task": "q_task", "q_eligible": "q_eligible", "q_ledger": "q_ledger"}
+
+    def test_an_acknowledged_write_that_is_absent_is_reported(self):
+        result = part2.o4_integrity(_FakeScanClient(["a-p1-b"]), self.queries, ["a-p1-b", "b-p1-b"])
+        self.assertTrue(result["scan_ok"])
+        self.assertEqual(result["acknowledged_missing"], ["b-p1-b"])
+
+    def test_every_acknowledged_write_present(self):
+        result = part2.o4_integrity(_FakeScanClient(["a", "b"]), self.queries, ["a", "b"])
+        self.assertEqual(result["acknowledged_missing"], [])
+
+    def test_a_failed_scan_is_not_a_clean_scan_and_hides_no_loss_claim(self):
+        result = part2.o4_integrity(_FakeScanClient([], ok=False), self.queries, ["a"])
+        self.assertFalse(result["scan_ok"])
+        self.assertIsNone(result["acknowledged_missing"])
 
 
 if __name__ == "__main__":

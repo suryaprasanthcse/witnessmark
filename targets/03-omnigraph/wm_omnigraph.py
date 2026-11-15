@@ -19,7 +19,7 @@ from witnessmark.scenarios import Expectation  # noqa: E402
 
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
-from witnessmark_omnigraph.part2 import run_o1, run_o4, run_o5  # noqa: E402
+from witnessmark_omnigraph.part2 import run_i6, run_o1, run_o4, run_o5  # noqa: E402
 from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
 
 BUILDS = {
@@ -88,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
         ("curve", "run the declared O1 cost curve", ["local", "minio", "proxy"]),
         ("failover", "run the O4 phase/variant matrix", ["local", "minio"]),
         ("visibility", "run O5 across two server processes", ["local", "minio"]),
+        ("i6", "run the I6a and I6b controls alone", ["local", "minio", "proxy"]),
     ):
         sub = commands.add_parser(name, help=help_text)
         sub.add_argument("--build", choices=sorted(BUILDS), required=True)
@@ -100,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--seed", type=int, default=20261115)
     args = parser.parse_args(argv)
 
-    if args.command in ("curve", "failover", "visibility"):
+    if args.command in ("curve", "failover", "visibility", "i6"):
         build = BUILDS[args.build]
         evidence = Path(args.evidence)
         if args.command == "curve":
@@ -111,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
                 print("FalkorDB S28 sanity band NOT MET; stop the batch before other findings")
                 print(f"evidence: {path}")
                 return 2
+        elif args.command == "i6":
+            manifest, path = run_i6(REPO, evidence, args.batch, args.build, build, args.storage)
         elif args.command == "failover":
             manifest, path = run_o4(REPO, evidence, args.batch, args.build, build, args.storage, args.seed)
         else:

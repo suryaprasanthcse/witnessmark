@@ -278,7 +278,7 @@ def invalid_table(runs: list[dict]) -> str | None:
 
 def omnigraph_cost_table(runs: list[dict]) -> str:
     lines = [
-        "| Build | Storage | Nodes / edges | Siblings | Create median [IQR] (ms) | Stall median (ms) | Reader p99 before / during (ms) | Merge / delete median (ms) | Object requests / bytes | Run |",
+        "| Build | Storage | Nodes / edges | Siblings | Create median [IQR] (ms) | Stall median (ms) | Reader p99 before / during (ms) | Merge / delete median (ms) | Object requests / bytes, one create + delete | Run |",
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for run in runs:
@@ -312,14 +312,54 @@ def falkor_copy_table(runs: list[dict]) -> str | None:
                      if (run.get("controls") or {}).get("falkordb")), None)
     if not baseline:
         return None
-    lines = ["| Nodes / edges | Copy median [IQR] (ms) | S28 reference (ms) | Inside ±50% band |",
-             "|---|---|---|---|"]
+    persistence = baseline.get("persistence_during_curve") or {}
+    found = baseline.get("persistence_found") or {}
+    lines = []
+    if persistence:
+        lines += ["Persistence during the curve: " + ", ".join(f"`{k} {v}`" for k, v in sorted(persistence.items())) +
+                  "; found beforehand: " + ", ".join(f"`{k} {v}`" for k, v in sorted(found.items())) + ".", ""]
+    lines += ["| Nodes / edges | Copy median [IQR] (ms) | S28 reference (ms) | Inside ±50% band | Delete median (ms) | "
+              "Source reader stall median (ms) | Unrelated reader stall median (ms) | Unrelated writer stall median (ms) | "
+              "RSS delta median (MB) | AOF bytes (last sample) |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
     for row in baseline.get("rows", []):
         value = row.get("copy_ms", {})
+        samples = row.get("samples", [])
+
+        def med(key):
+            found_values = [s[key] for s in samples if s.get(key) is not None]
+            return percentile(found_values, 50) if found_values else None
+
+        deltas = [s["rss_after_mb"] - s["rss_before_mb"] for s in samples
+                  if s.get("rss_after_mb") is not None and s.get("rss_before_mb") is not None]
+        aof = [s["aof_bytes"] for s in samples if s.get("aof_bytes") is not None]
         lines.append(f"| {row.get('size')} / {row.get('size')} | {_fmt(value.get('median'))} "
                      f"[{_fmt(value.get('q1'))}–{_fmt(value.get('q3'))}] | {row.get('s28_reference_ms')} | "
-                     f"{'yes' if row.get('inside_50_percent_band') else 'NO'} |")
+                     f"{'yes' if row.get('inside_50_percent_band') else 'NO'} | {_fmt(med('delete_ms'))} | "
+                     f"{_fmt(med('source_reader_stall_ms'))} | {_fmt(med('unrelated_reader_stall_ms'))} | "
+                     f"{_fmt(med('unrelated_writer_stall_ms'))} | {_fmt(percentile(deltas, 50) if deltas else None)} | "
+                     f"{aof[-1] if aof else '–'} |")
     return "\n".join(lines)
+
+
+def i6_table(runs: list[dict]) -> str | None:
+    lines = ["| Build | Storage | Source | I6a: branch prefix / main ledger | I6a gapless and non-empty | I6b isolation | Run |",
+             "|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, storage = _where(run)
+        if run["scenario"]["mode"] == "controls":
+            controls = [(t, "controls only") for t in run.get("trials", []) if t.get("valid")]
+        else:
+            i6 = (run.get("controls") or {}).get("i6")
+            controls = [(i6, "end of O1 curve")] if i6 else []
+        for control, source in controls:
+            prefix = control.get("i6a_prefix_length", len(control.get("branch_prefix_seq", [])))
+            main = control.get("i6a_main_length", len(control.get("main_seq", [])))
+            gapless = control.get("i6a_gapless_prefix") and prefix > 0
+            lines.append(f"| {build} | {storage} | {source} | {prefix} / {main} | {'yes' if gapless else 'NO'}"
+                         f"{' (empty prefix, not exercised)' if prefix == 0 else ''} | "
+                         f"{'yes' if control.get('i6b_isolation') else 'NO'} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
 
 
 def copy_weight_table(runs: list[dict]) -> str:
@@ -334,18 +374,23 @@ def copy_weight_table(runs: list[dict]) -> str:
 
 
 def omnigraph_failover_table(runs: list[dict]) -> str:
-    lines = ["| Build | Storage | Phase | Variant | Successor ready | A result | B result | Fence | Integrity scan | Classification | Run |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
+    lines = ["| Build | Storage | Phase | Variant | Successor ready | A result | B result | Fence | Scanned via | "
+             "Integrity scan | Acknowledged writes missing | Classification | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for run in runs:
         build, storage = _where(run)
         for trial in run.get("trials", []):
             a, b = trial.get("a_write") or {}, trial.get("b_write") or {}
+            integrity = trial.get("integrity") or {}
+            missing = integrity.get("acknowledged_missing")
+            missing_cell = "–" if not integrity else ("unknown" if missing is None else (", ".join(missing) or "none"))
             lines.append(f"| {build} | {storage} | {trial.get('phase')} | {trial.get('variant')} | "
                          f"{'yes' if trial.get('successor_ready') else 'no'} | {a.get('kind') or a.get('outcome') or '–'} | "
                          f"{b.get('kind') or b.get('outcome') or '–'} | "
                          f"{'WriterFenced' if trial.get('writer_fenced_observed') else 'not engaged'} | "
-                         f"{'ok' if trial.get('graph_open_and_scan') else 'NOT checked'} | {trial.get('status')} | "
-                         f"`{run['run_id']}` |")
+                         f"{integrity.get('scanned_via', 'A (stale server)')} | "
+                         f"{'ok' if trial.get('graph_open_and_scan') else 'NOT checked'} | {missing_cell} | "
+                         f"{trial.get('status')} | `{run['run_id']}` |")
     return "\n".join(lines)
 
 
@@ -398,13 +443,14 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     omnigraph_curves = [run for run in runs if run["scenario"]["mode"] == "curve"]
     omnigraph_failovers = [run for run in runs if run["scenario"]["mode"] == "matrix"]
     omnigraph_visibility = [run for run in runs if run["scenario"]["mode"] == "visibility"]
+    omnigraph_controls = [run for run in runs if run["scenario"]["mode"] == "controls"]
     first = runs[0]
     host, harness = first.get("host", {}), first.get("harness", {})
     run_summary = f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)"
-    if omnigraph_curves or omnigraph_failovers or omnigraph_visibility:
+    if omnigraph_curves or omnigraph_failovers or omnigraph_visibility or omnigraph_controls:
         run_summary = (f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, "
                        f"{len(visibility) + len(omnigraph_visibility)} visibility, {len(omnigraph_curves)} cost curves, "
-                       f"{len(omnigraph_failovers)} failover matrices)")
+                       f"{len(omnigraph_failovers)} failover matrices, {len(omnigraph_controls)} I6 control runs)")
     lines = [
         f"# {title}: batch `{batch}`",
         "",
@@ -439,6 +485,10 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
                   "", cases_table(suites), ""]
     if visibility:
         lines += ["## Read your writes", "", visibility_table(visibility), ""]
+    if omnigraph_curves or omnigraph_controls:
+        i6 = i6_table(omnigraph_curves + omnigraph_controls)
+        if i6:
+            lines += ["## I6a and I6b controls", "", i6, ""]
     if omnigraph_curves:
         lines += ["## O1 branch-creation cost", "", omnigraph_cost_table(omnigraph_curves), ""]
         lines += ["### Copy weight", "", copy_weight_table(omnigraph_curves), ""]

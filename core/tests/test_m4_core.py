@@ -38,6 +38,40 @@ class M4ReportTest(unittest.TestCase):
         self.assertIn("## O5 cross-process read your writes",
                       memory_markdown([visibility], "m4", "M4: Omnigraph"))
 
+    def test_i6_table_flags_an_empty_prefix_and_shows_controls_only_runs(self):
+        curve = run("curve", "o1.branch_cost", [])
+        curve["controls"] = {"i6": {"i6a_gapless_prefix": True, "branch_prefix_seq": [], "main_seq": [1, 2],
+                                    "i6b_isolation": True}}
+        controls = run("controls", "o1.i6_controls", [{"valid": True, "i6a_gapless_prefix": True,
+                       "i6a_prefix_length": 6, "i6a_main_length": 20, "i6b_isolation": True}])
+        controls["run_id"] = "run-controls"
+        text = memory_markdown([curve, controls], "m4", "M4: Omnigraph")
+        self.assertIn("## I6a and I6b controls", text)
+        self.assertIn("empty prefix, not exercised", text)
+        self.assertIn("| 6 / 20 |", text)
+
+    def test_failover_table_names_who_scanned_and_what_is_missing(self):
+        matrix = run("matrix", "o4.failover_acceptance", [{
+            "phase": "p1", "variant": "b", "successor_ready": True, "a_write": {"outcome": "ok"},
+            "b_write": {"outcome": "ok"}, "writer_fenced_observed": False, "graph_open_and_scan": True,
+            "status": "BOUNDARY", "integrity": {"scanned_via": "wm-omnigraph-b", "acknowledged_missing": ["a-p1-b"]}}])
+        text = memory_markdown([matrix], "m4", "M4: Omnigraph")
+        self.assertIn("wm-omnigraph-b", text)
+        self.assertIn("a-p1-b", text)
+
+    def test_falkor_table_reports_persistence_and_stalls(self):
+        curve = run("curve", "o1.branch_cost", [])
+        curve["controls"] = {"falkordb": {
+            "persistence_during_curve": {"appendonly": "yes", "appendfsync": "always"},
+            "persistence_found": {"appendonly": "no", "appendfsync": "everysec"},
+            "rows": [{"size": 32000, "s28_reference_ms": 165, "inside_50_percent_band": True,
+                      "copy_ms": {"median": 95.0, "q1": 90.0, "q3": 100.0},
+                      "samples": [{"delete_ms": 1.0, "source_reader_stall_ms": 90.0, "unrelated_reader_stall_ms": 91.0,
+                                   "unrelated_writer_stall_ms": 92.0, "rss_before_mb": 100.0, "rss_after_mb": 130.0,
+                                   "aof_bytes": 5}]}]}}
+        text = memory_markdown([curve], "m4", "M4: Omnigraph")
+        self.assertIn("`appendfsync always`", text)
+        self.assertIn("Unrelated writer stall", text)
 
 if __name__ == "__main__":
     unittest.main()

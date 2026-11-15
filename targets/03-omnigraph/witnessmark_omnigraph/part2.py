@@ -37,6 +37,7 @@ REPETITIONS = 5
 # a 2 s lease closed admission under load in O1 (batch m4c, proxy run).
 LEASE_SECONDS = 2
 DEFAULT_LEASE_SECONDS = 30
+I6_BRANCH_AFTER = 5  # the I6a branch is cut once this many ledger appends have landed
 MINIO_IMAGE = "witnessmark/minio:RELEASE.2025-09-07T16-13-09Z"
 MINIO_DIGEST = "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899"
 
@@ -352,6 +353,7 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
     }}, separators=(",", ":")) for name in ("i6-anchor", "i6b-branch-anchor", "i6b-main-anchor")]
     _check(client.load_ndjson(("\n".join(anchors) + "\n").encode()), "load I6 anchors")
     writer_done = threading.Event()
+    midway = threading.Event()
     writer_error: list[str] = []
 
     def writer():
@@ -360,6 +362,8 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
                 _check(client.mutate(queries["m_ledger"], {"id": f"i6-{seq}", "seq": seq, "rule": "i6",
                               "hash": str(seq), "prev": f"i6-{seq - 1}" if seq > 1 else "i6-anchor", "ts": seq},
                               name="m_ledger"), "append i6 ledger")
+                if seq == I6_BRANCH_AFTER:
+                    midway.set()
                 time.sleep(0.01)
         except Exception as exc:  # retained as evidence, then raised below
             writer_error.append(str(exc))
@@ -368,7 +372,11 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
 
     thread = threading.Thread(target=writer, name="wm-i6-writer", daemon=True)
     thread.start()
-    time.sleep(0.04)
+    # The branch is created while the appends continue, after a few have landed. A fixed
+    # sleep let the branch be cut before the first append on a slow store, which left an
+    # empty prefix that is trivially gapless (batch m4d).
+    if not midway.wait(60):
+        raise RuntimeError("the I6 ledger writer did not reach the branch point")
     _check(client.branch_create("i6-prefix", from_branch="main"), "create ledger branch")
     writer_done.wait(30)
     thread.join(timeout=2)
@@ -387,8 +395,40 @@ def _i6_controls(client: OmnigraphClient, queries: dict[str, str]) -> dict:
     on_main = _lease_rows(client, queries, rule="i6b")
     on_branch = _lease_rows(client, queries, "i6-isolation", "i6b")
     isolation_ok = on_main == [1002] and on_branch == [1001]
-    return {"i6a_gapless_prefix": prefix_ok, "main_seq": main, "branch_prefix_seq": prefix,
+    exercised = len(prefix) >= I6_BRANCH_AFTER
+    return {"i6a_gapless_prefix": prefix_ok and exercised, "i6a_exercised": exercised,
+            "i6a_prefix_length": len(prefix), "i6a_main_length": len(main),
+            "main_seq": main, "branch_prefix_seq": prefix,
             "i6b_isolation": isolation_ok, "main_visible": on_main, "branch_visible": on_branch}
+
+
+def run_i6(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str) -> tuple[dict, Path]:
+    """The I6a and I6b controls alone, on a graph without padding."""
+    started = _utc()
+    stack = Stack(repo, f"wm-m4-i6-{build_name.replace('.', '-')}-{storage}".lower(), build, storage)
+    queries = load_queries()
+    run_id = _run_id(started)
+    planned = _manifest(repo, batch, build, build_name, storage, "o1.i6_controls", "controls", started, [],
+                        run_id=run_id, invariants=["I6a", "I6b"], cluster_lease_seconds=stack.lease_seconds,
+                        status="planned-before-execution")
+    path = write_manifest(repo, evidence, planned)
+    try:
+        stack.provision()
+        client = OmnigraphClient("http://127.0.0.1:18080", "witnessmark", timeout=180)
+        _check(client.mutate(queries["m_reset"], {}, name="m_reset"), "reset I6 graph")
+        _check(client.mutate(queries["m_o1_fixture"], {"task_id": TASK, "skill_id": SKILL},
+                             name="m_o1_fixture"), "create I6 fixture")
+        i6 = _i6_controls(client, queries)
+        manifest = _manifest(repo, batch, build, build_name, storage, "o1.i6_controls", "controls", started,
+                             [{"valid": True, **i6}], run_id=run_id, invariants=["I6a", "I6b"],
+                             cluster_lease_seconds=stack.lease_seconds, status="complete")
+        update_manifest(path, manifest)
+        return manifest, path
+    except Exception as exc:
+        _error_note(path, repo, exc)
+        raise
+    finally:
+        stack.down()
 
 
 def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
@@ -649,6 +689,20 @@ def classify_o4_cell(build_name: str, storage: str, successor_ready: bool) -> tu
             "one-writer deployment rule")
 
 
+def o4_integrity(client: OmnigraphClient, queries: dict[str, str], acknowledged: list[str]) -> dict:
+    """Open the graph, scan it, and look for every acknowledged agent write."""
+    branch_state = client.branch_list(detailed=True)
+    task = client.query(queries["q_task"], {"task_id": TASK}, name="q_task")
+    eligible = client.query(queries["q_eligible"], {}, name="q_eligible")
+    ledger = client.query(queries["q_ledger"], {"rule": "genesis"}, name="q_ledger")
+    scans_ok = all(result.outcome is Outcome.OK for result in (task, eligible, ledger))
+    rows = eligible.data.get("rows", []) if eligible.outcome is Outcome.OK and isinstance(eligible.data, dict) else []
+    present = sorted({row.get("agent") for row in rows if isinstance(row, dict)} - {None})
+    missing = sorted(set(acknowledged) - set(present)) if eligible.outcome is Outcome.OK else None
+    return {"scan_ok": scans_ok, "acknowledged_agents": sorted(acknowledged), "present_agents": present,
+            "acknowledged_missing": missing, "branch_list": _op_json(branch_state)}
+
+
 def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict, storage: str,
            seed: int = 20261115) -> tuple[dict, Path]:
     """Run the O4 topology and classify each cell from what it actually did.
@@ -717,12 +771,16 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                 actions.append({"client": "nemesis", "kind": "resume", "target": "wm-omnigraph-a",
                                 "assertion": "resume our stale A test container and observe its pending publication"})
                 thread.join(timeout=30)
-                branch_state = a.branch_list(detailed=True)
-                scan_results = [
-                    a.query(queries["q_task"], {"task_id": TASK}, name="q_task"),
-                    a.query(queries["q_eligible"], {}, name="q_eligible"),
-                    a.query(queries["q_ledger"], {"rule": "genesis"}, name="q_ledger"),
-                ]
+                # Score the graph through the server that now owns it. A server whose
+                # admission was taken over stops itself (documented lease behaviour),
+                # so scoring through A reported "not checked" for every S3 cell.
+                scanner = OmnigraphClient("http://127.0.0.1:18081", "witnessmark", timeout=30) if b_ready else a
+                acknowledged = [agent for agent, result in (
+                    (f"a-{phase}-{variant}", a_result[0] if a_result else None),
+                    (f"b-{phase}-{variant}", b_write)) if result is not None and result.outcome is Outcome.OK]
+                integrity = o4_integrity(scanner, queries, acknowledged)
+                integrity["scanned_via"] = "wm-omnigraph-b" if b_ready else "wm-omnigraph-a"
+                stale_view = _op_json(a.branch_list(detailed=True))
                 fenced = bool(a_result and a_result[0].kind == "WriterFenced")
                 status, reason = classify_o4_cell(build_name, storage, b_ready)
                 trials.append({
@@ -730,8 +788,9 @@ def run_o4(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
                     "status": status, "reason": reason,
                     "fault_actions": actions, "successor_start_exit": start.returncode, "successor_ready": b_ready,
                     "a_write": _op_json(a_result[0] if a_result else None), "b_write": _op_json(b_write),
-                    "writer_fenced_observed": fenced, "branch_list": _op_json(branch_state),
-                    "graph_open_and_scan": all(result.outcome is Outcome.OK for result in scan_results),
+                    "writer_fenced_observed": fenced, "branch_list": integrity.pop("branch_list"),
+                    "branch_list_via_a": stale_view, "integrity": integrity,
+                    "graph_open_and_scan": integrity["scan_ok"],
                     "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
                     "single_epoch": "epoch_zero_unclaimed",
                 })

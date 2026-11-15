@@ -138,6 +138,12 @@ maps that documented constraint message to the definite typed refusal
   precede five measured repetitions. One closed-loop `q_task` reader owns its
   own connection; object-store request counts are taken in a separate matched
   proxy repetition [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
+  **I6a and I6b controls** run at the end of each curve and, from batch `m4e`, alone
+  (`wm_omnigraph.py i6`). The I6a branch is cut once five ledger appends have
+  landed and the others continue. The first version cut it after a fixed 40 ms, which on
+  a slow store was before the first append: all six O1 runs of batch `m4d` show an empty
+  prefix, trivially gapless, so I6a was not exercised there. Every report states the
+  prefix length, and an empty prefix is shown as not exercised.
 - **Expected.**
   - FalkorDB: inside the S28 band [ours].
   - Omnigraph: [unmeasured]. The hypothesis [inference, from #642's description of lazy forks] is that creation time barely depends on n, and grows with s and with catalog width.

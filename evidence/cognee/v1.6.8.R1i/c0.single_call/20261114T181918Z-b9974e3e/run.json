@@ -1,0 +1,333 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T181918Z-b9974e3e",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.8",
+    "package_version": "1.6.8",
+    "commit": "069f3cc119bdf5628be054bb915992b2fc78cfc5"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.8",
+      "config": {
+        "build": "v1.6.8",
+        "row": "R1i",
+        "backend": "R1i",
+        "access_control": "default",
+        "access_control_effective": true,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": false,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PROVIDER": "ladybug",
+          "GRAPH_DATABASE_SUBPROCESS_ENABLED": "false",
+          "VECTOR_DB_PROVIDER": "lancedb"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "ladybug",
+      "version": "0.22.3",
+      "config": {
+        "store": "graph",
+        "note": "in-process (GRAPH_DATABASE_SUBPROCESS_ENABLED=false)"
+      }
+    },
+    {
+      "role": "store",
+      "name": "lancedb",
+      "version": "0.39.0",
+      "config": {
+        "store": "vector",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c0.single_call",
+    "invariants": [
+      "I1B",
+      "I2",
+      "I4"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 2,
+    "params": {
+      "cases": [
+        "data_per_batch_1",
+        "default_20"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T18:19:18.702540Z",
+  "expectation": {
+    "role": "target",
+    "support": "supported",
+    "basis": "documented",
+    "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/infrastructure/databases/vector/lancedb/LanceDBAdapter.py#L572-L656 (create_data_points upserts, and dedups ids within a batch)",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "data_per_batch_1",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1c96f0f42f0f57f926436ab0a3dc2068ddb42b73431cbc1b7d3ab96ab0ddc169",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c0, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c0",
+          "detail": "all 14 entities in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c0",
+          "detail": "all 12 relations in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c0",
+          "detail": "all 8 chunks in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c0",
+          "detail": "all 8 data rows in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "default_20",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:19befe3d63846d0671c32a14d97eababaefcbb19b2f57fc7bae5b82fd18023c0",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c0, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": false,
+          "magnitude": 4,
+          "unit": "rows per vector id",
+          "detail": "EdgeType_relationship_name: up to 2 rows per id; EntityType_name: up to 4 rows per id; Entity_name: up to 2 rows per id",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c0",
+          "detail": "all 14 entities in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c0",
+          "detail": "all 12 relations in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c0",
+          "detail": "all 8 chunks in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c0",
+          "detail": "all 8 data rows in wm_c0 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1B",
+      "status": "FAIL",
+      "trials_violating": 1,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 1,
+        "median": 2.5,
+        "max": 4,
+        "unit": "records per key"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/infrastructure/databases/vector/lancedb/LanceDBAdapter.py#L572-L656 (create_data_points upserts, and dedups ids within a batch)",
+      "witnesses": [],
+      "note": "support: supported"
+    },
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "missing entities in wm_c0"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/infrastructure/databases/vector/lancedb/LanceDBAdapter.py#L572-L656 (create_data_points upserts, and dedups ids within a batch)",
+      "witnesses": [],
+      "note": "support: supported"
+    },
+    {
+      "invariant": "I4",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "artefacts in one store only"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/infrastructure/databases/vector/lancedb/LanceDBAdapter.py#L572-L656 (create_data_points upserts, and dedups ids within a batch)",
+      "witnesses": [],
+      "note": "support: supported"
+    }
+  ],
+  "finished_at": "2026-11-14T18:20:02.970582Z"
+}

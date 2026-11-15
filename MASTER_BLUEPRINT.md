@@ -956,6 +956,13 @@ All 12 sequential controls and all 9 negative controls were met, and all 3 posit
 
 The sequential control reproduced the fixture graph in all 11 race runs, on FalkorDB and on Neo4j. G6–G8 are deferred.
 
+**Status, M3.** M3's exit criterion is met in part, on 2026-11-15:
+
+- the sequential control passed on all four rows for the primary scenario `c1.k2`, and on 22 of the 24 final race runs; the two that did not are R3's `c2.writers` and `c3.cross_process`, which trip Cognee 1.6.1 behaviour on FalkorDB (target blueprint C27, §12), so those two are INVALID by rule (§9);
+- batches `m3-20261114T131136Z` (harness `1fd4dd0`), `m3b-20261114T204628Z` (`f3dbe98`), `m3c-20261114T221140Z` (`84dcdb7`) and `m3d-20261114T233706Z` (`5747966`); the later batches re-ran what a harness fix or a crash spoiled, and the target blueprint's §12 says which and why;
+- reports in `evidence/M3_COGNEE.md`, `evidence/M3_COGNEE_B2.md`, `evidence/M3_COGNEE_B3.md` and `evidence/M3_COGNEE_B4.md`; results in the Cognee blueprint, §12;
+- deferred: R4 (PostgreSQL) and the GLiNER check; no pull-request build was installed or run.
+
 ## 13. Open questions
 
 | Question | Settled in |

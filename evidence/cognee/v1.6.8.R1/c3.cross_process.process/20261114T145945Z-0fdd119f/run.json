@@ -1,0 +1,2043 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T145945Z-0fdd119f",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.8",
+    "package_version": "1.6.8",
+    "commit": "069f3cc119bdf5628be054bb915992b2fc78cfc5"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.8",
+      "config": {
+        "build": "v1.6.8",
+        "row": "R1",
+        "backend": "R1",
+        "access_control": "default",
+        "access_control_effective": true,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": false,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PROVIDER": "ladybug",
+          "GRAPH_DATABASE_SUBPROCESS_ENABLED": "true",
+          "VECTOR_DB_PROVIDER": "lancedb"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "ladybug",
+      "version": "0.22.3",
+      "config": {
+        "store": "graph",
+        "note": "subprocess worker on"
+      }
+    },
+    {
+      "role": "store",
+      "name": "lancedb",
+      "version": "0.39.0",
+      "config": {
+        "store": "vector",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c3.cross_process.process",
+    "invariants": [
+      "I2",
+      "I5"
+    ],
+    "mode": "process",
+    "clients": 2,
+    "trials": 36,
+    "params": {
+      "support": "boundary",
+      "op_timeout_s": 900.0,
+      "processes": 2,
+      "spread_gate_ms": null,
+      "declared_sweep": [
+        {
+          "offset_ms": -50
+        },
+        {
+          "offset_ms": -45
+        },
+        {
+          "offset_ms": -40
+        },
+        {
+          "offset_ms": -35
+        },
+        {
+          "offset_ms": -30
+        },
+        {
+          "offset_ms": -25
+        },
+        {
+          "offset_ms": -20
+        },
+        {
+          "offset_ms": -15
+        },
+        {
+          "offset_ms": -10
+        },
+        {
+          "offset_ms": -5
+        },
+        {
+          "offset_ms": 0
+        },
+        {
+          "offset_ms": 5
+        },
+        {
+          "offset_ms": 10
+        },
+        {
+          "offset_ms": 15
+        },
+        {
+          "offset_ms": 20
+        },
+        {
+          "offset_ms": 25
+        },
+        {
+          "offset_ms": 30
+        },
+        {
+          "offset_ms": 35
+        },
+        {
+          "offset_ms": 40
+        },
+        {
+          "offset_ms": 45
+        },
+        {
+          "offset_ms": 50
+        },
+        {
+          "offset_ms": 55
+        },
+        {
+          "offset_ms": 60
+        },
+        {
+          "offset_ms": 65
+        },
+        {
+          "offset_ms": 70
+        },
+        {
+          "offset_ms": 75
+        },
+        {
+          "offset_ms": 80
+        },
+        {
+          "offset_ms": 85
+        },
+        {
+          "offset_ms": 90
+        },
+        {
+          "offset_ms": 95
+        },
+        {
+          "offset_ms": 100
+        },
+        {
+          "offset_ms": 105
+        },
+        {
+          "offset_ms": 110
+        },
+        {
+          "offset_ms": 115
+        },
+        {
+          "offset_ms": 120
+        },
+        {
+          "offset_ms": 125
+        }
+      ],
+      "offset": "positive: the add starts later; negative: the delete starts later; trial k uses offset k-1 of the sweep",
+      "credit": "#6559's reporter found the window and swept offsets without a pause"
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T14:59:45.580528Z",
+  "expectation": {
+    "role": "target",
+    "support": "boundary",
+    "basis": "issue",
+    "basis_ref": "https://github.com/topoteretes/cognee/issues/6559",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "c3.cross_process.process: 2 clients, one at a time",
+      "expected": "delete(A) then add(B) and cognify(B): B's row and files exist, cognify(B) succeeds, A's copy is gone",
+      "observed": "as expected",
+      "met": true
+    },
+    {
+      "kind": "overlap",
+      "configuration": "c3.cross_process.process: 2 clients x 36 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "36 of 36 valid trials had two or more in flight",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.085,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.064,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.067,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.064,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.165,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.061,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.063,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.069,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.039,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.061,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.066,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.066,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.035,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.053,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.019,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.065,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.061,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.067,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.033,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.07,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 21,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.069,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/21.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 22,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.066,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/22.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 23,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.026,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/23.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 24,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.062,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/24.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 25,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.06,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/25.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 26,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.057,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/26.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 27,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.026,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/27.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 28,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.026,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/28.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 29,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.06,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/29.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 30,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.023,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/30.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 31,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.055,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/31.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 32,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.504,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/32.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 33,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.06,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/33.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 34,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.058,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/34.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 35,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.07,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/35.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 36,
+      "valid": true,
+      "precondition_digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+      "release_spread_ms": 0.061,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9a1d08fd99a56332e4c44a40389ad7481299579bd3ad39bcc1cedbcc826d77b7",
+      "state_file": "state/36.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "A artefacts left",
+          "detail": "A's copy is gone",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 36,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "B rows pointing at deleted files"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6559",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I5",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 36,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "A artefacts left"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6559",
+      "witnesses": [],
+      "note": "support: boundary"
+    }
+  ],
+  "finished_at": "2026-11-14T15:26:09.892016Z"
+}

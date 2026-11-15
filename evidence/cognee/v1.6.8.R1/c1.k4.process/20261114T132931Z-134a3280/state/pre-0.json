@@ -1,0 +1,13 @@
+{
+  "k": "pre-0",
+  "digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+  "state": {
+    "wm_c1": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    }
+  }
+}

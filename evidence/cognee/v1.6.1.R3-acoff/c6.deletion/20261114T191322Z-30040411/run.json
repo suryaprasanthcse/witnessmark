@@ -1,0 +1,316 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T191322Z-30040411",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.1",
+    "package_version": "1.6.1",
+    "commit": "eb90d03740755f5252b8b12cce91fd09970f2d81"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.1",
+      "config": {
+        "build": "v1.6.1",
+        "row": "R3",
+        "backend": "R3 (access control off)",
+        "access_control": "off",
+        "access_control_effective": false,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": true,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PORT": "16380",
+          "GRAPH_DATABASE_PROVIDER": "falkor",
+          "GRAPH_DATABASE_URL": "127.0.0.1",
+          "VECTOR_DB_PORT": "16380",
+          "VECTOR_DB_PROVIDER": "falkor",
+          "VECTOR_DB_URL": "127.0.0.1"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "graph",
+        "note": "FalkorDB 6.0.4 via cognee-community-hybrid-adapter-falkor"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "vector",
+        "note": "same server"
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "cognee-community-hybrid-adapter-falkor",
+      "version": "0.4.1"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c6.deletion",
+    "invariants": [
+      "I5",
+      "I2"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 2,
+    "params": {
+      "cases": [
+        "delete",
+        "delete_during_cognify"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T19:13:22.120281Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "documented",
+    "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/api/v1/datasets/datasets.py#L464-L506",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "delete",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:2b54b1527ec3cf5e7a0e28f7e9b3a58f7c370238a2920a610b79d02858c3d230",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts left",
+          "detail": "nothing derived only from C6D1 remains",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "dangling artefacts",
+          "detail": "0 orphan edges, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing shared and other entities",
+          "detail": "all 6 shared and other entities present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing other documents' relations",
+          "detail": "all 4 other documents' relations present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing other documents' chunks",
+          "detail": "all 2 other documents' chunks present",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "case": "delete_during_cognify",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c6059d38dc0e2c45bb6a3b4e071a11bd365611beef04ee8a6c811960aad2a05c",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts left",
+          "detail": "nothing derived only from C6D1 remains",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "dangling artefacts",
+          "detail": "0 orphan edges, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing shared and other entities",
+          "detail": "all 6 shared and other entities present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing other documents' relations",
+          "detail": "all 4 other documents' relations present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing other documents' chunks",
+          "detail": "all 2 other documents' chunks present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c6e",
+          "detail": "all 6 entities in wm_c6e present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c6e",
+          "detail": "all 4 relations in wm_c6e present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c6e",
+          "detail": "all 2 chunks in wm_c6e present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c6e",
+          "detail": "all 2 data rows in wm_c6e present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I5",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "artefacts left"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/api/v1/datasets/datasets.py#L464-L506",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 2,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "missing shared and other entities"
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/cognee/api/v1/datasets/datasets.py#L464-L506",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-14T19:13:36.553865Z"
+}

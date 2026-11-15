@@ -1,0 +1,38 @@
+{
+  "k": "pre-0",
+  "digest": "sha256:8170e66d772ea648a3277246fb234fe2307a2bc0fe3ca8d1f9c484d154363cd2",
+  "state": {
+    "wm_c3_a": {
+      "dataset": "wm_c3_a",
+      "relational": [
+        {
+          "tags": [
+            "C3X"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {},
+        "edges": {},
+        "orphan_edges": 0,
+        "node_count": 0,
+        "edge_count": 0
+      },
+      "provenance": {},
+      "vector": {
+        "_unsupported": "no separate vector store to read: the FalkorDB hybrid adapter keeps each vector on its graph node",
+        "graph_nodes_without_vector": {}
+      }
+    },
+    "wm_c3_b": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    }
+  }
+}

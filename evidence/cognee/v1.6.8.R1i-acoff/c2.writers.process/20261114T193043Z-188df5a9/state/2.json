@@ -1,0 +1,195 @@
+{
+  "k": 2,
+  "digest": "sha256:7e6764f17fb3dc5fcfafac33a43d7a140c11d3704e62cdbcfb2b7f2d6bdf6ea8",
+  "state": {
+    "wm_c2_a": {
+      "dataset": "wm_c2_a",
+      "relational": [],
+      "graph": {
+        "nodes": {},
+        "edges": {},
+        "orphan_edges": 0,
+        "node_count": 0,
+        "edge_count": 0
+      },
+      "provenance": {},
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    },
+    "wm_c2_b": {
+      "dataset": "wm_c2_b",
+      "relational": [],
+      "graph": {
+        "nodes": {},
+        "edges": {},
+        "orphan_edges": 0,
+        "node_count": 0,
+        "edge_count": 0
+      },
+      "provenance": {},
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    },
+    "wm_c2_c": {
+      "dataset": "wm_c2_c",
+      "relational": [],
+      "graph": {
+        "nodes": {},
+        "edges": {},
+        "orphan_edges": 0,
+        "node_count": 0,
+        "edge_count": 0
+      },
+      "provenance": {},
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 0,
+          "unique_ids": 0,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 0,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    }
+  }
+}

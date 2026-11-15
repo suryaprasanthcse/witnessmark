@@ -1,0 +1,34 @@
+{
+  "k": "pre-0",
+  "digest": "sha256:0cb10a6fee42d980d18dc4957b884a4bacc1b8838da7b9de018c18bdd51459ae",
+  "state": {
+    "wm_c1d_0": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    },
+    "wm_c1d_1": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    },
+    "wm_c1d_2": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    },
+    "wm_c1d_3": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    }
+  }
+}

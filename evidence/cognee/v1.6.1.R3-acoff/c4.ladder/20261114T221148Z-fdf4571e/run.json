@@ -1,0 +1,511 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T221148Z-fdf4571e",
+  "batch": "m3c-20261114T221140Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "84dcdb7bf38f7cc979eca3125d04f9fe15c9f2a6",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.1",
+    "package_version": "1.6.1",
+    "commit": "eb90d03740755f5252b8b12cce91fd09970f2d81"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.1",
+      "config": {
+        "build": "v1.6.1",
+        "row": "R3",
+        "backend": "R3 (access control off)",
+        "access_control": "off",
+        "access_control_effective": false,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": true,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PORT": "16380",
+          "GRAPH_DATABASE_PROVIDER": "falkor",
+          "GRAPH_DATABASE_URL": "127.0.0.1",
+          "VECTOR_DB_PORT": "16380",
+          "VECTOR_DB_PROVIDER": "falkor",
+          "VECTOR_DB_URL": "127.0.0.1"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "graph",
+        "note": "FalkorDB 6.0.4 via cognee-community-hybrid-adapter-falkor"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "vector",
+        "note": "same server"
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "cognee-community-hybrid-adapter-falkor",
+      "version": "0.4.1"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c4.ladder",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 5,
+    "params": {
+      "ladder": [
+        448,
+        1000,
+        1650,
+        2500,
+        5401
+      ],
+      "batch_size": 16,
+      "chunks_per_batch": 16,
+      "pinned_ids": true,
+      "corpus": "c4: seeded generator, seed 6170, one dated sentence per document",
+      "declared_sweep": [
+        {
+          "documents": 448
+        },
+        {
+          "documents": 1000
+        },
+        {
+          "documents": 1650
+        },
+        {
+          "documents": 2500
+        },
+        {
+          "documents": 5401
+        }
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T22:11:48.693746Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "rung": 448,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 28,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:88c573e84d7d217a849b40116fff2d2247b66edd128715ff6d5178511f9d3b37",
+      "state_file": "",
+      "documents": 448,
+      "elapsed_s": 120.0,
+      "batch_seconds": {
+        "min": 3.1324528000041028,
+        "median": 4.112142100002529,
+        "max": 5.890958999996656,
+        "unit": "s",
+        "batches": 28
+      },
+      "resident_mb_peak": {
+        "helper": 373.5,
+        "children": 0.0
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      },
+      "graph": {
+        "nodes": 2688,
+        "edges": 4477,
+        "entities": 1341,
+        "graph_path": null
+      },
+      "stub_calls": {
+        "llm": 897,
+        "embed": 449,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "1341 entity nodes; the fixture names 1341",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "rung": 1000,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 35,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d2e96a30d7b884941d3d9378f62944a97b492f46f1aea119b2037e49d334e8ca",
+      "state_file": "",
+      "documents": 1000,
+      "elapsed_s": 355.5,
+      "batch_seconds": {
+        "min": 4.622285999997985,
+        "median": 6.5328011000019615,
+        "max": 8.456188399999519,
+        "unit": "s",
+        "batches": 35
+      },
+      "resident_mb_peak": {
+        "helper": 385.1,
+        "children": 0.0
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      },
+      "graph": {
+        "nodes": 5995,
+        "edges": 9992,
+        "entities": 2992,
+        "graph_path": null
+      },
+      "stub_calls": {
+        "llm": 1104,
+        "embed": 552,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "2992 entity nodes; the fixture names 2992",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "rung": 1650,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 41,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:f88c4ebea5328236fbd7abfbe8c1e869cd9106ab39c21ad6ce5e0405d00f42a7",
+      "state_file": "",
+      "documents": 1650,
+      "elapsed_s": 753.4,
+      "batch_seconds": {
+        "min": 7.629325899994001,
+        "median": 9.627796100001433,
+        "max": 11.574975900002755,
+        "unit": "s",
+        "batches": 41
+      },
+      "resident_mb_peak": {
+        "helper": 407.7,
+        "children": 0.0
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      },
+      "graph": {
+        "nodes": 9890,
+        "edges": 10000,
+        "entities": 4937,
+        "graph_path": null
+      },
+      "stub_calls": {
+        "llm": 1300,
+        "embed": 650,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "4937 entity nodes; the fixture names 4937",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "rung": 2500,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 54,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:79e661616a74e4902b5dacc2944a5a3937ebaf4021a07917b2c0fc4b26250dd0",
+      "state_file": "",
+      "documents": 2500,
+      "elapsed_s": 1471.2,
+      "batch_seconds": {
+        "min": 10.40875319999759,
+        "median": 13.157949349999399,
+        "max": 16.081001400001696,
+        "unit": "s",
+        "batches": 54
+      },
+      "resident_mb_peak": {
+        "helper": 415.6,
+        "children": 0.0
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      },
+      "graph": {
+        "nodes": 10000,
+        "edges": 10000,
+        "entities": 4991,
+        "graph_path": null
+      },
+      "stub_calls": {
+        "llm": 1700,
+        "embed": 850,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2486,
+          "unit": "entities off",
+          "detail": "4991 entity nodes; the fixture names 7477",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "rung": 5401,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 182,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:79e661616a74e4902b5dacc2944a5a3937ebaf4021a07917b2c0fc4b26250dd0",
+      "state_file": "",
+      "documents": 5401,
+      "elapsed_s": 5009.3,
+      "batch_seconds": {
+        "min": 14.710108400002355,
+        "median": 19.404243149994727,
+        "max": 23.439607300002535,
+        "unit": "s",
+        "batches": 182
+      },
+      "resident_mb_peak": {
+        "helper": 453.2,
+        "children": 0.0
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      },
+      "graph": {
+        "nodes": 10000,
+        "edges": 10000,
+        "entities": 4991,
+        "graph_path": null
+      },
+      "stub_calls": {
+        "llm": 5802,
+        "embed": 2901,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 11107,
+          "unit": "entities off",
+          "detail": "4991 entity nodes; the fixture names 16098",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "ladder": {
+    "documents": 5401,
+    "crash": null,
+    "reopen": {
+      "read_only": "n/a (no Ladybug store)",
+      "read_write": "n/a"
+    }
+  },
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "OBSERVED",
+      "trials_violating": 2,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 11107,
+        "unit": "entities off"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "CRASH",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "crashes"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-14T23:35:21.497668Z"
+}

@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T191258Z-e09326c6",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.1",
+    "package_version": "1.6.1",
+    "commit": "eb90d03740755f5252b8b12cce91fd09970f2d81"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.1",
+      "config": {
+        "build": "v1.6.1",
+        "row": "R3",
+        "backend": "R3 (access control off)",
+        "access_control": "off",
+        "access_control_effective": false,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": true,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PORT": "16380",
+          "GRAPH_DATABASE_PROVIDER": "falkor",
+          "GRAPH_DATABASE_URL": "127.0.0.1",
+          "VECTOR_DB_PORT": "16380",
+          "VECTOR_DB_PROVIDER": "falkor",
+          "VECTOR_DB_URL": "127.0.0.1"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "graph",
+        "note": "FalkorDB 6.0.4 via cognee-community-hybrid-adapter-falkor"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "vector",
+        "note": "same server"
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "cognee-community-hybrid-adapter-falkor",
+      "version": "0.4.1"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c3.in_process",
+    "invariants": [
+      "I2",
+      "I5"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 2,
+    "params": {
+      "cases": [
+        "paused",
+        "gather"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T19:12:58.970170Z",
+  "expectation": {
+    "role": "target",
+    "support": "supported",
+    "basis": "issue",
+    "basis_ref": "https://github.com/topoteretes/cognee/issues/6559 (support: https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L104-L116)",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "case": "paused",
+      "valid": false,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 1
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:95a1a086a95261a2dcb1572f1968a2252c8645011ca1f19d668052e7ccccb8ae",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): None",
+          "witnesses": []
+        }
+      ],
+      "invalid_reason": "1 ingest(s) did not succeed: {'type': 'target.RemoteError', 'message': 'DocumentSubgraphNotFoundError: DocumentSubgraphNotFoundError: DocumentSubgraphNotFoundError: Document not found with id: a404fbf6-ed47-4e4c-a550-e6a95e1aeb36 (Status code: 404)'}"
+    },
+    {
+      "k": 2,
+      "case": "gather",
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9f8036e45f9344b73c8b05689af303bcfa03ec2be4f6639aa65cdcacb0df288c",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "B rows pointing at deleted files",
+          "detail": "B's row and its files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "failed cognify(B)",
+          "detail": "cognify(B): ok",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 1,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "B rows pointing at deleted files"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6559 (support: https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L104-L116)",
+      "witnesses": [],
+      "note": "support: supported"
+    },
+    {
+      "invariant": "I5",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 0,
+      "magnitude": {
+        "unit": ""
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6559 (support: https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L104-L116)",
+      "witnesses": [],
+      "note": "support: supported"
+    }
+  ],
+  "finished_at": "2026-11-14T19:13:12.588073Z"
+}

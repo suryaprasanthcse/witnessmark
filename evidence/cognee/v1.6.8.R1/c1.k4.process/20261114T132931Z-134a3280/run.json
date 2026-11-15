@@ -1,0 +1,2292 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T132931Z-134a3280",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.8",
+    "package_version": "1.6.8",
+    "commit": "069f3cc119bdf5628be054bb915992b2fc78cfc5"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.8",
+      "config": {
+        "build": "v1.6.8",
+        "row": "R1",
+        "backend": "R1",
+        "access_control": "default",
+        "access_control_effective": true,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": false,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PROVIDER": "ladybug",
+          "GRAPH_DATABASE_SUBPROCESS_ENABLED": "true",
+          "VECTOR_DB_PROVIDER": "lancedb"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "ladybug",
+      "version": "0.22.3",
+      "config": {
+        "store": "graph",
+        "note": "subprocess worker on"
+      }
+    },
+    {
+      "role": "store",
+      "name": "lancedb",
+      "version": "0.39.0",
+      "config": {
+        "store": "vector",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c1.k4.process",
+    "invariants": [
+      "I1B",
+      "I2",
+      "I4"
+    ],
+    "mode": "process",
+    "clients": 8,
+    "trials": 20,
+    "params": {
+      "support": "boundary",
+      "op_timeout_s": 900.0,
+      "processes": 4,
+      "spread_gate_ms": 1.0,
+      "corpus": "c1",
+      "documents": 24,
+      "workers": 4,
+      "overlap": 2,
+      "slices": [
+        [
+          "C1D000",
+          "C1D001",
+          "C1D002",
+          "C1D003",
+          "C1D004",
+          "C1D005",
+          "C1D006",
+          "C1D007"
+        ],
+        [
+          "C1D006",
+          "C1D007",
+          "C1D008",
+          "C1D009",
+          "C1D010",
+          "C1D011",
+          "C1D012",
+          "C1D013"
+        ],
+        [
+          "C1D012",
+          "C1D013",
+          "C1D014",
+          "C1D015",
+          "C1D016",
+          "C1D017",
+          "C1D018",
+          "C1D019"
+        ],
+        [
+          "C1D018",
+          "C1D019",
+          "C1D020",
+          "C1D021",
+          "C1D022",
+          "C1D023",
+          "C1D000",
+          "C1D001"
+        ]
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T13:29:31.463835Z",
+  "expectation": {
+    "role": "target",
+    "support": "boundary",
+    "basis": "documented",
+    "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L118-L125",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "c1.k4.process: 8 clients, one at a time",
+      "expected": "the fixture graph exactly: 14 entities and 16 relations once each; one chunk, document, summary and row per document (24); no duplicates, orphans or one-store artefacts",
+      "observed": "as expected",
+      "met": true
+    },
+    {
+      "kind": "overlap",
+      "configuration": "c1.k4.process: 8 clients x 20 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "0 of 0 valid trials had two or more in flight",
+      "met": false
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.134,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "1-c01-0",
+            "1-c02-0",
+            "1-c03-0",
+            "1-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 2,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.117,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "2-c00-0",
+            "2-c02-0",
+            "2-c03-0",
+            "2-c06-0",
+            "2-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 3,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.113,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "3-c00-0",
+            "3-c02-0",
+            "3-c03-0",
+            "3-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 4,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.135,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "4-c01-0",
+            "4-c02-0",
+            "4-c03-0",
+            "4-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 5,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.151,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "5-c01-0",
+            "5-c02-0",
+            "5-c03-0",
+            "5-c05-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 6,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.122,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "6-c00-0",
+            "6-c02-0",
+            "6-c03-0",
+            "6-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 7,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.428,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5af28d78ca76decaf68f6d813086c77926ff0ff8bab70f998da936e5ed16d6ba",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "7-c00-0",
+            "7-c01-0",
+            "7-c02-0",
+            "7-c04-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 8,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 1.009,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 6
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 6,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x6",
+          "witnesses": [
+            "8-c01-0",
+            "8-c02-0",
+            "8-c03-0",
+            "8-c05-0",
+            "8-c06-0",
+            "8-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "6 of 8 operations had an unknown outcome; release spread 1.009 ms exceeds the process gate 1.0 ms"
+    },
+    {
+      "k": 9,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.243,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "9-c01-0",
+            "9-c02-0",
+            "9-c03-0",
+            "9-c06-0",
+            "9-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 10,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.13,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5af28d78ca76decaf68f6d813086c77926ff0ff8bab70f998da936e5ed16d6ba",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "10-c00-0",
+            "10-c01-0",
+            "10-c02-0",
+            "10-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 11,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.258,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fc61dc6ade0abe7f011437e2ca57ff24e8d3c4f15eb6e4e6f4d4bbf09abaaad",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "11-c00-0",
+            "11-c01-0",
+            "11-c03-0",
+            "11-c05-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 12,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.406,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "12-c00-0",
+            "12-c02-0",
+            "12-c03-0",
+            "12-c04-0",
+            "12-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 13,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.456,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "13-c00-0",
+            "13-c02-0",
+            "13-c03-0",
+            "13-c06-0",
+            "13-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 14,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.119,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1acd96a89893de6ae9c0a4b69db1942e6578c4c6f30bc08d0d175c5e853cd3b2",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "14-c01-0",
+            "14-c02-0",
+            "14-c03-0",
+            "14-c05-0",
+            "14-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 15,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.124,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "15-c00-0",
+            "15-c02-0",
+            "15-c03-0",
+            "15-c04-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 16,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.77,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "16-c00-0",
+            "16-c02-0",
+            "16-c03-0",
+            "16-c06-0",
+            "16-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 17,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 1.092,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5af28d78ca76decaf68f6d813086c77926ff0ff8bab70f998da936e5ed16d6ba",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "17-c00-0",
+            "17-c01-0",
+            "17-c02-0",
+            "17-c05-0",
+            "17-c06-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome; release spread 1.092 ms exceeds the process gate 1.0 ms"
+    },
+    {
+      "k": 18,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.118,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:fa0f703052470cfa9fe68fdf91072477dfde2f540bbc7b93c5aed36aec38852f",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "18-c00-0",
+            "18-c02-0",
+            "18-c03-0",
+            "18-c04-0",
+            "18-c07-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 19,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.256,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 4,
+        "fail": 0,
+        "unknown": 4
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fc61dc6ade0abe7f011437e2ca57ff24e8d3c4f15eb6e4e6f4d4bbf09abaaad",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x4",
+          "witnesses": [
+            "19-c00-0",
+            "19-c01-0",
+            "19-c03-0",
+            "19-c04-0"
+          ]
+        }
+      ],
+      "invalid_reason": "4 of 8 operations had an unknown outcome"
+    },
+    {
+      "k": 20,
+      "valid": false,
+      "precondition_digest": "sha256:c35b452233e83fb0aec710ad509e2c334c25a6ca20587a52db0dd9ce37730191",
+      "release_spread_ms": 0.155,
+      "max_in_flight": 7,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 5
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:5af28d78ca76decaf68f6d813086c77926ff0ff8bab70f998da936e5ed16d6ba",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in wm_c1, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 6 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in wm_c1",
+          "detail": "all 14 entities in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in wm_c1",
+          "detail": "all 12 relations in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in wm_c1",
+          "detail": "all 8 chunks in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in wm_c1",
+          "detail": "all 8 data rows in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing rows of acknowledged adds in wm_c1",
+          "detail": "all 8 rows of acknowledged adds in wm_c1 present",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 5,
+          "unit": "operations that raised",
+          "detail": "ladybug file lock x5",
+          "witnesses": [
+            "20-c00-0",
+            "20-c01-0",
+            "20-c02-0",
+            "20-c04-0",
+            "20-c05-0"
+          ]
+        }
+      ],
+      "invalid_reason": "5 of 8 operations had an unknown outcome"
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1B",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 0,
+      "magnitude": {
+        "unit": ""
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L118-L125",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I2",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 0,
+      "magnitude": {
+        "unit": ""
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L118-L125",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I4",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 0,
+      "magnitude": {
+        "unit": ""
+      },
+      "basis": "documented",
+      "basis_ref": "https://github.com/topoteretes/cognee/blob/v1.6.8/.agents/skills/cognee-performance/SKILL.md#L118-L125",
+      "witnesses": [],
+      "note": "support: boundary"
+    }
+  ],
+  "finished_at": "2026-11-14T13:49:12.794111Z"
+}

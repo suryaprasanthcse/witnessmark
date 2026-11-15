@@ -1,0 +1,130 @@
+{
+  "k": 19,
+  "digest": "sha256:ead0aaab5beeddfafb81ba0106336ea05f2ceb2bb184d9ef2696a0446a03f5c3",
+  "state": {
+    "wm_c3_a": {
+      "dataset": "wm_c3_a",
+      "relational": [
+        {
+          "tags": [
+            "C3X"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C3X": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "alice moreau": 1,
+            "lyon": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C3X": 1
+          },
+          "TextSummary": {
+            "C3X": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C3X|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C3X|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C3X|contains|Entity:lyon": 1,
+          "DocumentChunk:C3X|is_part_of|TextDocument:C3X": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:alice moreau|is_a|EntityType:person": 1,
+          "Entity:alice moreau|works_at|Entity:acme robotics": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "TextSummary:C3X|made_from|DocumentChunk:C3X": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 9,
+        "edge_count": 10
+      },
+      "provenance": {
+        "C3X": [
+          "acme robotics",
+          "alice moreau",
+          "lyon"
+        ]
+      },
+      "vector": {
+        "_unsupported": "no separate vector store to read: the FalkorDB hybrid adapter keeps each vector on its graph node",
+        "graph_nodes_without_vector": {}
+      }
+    },
+    "wm_c3_b": {
+      "dataset": "wm_c3_b",
+      "relational": [
+        {
+          "tags": [
+            "C3X"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C3X": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "alice moreau": 1,
+            "lyon": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C3X": 1
+          },
+          "TextSummary": {
+            "C3X": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C3X|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C3X|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C3X|contains|Entity:lyon": 1,
+          "DocumentChunk:C3X|is_part_of|TextDocument:C3X": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:alice moreau|is_a|EntityType:person": 1,
+          "Entity:alice moreau|works_at|Entity:acme robotics": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "TextSummary:C3X|made_from|DocumentChunk:C3X": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 9,
+        "edge_count": 10
+      },
+      "provenance": {
+        "C3X": [
+          "acme robotics",
+          "alice moreau",
+          "lyon"
+        ]
+      },
+      "vector": {
+        "_unsupported": "no separate vector store to read: the FalkorDB hybrid adapter keeps each vector on its graph node",
+        "graph_nodes_without_vector": {}
+      }
+    }
+  }
+}

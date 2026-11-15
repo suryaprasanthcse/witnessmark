@@ -4,7 +4,7 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.2, 2026-11-14. Implemented in M3: `witnessmark_cognee/` (adapter, helper process, stub handlers, fixtures, scenarios C0–C6, the C4 ladder), `wm_cognee.py` (entry point), `requirements/` (frozen builds). §1.2 records what was read at the pin; results are in §12 once the batch has run. A finding counts only when a run in `evidence/` backs it. |
+| Status | v0.3, 2026-11-15. M3 ran; results are in §12 and in `evidence/M3_COGNEE*.md`. Implemented in M3: `witnessmark_cognee/` (adapter, helper process, stub handlers, fixtures, scenarios C0–C6, the C4 ladder), `wm_cognee.py` (entry point), `requirements/` (frozen builds). §1.2 records what was read at the pin. A finding counts only when a run in `evidence/` backs it. |
 | Code | Run with the build's venv Python: `.state/venvs/cognee-v1.6.8/Scripts/python targets/02-cognee/wm_cognee.py {race,cases,visibility,ladder} --row R1 …`. Row R3 runs in `.state/venvs/cognee-v1.6.1-falkor` with `--build v1.6.1`. |
 | Project | [topoteretes/cognee](https://github.com/topoteretes/cognee), Apache-2.0. A memory engine that ingests data, builds a knowledge graph with an LLM (`cognify`), and serves graph and vector retrieval. |
 | Line under test | v1.6.x. The primary pin is **v1.6.8**, tag commit `069f3cc119bdf5628be054bb915992b2fc78cfc5` (2026-11-12), which is also the current PyPI release. Before anything is filed, the scenario is re-run on the `dev` branch, where development happens. |
@@ -103,7 +103,10 @@ The reporter builds this table from evidence ("Invariants by backend" in `eviden
 
 | Row | Duplicate entities (I1 Form B) | Duplicate vector IDs (I1 Form B) | Orphan edges and dangling vectors (I4 across stores) | Lost acknowledged items (I2) | Deletion permanence (I5) | Crash ceiling (documents) | Store reopens after a crash |
 |---|---|---|---|---|---|---|---|
-| R1 … R3 | see §12 | | | | | | |
+| R1 | 0 of 14 valid disjoint trials (`20261114T141347Z-b025f668`) | C0 default: 1 of 2 cases (`20261114T131142Z-daa65b09`); with `data_per_batch=1`, 0 | 0 of 14 | 0 of 14; 0 of 5 ladder rungs (`20261114T153402Z-d2bf713f`) | 0 of 2 (`20261114T152659Z-66cfc612`); 0 of 36 (`20261114T145945Z-0fdd119f`) | none up to 5,401 | no crash to reopen; reopens read-only and read-write after the run |
+| R1i | 0 of 19 (`20261114T191301Z-63ab727b`) | C0 default: 1 of 2 (`20261114T181918Z-b9974e3e`) | 0 of 19 | 0 of 19; 0 of 5 (`20261114T202544Z-f23205b5`) | 0 of 2 (`20261114T201915Z-d2b863b9`); 0 of 36 (`20261114T195002Z-d40746c3`) | none up to 5,401 | as R1 |
+| R2 | 0 of 20 (`20261114T131236Z-6344cb3f`) | k4: 2 of 2 valid (`20261114T133423Z-70f45910`); `c2.writers`: 13 of 14 (`20261114T214705Z-8a40b975`); C0 default 1 of 2 (`20261114T131148Z-0fb02db6`) | 0 of 20; 0 of 14 | 0 of 20; 0 of 5 (`20261114T154821Z-2a544933`) | 0 of 14; 0 of 2 (`20261114T154636Z-4a6b3bf3`); 0 of 36 (`20261114T151804Z-ffa7ede5`) | none up to 5,401 | n/a (no Ladybug store) |
+| R3 | 0 of 20 (`20261114T174759Z-d5488c9a`) | none: vectors are graph nodes, so the dump reports `_unsupported` | 0 of 20 | 0 of 20; 0 of 5 ladder rungs (`20261114T233713Z-ea3ee4af`; the two earlier R3 ladders, `20261114T191423Z-43cd092f` and `20261114T221148Z-fdf4571e`, show 2 of 5 because the dump was capped, C28) | `c6.deletion` 0 of 2 (`20261114T191322Z-30040411`); `c2.writers` and `c3.cross_process` invalid (C27) | none up to 5,401 | n/a |
 
 ## 4. Stub contract
 
@@ -282,6 +285,9 @@ The reporter builds this table from evidence ("Invariants by backend" in `eviden
 | Does the community FalkorDB adapter install on cognee 1.6.8? | Open, for the maintainer: testing it means overriding the adapter's `cognee==1.6.1` pin, a build nobody publishes. M3 ran the pinned 1.6.1. |
 | Should the GLiNER realism check run? It needs the `gliner` runtime and a model download. | Open, for the maintainer: it conflicts with the no-network rule |
 | R4 (PostgreSQL) | Deferred: needs a pinned Postgres service in `baselines/` and #4167's head |
+| Should C3 on R3 cognify A in its setup, so that `delete_data` takes the ledger path and R3 yields a cross-process measurement of #6559? Today the delete of a never-cognified document raises on cognee 1.6.1 + the FalkorDB adapter (C27), so the control is not met | Open, for the maintainer: it changes C3's fixture on one row only |
+| Should C2's fixture give the deleted documents an entity of their own, so that R3's control is not tripped by the edge that 1.6.1's delete leaves between two shared entities (C27)? That would hide the behaviour from C2; C6 does not exercise it | Open, for the maintainer |
+| Are the R2 `AfterRunHookError`s (LanceDB compaction commit conflicts across processes) a finding for `topoteretes/cognee`, and does #5253 change them? | Open: needs the #5253 head (§11) |
 
 ## 11. Pull-request builds pending approval
 
@@ -292,3 +298,80 @@ Installing or running third-party pull-request code needs the maintainer's expli
 | [#5253](https://github.com/topoteretes/cognee/pull/5253) | `599ae0110bf5ddf4d6865f586e1887ea5f99a1fa` | C2 on R1 and R2, C1 | pending approval |
 | [#4167](https://github.com/topoteretes/cognee/pull/4167) | `87301c704d1a8b660b481e3b12e5796d91ae44f4` | C1 on R1 (SQLite file lock) and R4 (advisory lock) | pending approval |
 | [#6571](https://github.com/topoteretes/cognee/pull/6571) | `9455c4c7043d8b59a28921fcdd3947ccb4867a7e` | its own regression test, next to C3 | pending approval |
+
+## 12. Results (M3)
+
+**Provenance.** Four batches on this host (Windows 11, 11th Gen i5-11320H, 8 logical cores, 23.8 GB), 20 trials per race, 36 for the cross-process C3. Every number below is [measured] and comes from a report that is regenerated from `evidence/` and cmp-verified:
+
+| Batch | Report | Harness commit | What it holds |
+|---|---|---|---|
+| `m3-20261114T131136Z` | [evidence/M3_COGNEE.md](../../evidence/M3_COGNEE.md) | `1fd4dd0` | the matrix: C0 to C6 on R1, R1i, R2, R3 |
+| `m3b-20261114T204628Z` | [evidence/M3_COGNEE_B2.md](../../evidence/M3_COGNEE_B2.md) | `f3dbe98` | re-runs after a harness bug on shared stores (below) |
+| `m3c-20261114T221140Z` | [evidence/M3_COGNEE_B3.md](../../evidence/M3_COGNEE_B3.md) | `84dcdb7` | R3 ladder, first fix of the FalkorDB dump (did not take effect) |
+| `m3d-20261114T233706Z` | [evidence/M3_COGNEE_B4.md](../../evidence/M3_COGNEE_B4.md) | `5747966` | R3 ladder with the dump paging as intended |
+
+**Why there are four batches.** Nothing was re-run to change a result; every re-run followed a harness fix that was committed first, and the earlier runs stay in `evidence/` and in the reports.
+
+| Re-run | Cause | Where |
+|---|---|---|
+| R2 `c1.k8` | Batch 1's run crashed at the dump of trial 19: Cognee's LanceDB worker subprocess exited before it signalled ready (60 s). `ERROR.md` is kept at `evidence/cognee/v1.6.8.R2-acoff/c1.k8.process/20261114T140306Z-9f88c9a1/`. Not a harness bug; re-run with the same code | batch 2 |
+| R2 and R3 `c1.disjoint.k4`, R2 and R3 `c2.writers` | Harness bug: with access control off every dataset reads one graph, so the per-dataset control of `c1.disjoint.k4` saw every slice and `c2.writers` read B's relational rows as missing. R2's batch-1 `c2.writers` "I2 BOUNDARY 12/12" and R3's "I2 INVALID 16/16" are that bug, not findings. Fixed in `f3dbe98` | batch 2 |
+| R3 `c4.ladder` | Harness bug in the dump: FalkorDB 6.0.4 truncates result sets at 10,000 rows and the adapter's `get_graph_data` does not page (C28), so the dump showed 10,000 nodes from the 2,500-document rung up and I2 OBSERVED on 2 of 5 rungs. The first fix (`84dcdb7`) keyed on a class name that cognee 1.6.1's `_GraphEngineHandle` hides, so it still showed 10,000; fixed in `5747966` | batches 3 and 4 |
+
+Earlier in the session the harness also gained, before any batch: the `SummarizedContent` stub handler for cognee 1.6.1 (C25), APOC for Neo4j and the `neo4j` driver in the v1.6.8 environment (C26), and a fix to C3's I5 check on shared stores (`1fd4dd0`).
+
+### Controls
+
+The sequential control is the exit criterion (master §9): with nothing racing, the fixture graph comes out exactly as specified.
+
+| Scenario | R1 | R1i | R2 | R3 |
+|---|---|---|---|---|
+| `c1.k2`, `c1.k4`, `c1.k8` | met | met | met | met |
+| `c1.disjoint.k4` | met | met | met (batch 2) | met (batch 2) |
+| `c2.writers` | met | met | met (batch 2) | **NOT met** |
+| `c3.cross_process` | met | met | met | **NOT met** |
+
+22 of the 24 final race runs met their control, and the primary scenario `c1.k2` met it on all four rows. The two that did not are R3 under cognee 1.6.1, and both come from Cognee's behaviour, not the harness:
+
+- **R3 `c2.writers`** (runs `20261114T183825Z-c97d0d06` before the fix, `20261114T210439Z-c2c55f16` after): the control observes `relations 14 (want 13, one each)` in both. After the delete of C, one relation between two entities that A and B still reference stays in the graph. At 1.6.1 the ledger path deletes graph nodes with `DETACH DELETE` and no edges (C27), so an edge whose endpoints both survive is not removed. On R1, R2 at 1.6.8 the same control is met.
+- **R3 `c3.cross_process`** (`20261114T185051Z-97edaf64`) and one `c3.in_process` case (`20261114T191258Z-e09326c6`): `delete_data` of a document that was only added raises `DocumentSubgraphNotFoundError` (C27). R3 therefore has no cross-process C3 measurement; it is INVALID by rule (master §9), and a variant that cognifies A in setup is an open question (§10).
+
+### Results
+
+| Scenario | R1 (Ladybug) | R1i (Ladybug, in process) | R2 (Neo4j + LanceDB) | R3 (FalkorDB, 1.6.1) | Verdict |
+|---|---|---|---|---|---|
+| C0, one call, `data_per_batch=1` | 0 duplicates | 0 | 0 | 0 | PASS |
+| C0, one call, default (20) | duplicate vector ids: `EntityType_name` up to 4 rows per id, `Entity_name` and `EdgeType_relationship_name` up to 2 | same | `EntityType_name` up to 8, the others up to 2 | none (vectors are graph nodes) | FAIL on a supported path (C0's basis is documented, §5.0): in one process with nothing racing |
+| C1, K workers, one dataset (k2, k4, k8) | 0 of 20 trials valid in each: the second worker fails with `Could not set lock on file ….lbug` | same | k2: 20 of 20 valid, 0 violations. k4: 2 of 20 valid, both with duplicate vector ids (up to 3 rows per id); 18 of 20 raised `AfterRunHookError`. k8: 0 of 20 valid, `AfterRunHookError` in all 20 | k2: 20 of 20, k4: 20 of 20, k8: 17 of 20 valid; 0 violations | R1, R1i: BOUNDARY (C21), no measurement. R2: BOUNDARY. R3: PASS |
+| C1 disjoint (4 datasets) | 14 of 20 valid, 0 violations | 19 of 20, 0 | 5 of 20 valid, 0 (the rest `AfterRunHookError`) | 15 of 20, 0 | PASS |
+| C2, two writers and a delete | 0 of 20 valid (lock) | 0 of 20 (lock) | 14 of 20 valid: duplicate vector ids in 13 (up to 2 rows per id in `Entity_name`, `EntityType_name`, `EdgeType_relationship_name`); I2, I4, I5 hold; no `Too many concurrent writers`; 6 of 20 `AfterRunHookError` | control not met | R2: BOUNDARY. R1, R1i: no measurement |
+| C3 cross-process, 36 offsets (−50 to +125 ms) | 36 of 36 valid; B's row and files exist, A's copy gone, in all | 36 of 36, same | 36 of 36, same | control not met | no violation at any declared offset on the three rows that ran it |
+| C3 in process (`paused`, `gather`) | both cases PASS | both PASS | both PASS | `paused` invalid (its delete raises); `gather`: I2 holds, but its delete raised too, so I5 was not checked | PASS (R1, R1i, R2) |
+| C5, read your writes | same instance 10 of 10; a second process: 0 of 10 within 30 s, its searches raised the file lock | same | 10 of 10 on both | 10 of 10 on both | OBSERVED (R1, R1i); PASS (R2, R3) |
+| C6, deletion permanence | I5 and I2 hold, both cases | same | same | same | PASS |
+| C4, ladder to 5,401 documents | no crash, no I2 loss | no crash, no I2 loss | no crash, no I2 loss | no crash, no I2 loss; node counts equal R1's and R2's at every rung | PASS |
+
+**Credit.** On the supported path the project's code holds up in these runs: 14 and 19 valid disjoint-dataset trials with no duplicate and nothing lost on the Ladybug rows; C3's cross-process window found nothing at any of 36 declared offsets on three rows (consistent with, and not proof of, v1.6.8's in-process claim registry, C19) [inference]; deletion leaves nothing behind and keeps shared entities on all four rows; and the 5,401-document ladder completed on every row, with each reopened Ladybug store (R1, R1i) readable and writable afterwards.
+
+### Findings
+
+Each is [measured] with the run id; causes are [code] or [inference] as marked.
+
+1. **One `cognify` over documents that share entities stores duplicate vector rows, with nothing racing** (C0; runs `20261114T131142Z-daa65b09` (R1), `20261114T181918Z-b9974e3e` (R1i), `20261114T131148Z-0fb02db6` (R2)). With `data_per_batch=1` there are none. The default is 20 (C17); the duplicates sit in LanceDB (`merge_insert` upsert, C14) [inference: the call's concurrently processed data items upsert the same ids]. This is why the other scenarios use `data_per_batch=1`.
+2. **Ladybug allows one process per store.** Every multi-worker scenario on one dataset fails with `IO exception: Could not set lock on file …` (R1 and R1i, `c1.k2`/`k4`/`k8`, `c2.writers`), and a second process cannot search while the writer holds the store (C5). Cognee's own guide scopes open source to one process (C21), so this is a support boundary, not a defect.
+3. **R2 (Neo4j + LanceDB), several processes on one dataset: `cognify` raises after the data is stored.** The error is `AfterRunHookError … LanceDB compaction failed … OSError('Retryable commit conflict … This Rewrite transaction was preempted by concurrent transaction Rewrite')` (runs `20261114T204652Z-d5f2e1c9` and `20261114T133423Z-70f45910`, 20 of 20 and 18 of 20 trials). The harness scores those operations as unknown outcomes and the trials as invalid; the trials that are valid show duplicate vector ids (`c1.k4`, 2 of 2) [inference: the same process-local LanceDB lock gap as #5254, C14].
+4. **R2 `c2.writers`: duplicate vector ids with concurrent writers on a shared LanceDB store** (`20261114T214705Z-8a40b975`, 13 of 14 valid trials). I2, I4 and I5 hold, and there is no `Too many concurrent writers` error, which is the symptom #5254 reports.
+5. **cognee 1.6.1 on FalkorDB: delete leaves an edge, and delete of a never-cognified document raises** (C27; runs above). Candidate findings for `topoteretes/cognee` and `cognee-community`.
+6. **FalkorDB 6.0.4's result limit silently truncates the adapter's `get_graph_data`** (C28). On the graph the second ladder left behind, the adapter's call returned 10,000 nodes and 10,000 edges; FalkorDB held 32,304 and 53,905.
+7. **The vector-port shim** (C24) was needed and recorded in every R3 run (`falkor_vector_port_shim: true`).
+8. **#6170 (SIGSEGV near 1,650 documents) did not reproduce** on v1.6.8 with Ladybug 0.22.3, either as the subprocess worker (R1) or in process (R1i), up to 5,401 documents, with the stub and the issue's corpus shape. Total elapsed: R1 9,838.7 s, R1i 9,487.8 s, R2 7,126.6 s, R3 4,275.3 s (`20261114T233713Z-ea3ee4af`); worker memory at 5,401 documents: 2,694 MB (R1), 2,331 MB (R1i), 2,193 MB (R2); the helper's peak was 604 MB (R1), 984 MB (R1i), 629 MB (R2) and 445 MB (R3). Every row counted the same 32,304 nodes and 16,098 entities at 5,401 documents. The original build (cognee 1.6.2, Ladybug 0.19.0) was not run, so whether 0.22.3 fixed it or the stub's shape differs is [unmeasured]. Both reopened Ladybug stores (R1, R1i) read 32,306 nodes against 32,304 counted by the ladder; the two extra are unexplained [unmeasured].
+
+### The invariants table (§3)
+
+The table in §3 is filled from these reports; each cell names its run.
+
+### Not run, and open
+
+- **Deferred:** R4 (PostgreSQL), memify in C2 (§5.0), the GLiNER realism check (§4). Nothing that needs a pull request's code ran (§11).
+- **E3 (single-file repros) was not written in M3.** The candidates are C27 (R3 delete), the R2 `AfterRunHookError` under concurrent processes, and C0's default-path duplicates.
+- **Invalid trials.** The reports' "Invalid trials" tables list, per run, the trials a validity gate removed (release spread over 1 ms for processes, an operation with an unknown outcome) and why. Verdict cells count valid trials only.

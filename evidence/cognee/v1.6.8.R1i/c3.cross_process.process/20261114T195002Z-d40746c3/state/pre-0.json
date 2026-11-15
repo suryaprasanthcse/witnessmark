@@ -1,0 +1,38 @@
+{
+  "k": "pre-0",
+  "digest": "sha256:12c7d923dcc43764bb456b998207f56f35f9e0ad16a40220247779fd7e2d6293",
+  "state": {
+    "wm_c3_a": {
+      "dataset": "wm_c3_a",
+      "relational": [
+        {
+          "tags": [
+            "C3X"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {},
+        "edges": {},
+        "orphan_edges": 0,
+        "node_count": 0,
+        "edge_count": 0
+      },
+      "provenance": {},
+      "vector": {
+        "graph_nodes_without_vector": {},
+        "_note": "no vector store written yet"
+      }
+    },
+    "wm_c3_b": {
+      "dataset": null,
+      "relational": [],
+      "graph": {},
+      "vector": {},
+      "provenance": {}
+    }
+  }
+}

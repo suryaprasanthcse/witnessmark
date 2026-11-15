@@ -1,0 +1,294 @@
+{
+  "k": 1,
+  "digest": "sha256:5ce8050d6090d61e8d74eda092178f89f93f1c6b845e423f5e0bbbd90da968d4",
+  "state": {
+    "wm_c0": {
+      "dataset": "wm_c0",
+      "relational": [
+        {
+          "tags": [
+            "C1D000"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D001"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D002"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D003"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D004"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D005"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D006"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C1D007"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C1D000": 1,
+            "C1D001": 1,
+            "C1D002": 1,
+            "C1D003": 1,
+            "C1D004": 1,
+            "C1D005": 1,
+            "C1D006": 1,
+            "C1D007": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "alice moreau": 1,
+            "bilal okafor": 1,
+            "borealis foods": 1,
+            "chen wei": 1,
+            "cobalt analytics": 1,
+            "dana petrov": 1,
+            "delta freight": 1,
+            "elif kaya": 1,
+            "farid haddad": 1,
+            "gdansk": 1,
+            "lyon": 1,
+            "oslo": 1,
+            "porto": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C1D000": 1,
+            "C1D001": 1,
+            "C1D002": 1,
+            "C1D003": 1,
+            "C1D004": 1,
+            "C1D005": 1,
+            "C1D006": 1,
+            "C1D007": 1
+          },
+          "TextSummary": {
+            "C1D000": 1,
+            "C1D001": 1,
+            "C1D002": 1,
+            "C1D003": 1,
+            "C1D004": 1,
+            "C1D005": 1,
+            "C1D006": 1,
+            "C1D007": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C1D000|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C1D000|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C1D000|contains|Entity:lyon": 1,
+          "DocumentChunk:C1D000|is_part_of|TextDocument:C1D000": 1,
+          "DocumentChunk:C1D001|contains|Entity:bilal okafor": 1,
+          "DocumentChunk:C1D001|contains|Entity:borealis foods": 1,
+          "DocumentChunk:C1D001|contains|Entity:oslo": 1,
+          "DocumentChunk:C1D001|is_part_of|TextDocument:C1D001": 1,
+          "DocumentChunk:C1D002|contains|Entity:chen wei": 1,
+          "DocumentChunk:C1D002|contains|Entity:cobalt analytics": 1,
+          "DocumentChunk:C1D002|contains|Entity:porto": 1,
+          "DocumentChunk:C1D002|is_part_of|TextDocument:C1D002": 1,
+          "DocumentChunk:C1D003|contains|Entity:dana petrov": 1,
+          "DocumentChunk:C1D003|contains|Entity:delta freight": 1,
+          "DocumentChunk:C1D003|contains|Entity:gdansk": 1,
+          "DocumentChunk:C1D003|is_part_of|TextDocument:C1D003": 1,
+          "DocumentChunk:C1D004|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C1D004|contains|Entity:elif kaya": 1,
+          "DocumentChunk:C1D004|contains|Entity:lyon": 1,
+          "DocumentChunk:C1D004|is_part_of|TextDocument:C1D004": 1,
+          "DocumentChunk:C1D005|contains|Entity:borealis foods": 1,
+          "DocumentChunk:C1D005|contains|Entity:farid haddad": 1,
+          "DocumentChunk:C1D005|contains|Entity:oslo": 1,
+          "DocumentChunk:C1D005|is_part_of|TextDocument:C1D005": 1,
+          "DocumentChunk:C1D006|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C1D006|contains|Entity:cobalt analytics": 1,
+          "DocumentChunk:C1D006|contains|Entity:porto": 1,
+          "DocumentChunk:C1D006|is_part_of|TextDocument:C1D006": 1,
+          "DocumentChunk:C1D007|contains|Entity:bilal okafor": 1,
+          "DocumentChunk:C1D007|contains|Entity:delta freight": 1,
+          "DocumentChunk:C1D007|contains|Entity:gdansk": 1,
+          "DocumentChunk:C1D007|is_part_of|TextDocument:C1D007": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:alice moreau|is_a|EntityType:person": 1,
+          "Entity:alice moreau|works_at|Entity:acme robotics": 1,
+          "Entity:alice moreau|works_at|Entity:cobalt analytics": 1,
+          "Entity:bilal okafor|is_a|EntityType:person": 1,
+          "Entity:bilal okafor|works_at|Entity:borealis foods": 1,
+          "Entity:bilal okafor|works_at|Entity:delta freight": 1,
+          "Entity:borealis foods|based_in|Entity:oslo": 1,
+          "Entity:borealis foods|is_a|EntityType:organization": 1,
+          "Entity:chen wei|is_a|EntityType:person": 1,
+          "Entity:chen wei|works_at|Entity:cobalt analytics": 1,
+          "Entity:cobalt analytics|based_in|Entity:porto": 1,
+          "Entity:cobalt analytics|is_a|EntityType:organization": 1,
+          "Entity:dana petrov|is_a|EntityType:person": 1,
+          "Entity:dana petrov|works_at|Entity:delta freight": 1,
+          "Entity:delta freight|based_in|Entity:gdansk": 1,
+          "Entity:delta freight|is_a|EntityType:organization": 1,
+          "Entity:elif kaya|is_a|EntityType:person": 1,
+          "Entity:elif kaya|works_at|Entity:acme robotics": 1,
+          "Entity:farid haddad|is_a|EntityType:person": 1,
+          "Entity:farid haddad|works_at|Entity:borealis foods": 1,
+          "Entity:gdansk|is_a|EntityType:city": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "Entity:oslo|is_a|EntityType:city": 1,
+          "Entity:porto|is_a|EntityType:city": 1,
+          "TextSummary:C1D000|made_from|DocumentChunk:C1D000": 1,
+          "TextSummary:C1D001|made_from|DocumentChunk:C1D001": 1,
+          "TextSummary:C1D002|made_from|DocumentChunk:C1D002": 1,
+          "TextSummary:C1D003|made_from|DocumentChunk:C1D003": 1,
+          "TextSummary:C1D004|made_from|DocumentChunk:C1D004": 1,
+          "TextSummary:C1D005|made_from|DocumentChunk:C1D005": 1,
+          "TextSummary:C1D006|made_from|DocumentChunk:C1D006": 1,
+          "TextSummary:C1D007|made_from|DocumentChunk:C1D007": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 41,
+        "edge_count": 66
+      },
+      "provenance": {
+        "C1D000": [
+          "acme robotics",
+          "alice moreau",
+          "lyon"
+        ],
+        "C1D001": [
+          "bilal okafor",
+          "borealis foods",
+          "oslo"
+        ],
+        "C1D002": [
+          "chen wei",
+          "cobalt analytics",
+          "porto"
+        ],
+        "C1D003": [
+          "dana petrov",
+          "delta freight",
+          "gdansk"
+        ],
+        "C1D004": [
+          "acme robotics",
+          "elif kaya",
+          "lyon"
+        ],
+        "C1D005": [
+          "borealis foods",
+          "farid haddad",
+          "oslo"
+        ],
+        "C1D006": [
+          "alice moreau",
+          "cobalt analytics",
+          "porto"
+        ],
+        "C1D007": [
+          "bilal okafor",
+          "delta freight",
+          "gdansk"
+        ]
+      },
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 8,
+          "unique_ids": 8,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 56,
+          "unique_ids": 56,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 3,
+          "unique_ids": 3,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 14,
+          "unique_ids": 14,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 8,
+          "unique_ids": 8,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 8,
+          "unique_ids": 8,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    }
+  }
+}

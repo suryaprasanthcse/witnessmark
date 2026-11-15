@@ -1,0 +1,30 @@
+{
+  "k": 0,
+  "digest": "sha256:d37fe651796b0e4debbb4788bbf2bd90fbf98e9c4add7f36275e8f13ba7c8ed3",
+  "state": {
+    "wm_c4": {
+      "documents": 5401,
+      "crash": null,
+      "reopen": {
+        "store": "system/databases/303bb1a1-9b69-437c-8b06-bf633e5f8bd1/6d0e34d9-126b-57af-848d-16c8d836623f.lbug",
+        "read_only": {
+          "opened": true,
+          "nodes": 32306,
+          "exit_code": 0
+        },
+        "read_write": {
+          "opened": true,
+          "nodes": 32306,
+          "exit_code": 0
+        }
+      },
+      "store": {
+        "graph_bytes": 220409856,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 444980787
+      }
+    }
+  }
+}

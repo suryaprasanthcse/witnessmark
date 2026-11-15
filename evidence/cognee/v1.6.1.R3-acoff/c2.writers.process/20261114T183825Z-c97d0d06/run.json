@@ -1,0 +1,2716 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T183825Z-c97d0d06",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.1",
+    "package_version": "1.6.1",
+    "commit": "eb90d03740755f5252b8b12cce91fd09970f2d81"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.1",
+      "config": {
+        "build": "v1.6.1",
+        "row": "R3",
+        "backend": "R3 (access control off)",
+        "access_control": "off",
+        "access_control_effective": false,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": true,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PORT": "16380",
+          "GRAPH_DATABASE_PROVIDER": "falkor",
+          "GRAPH_DATABASE_URL": "127.0.0.1",
+          "VECTOR_DB_PORT": "16380",
+          "VECTOR_DB_PROVIDER": "falkor",
+          "VECTOR_DB_URL": "127.0.0.1"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "graph",
+        "note": "FalkorDB 6.0.4 via cognee-community-hybrid-adapter-falkor"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "1.8.2",
+      "config": {
+        "store": "vector",
+        "note": "same server"
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "cognee-community-hybrid-adapter-falkor",
+      "version": "0.4.1"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c2.writers.process",
+    "invariants": [
+      "I1B",
+      "I2",
+      "I4",
+      "I5"
+    ],
+    "mode": "process",
+    "clients": 3,
+    "trials": 20,
+    "params": {
+      "support": "boundary",
+      "op_timeout_s": 900.0,
+      "processes": 3,
+      "spread_gate_ms": 1.0,
+      "corpus": "c2",
+      "datasets": {
+        "wm_c2_a": [
+          "C2A000",
+          "C2A001",
+          "C2A002",
+          "C2A003",
+          "C2A004",
+          "C2A005",
+          "C2A006",
+          "C2A007"
+        ],
+        "wm_c2_b": [
+          "C2B000",
+          "C2B001",
+          "C2B002",
+          "C2B003",
+          "C2B004",
+          "C2B005",
+          "C2B006",
+          "C2B007"
+        ],
+        "wm_c2_c": [
+          "C2C000",
+          "C2C001",
+          "C2C002",
+          "C2C003",
+          "C2C004",
+          "C2C005",
+          "C2C006",
+          "C2C007"
+        ]
+      },
+      "store": "one store shared by every dataset (ENABLE_BACKEND_ACCESS_CONTROL=false)",
+      "omitted": "memify (no model fixture for its prompts)"
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T18:38:25.925009Z",
+  "expectation": {
+    "role": "target",
+    "support": "boundary",
+    "basis": "issue",
+    "basis_ref": "https://github.com/topoteretes/cognee/issues/5254",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "c2.writers.process: 3 clients, one at a time",
+      "expected": "the shared store holds exactly A's and B's fixture graph; nothing of C remains",
+      "observed": "relations 14 (want 13, one each)",
+      "met": false
+    },
+    {
+      "kind": "overlap",
+      "configuration": "c2.writers.process: 3 clients x 20 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "16 of 16 valid trials had two or more in flight",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.096,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.08,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": false,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 1.32,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 2
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b36d1b3279d978a11b6a6e4e447f93c7d8694139a4cdb003c0158bcc0b1ac298",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "13 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 0 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 0 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 0 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in the shared store",
+          "detail": "all 0 data rows in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": false,
+          "magnitude": 4,
+          "unit": "partially indexed documents",
+          "detail": "documents with a row but no chunk, or a chunk but no row: ['C2A002', 'C2B001', 'C2B003', 'C2B007']",
+          "witnesses": [
+            "C2A002",
+            "C2B001",
+            "C2B003",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 2,
+          "unit": "operations that raised",
+          "detail": "CognifyFailedError x2",
+          "witnesses": [
+            "3-c00-0",
+            "3-c01-0"
+          ]
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ],
+      "invalid_reason": "2 of 3 operations had an unknown outcome; release spread 1.32 ms exceeds the process gate 1.0 ms"
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.256,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.1,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.097,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.089,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.109,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.084,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.101,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.1,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": false,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 3.978,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ],
+      "invalid_reason": "release spread 3.978 ms exceeds the process gate 1.0 ms"
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.107,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.101,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.095,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b9b943f03a1193544f595a35d67f473d0f8feade56be359a89179fcd27233e76",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": false,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 1.599,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ],
+      "invalid_reason": "release spread 1.599 ms exceeds the process gate 1.0 ms"
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.106,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.089,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 0.091,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 3,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:b20290be609205d7869fafd27303c9b6a3f36cc3a3dea6cec3d47230b052b421",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "14 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 14 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 13 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 16 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 8,
+          "unit": "missing data rows in the shared store",
+          "detail": "8 of 16 data rows in the shared store missing: ['C2B000', 'C2B001', 'C2B002', 'C2B003', 'C2B004']",
+          "witnesses": [
+            "C2B000",
+            "C2B001",
+            "C2B002",
+            "C2B003",
+            "C2B004",
+            "C2B005",
+            "C2B006",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": true,
+          "magnitude": 0,
+          "unit": "partially indexed documents",
+          "detail": "every document is either fully indexed or absent",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations that raised",
+          "detail": "none",
+          "witnesses": []
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": false,
+      "precondition_digest": "sha256:2cabf44571eb1b3b27caef36a0417ceec4bb418d379d82e0debbf16766412508",
+      "release_spread_ms": 1.012,
+      "max_in_flight": 3,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 2
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:49945d3211eecbccf8d6baa329ed0777222b724b2d0bf5128fe8be384b652462",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "10 entities in the shared store, one record each",
+          "witnesses": []
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows per vector id",
+          "detail": "one row per id in 0 collections",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing entities in the shared store",
+          "detail": "all 0 entities in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing relations in the shared store",
+          "detail": "all 0 relations in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing chunks in the shared store",
+          "detail": "all 0 chunks in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "missing data rows in the shared store",
+          "detail": "all 0 data rows in the shared store present",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "rows whose stored file is gone",
+          "detail": "every row's stored files exist",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "artefacts in one store only",
+          "detail": "0 edges with a missing endpoint, 0 vectors without a graph node, 0 graph nodes without a vector",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2W",
+          "held": true,
+          "magnitude": 0,
+          "unit": "operations failed with writer conflicts",
+          "detail": "no writer conflicts",
+          "witnesses": []
+        },
+        {
+          "invariant": "C2P",
+          "held": false,
+          "magnitude": 9,
+          "unit": "partially indexed documents",
+          "detail": "documents with a row but no chunk, or a chunk but no row: ['C2A000', 'C2A001', 'C2A002', 'C2A003', 'C2A004', 'C2A005']",
+          "witnesses": [
+            "C2A000",
+            "C2A001",
+            "C2A002",
+            "C2A003",
+            "C2A004",
+            "C2A005",
+            "C2B002",
+            "C2B003",
+            "C2B007"
+          ]
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 2,
+          "unit": "operations that raised",
+          "detail": "CognifyFailedError x2",
+          "witnesses": [
+            "20-c00-0",
+            "20-c01-0"
+          ]
+        },
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "deleted documents still present",
+          "detail": "nothing of the deleted documents remains",
+          "witnesses": []
+        }
+      ],
+      "invalid_reason": "2 of 3 operations had an unknown outcome; release spread 1.012 ms exceeds the process gate 1.0 ms"
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1B",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 16,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "records per key"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/5254",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I2",
+      "status": "INVALID",
+      "trials_violating": 16,
+      "trials_valid": 16,
+      "magnitude": {
+        "min": 8,
+        "median": 8.0,
+        "max": 8,
+        "unit": "missing entities in the shared store"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/5254",
+      "witnesses": [
+        "C2B000",
+        "C2B001",
+        "C2B002",
+        "C2B003",
+        "C2B004",
+        "C2B005",
+        "C2B006",
+        "C2B007",
+        "C2B000",
+        "C2B001",
+        "C2B002",
+        "C2B003",
+        "C2B004",
+        "C2B005",
+        "C2B006",
+        "C2B007",
+        "C2B000",
+        "C2B001",
+        "C2B002",
+        "C2B003",
+        "C2B004",
+        "C2B005",
+        "C2B006",
+        "C2B007"
+      ],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I4",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 16,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "artefacts in one store only"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/5254",
+      "witnesses": [],
+      "note": "support: boundary"
+    },
+    {
+      "invariant": "I5",
+      "status": "INVALID",
+      "trials_violating": 0,
+      "trials_valid": 16,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "deleted documents still present"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/5254",
+      "witnesses": [],
+      "note": "support: boundary"
+    }
+  ],
+  "finished_at": "2026-11-14T18:50:41.367843Z"
+}

@@ -1,0 +1,215 @@
+{
+  "k": 15,
+  "digest": "sha256:056c48954c3cb03a11b621b35338b39153e8d642899199901779dca7ab2541a2",
+  "state": {
+    "wm_c3_a": {
+      "dataset": "wm_c3_a",
+      "relational": [],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C3X": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "alice moreau": 1,
+            "lyon": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C3X": 1
+          },
+          "TextSummary": {
+            "C3X": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C3X|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C3X|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C3X|contains|Entity:lyon": 1,
+          "DocumentChunk:C3X|is_part_of|TextDocument:C3X": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:alice moreau|is_a|EntityType:person": 1,
+          "Entity:alice moreau|works_at|Entity:acme robotics": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "TextSummary:C3X|made_from|DocumentChunk:C3X": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 9,
+        "edge_count": 10
+      },
+      "provenance": {
+        "C3X": [
+          "acme robotics",
+          "alice moreau",
+          "lyon"
+        ]
+      },
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 10,
+          "unique_ids": 10,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 3,
+          "unique_ids": 3,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 3,
+          "unique_ids": 3,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    },
+    "wm_c3_b": {
+      "dataset": "wm_c3_b",
+      "relational": [
+        {
+          "tags": [
+            "C3X"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C3X": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "alice moreau": 1,
+            "lyon": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C3X": 1
+          },
+          "TextSummary": {
+            "C3X": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C3X|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C3X|contains|Entity:alice moreau": 1,
+          "DocumentChunk:C3X|contains|Entity:lyon": 1,
+          "DocumentChunk:C3X|is_part_of|TextDocument:C3X": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:alice moreau|is_a|EntityType:person": 1,
+          "Entity:alice moreau|works_at|Entity:acme robotics": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "TextSummary:C3X|made_from|DocumentChunk:C3X": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 9,
+        "edge_count": 10
+      },
+      "provenance": {
+        "C3X": [
+          "acme robotics",
+          "alice moreau",
+          "lyon"
+        ]
+      },
+      "vector": {
+        "DocumentChunk_text": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EdgeType_relationship_name": {
+          "rows": 10,
+          "unique_ids": 10,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "EntityType_name": {
+          "rows": 3,
+          "unique_ids": 3,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "Entity_name": {
+          "rows": 3,
+          "unique_ids": 3,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextDocument_name": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "TextSummary_text": {
+          "rows": 1,
+          "unique_ids": 1,
+          "duplicate_ids": 0,
+          "max_rows_per_id": 1,
+          "without_graph_node": 0
+        },
+        "graph_nodes_without_vector": {
+          "Entity": 0,
+          "EntityType": 0,
+          "DocumentChunk": 0,
+          "TextDocument": 0,
+          "TextSummary": 0
+        }
+      }
+    }
+  }
+}

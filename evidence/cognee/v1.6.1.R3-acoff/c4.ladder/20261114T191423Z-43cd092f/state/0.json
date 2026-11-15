@@ -1,0 +1,19 @@
+{
+  "k": 0,
+  "digest": "sha256:d8bcb9d98b86655c9df94476fc049f383046cf59a81ecef34ea5318fc68d56a5",
+  "state": {
+    "wm_c4": {
+      "documents": 5401,
+      "crash": null,
+      "reopen": {
+        "read_only": "n/a (no Ladybug store)",
+        "read_write": "n/a"
+      },
+      "store": {
+        "graph_bytes": 0,
+        "graph_files": [],
+        "vector_bytes": 0
+      }
+    }
+  }
+}

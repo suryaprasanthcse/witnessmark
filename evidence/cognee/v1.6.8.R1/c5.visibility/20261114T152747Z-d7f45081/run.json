@@ -1,0 +1,491 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T152747Z-d7f45081",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.8",
+    "package_version": "1.6.8",
+    "commit": "069f3cc119bdf5628be054bb915992b2fc78cfc5"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.8",
+      "config": {
+        "build": "v1.6.8",
+        "row": "R1",
+        "backend": "R1",
+        "access_control": "default",
+        "access_control_effective": true,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": false,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PROVIDER": "ladybug",
+          "GRAPH_DATABASE_SUBPROCESS_ENABLED": "true",
+          "VECTOR_DB_PROVIDER": "lancedb"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "ladybug",
+      "version": "0.22.3",
+      "config": {
+        "store": "graph",
+        "note": "subprocess worker on"
+      }
+    },
+    {
+      "role": "store",
+      "name": "lancedb",
+      "version": "0.39.0",
+      "config": {
+        "store": "vector",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c5.visibility",
+    "invariants": [
+      "I3"
+    ],
+    "mode": "sequential",
+    "clients": 2,
+    "trials": 10,
+    "params": {
+      "poll_interval_s": 0.01,
+      "poll_budget_s": 30.0,
+      "readers": [
+        "the writing instance",
+        "a second instance with its own connections"
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T15:27:47.892807Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "inferred",
+    "basis_ref": "",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "1-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "2-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "3-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "4-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "5-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "6-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "7-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "8-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "9-c00-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 1,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "",
+      "state_file": "",
+      "checks": [
+        {
+          "invariant": "I3",
+          "held": true,
+          "magnitude": 0.0,
+          "unit": "ms",
+          "detail": "same instance: seen on the first search",
+          "witnesses": []
+        },
+        {
+          "invariant": "I3",
+          "held": false,
+          "magnitude": 30000.0,
+          "unit": "ms",
+          "detail": "second instance: never seen within the budget; 6 search(es) raised, last: RemoteError: RuntimeError: RuntimeError: IO exception: Could not set lock on file : C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T152737316554Z-R1-c5\\g0001\\",
+          "witnesses": [
+            "10-c00-0"
+          ]
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I3",
+      "status": "OBSERVED",
+      "trials_violating": 10,
+      "trials_valid": 10,
+      "magnitude": {
+        "min": 30000.0,
+        "median": 30000.0,
+        "max": 30000.0,
+        "unit": "ms"
+      },
+      "basis": "inferred",
+      "basis_ref": "",
+      "witnesses": [
+        "1-c00-0",
+        "2-c00-0",
+        "3-c00-0"
+      ],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-14T15:33:54.187646Z"
+}

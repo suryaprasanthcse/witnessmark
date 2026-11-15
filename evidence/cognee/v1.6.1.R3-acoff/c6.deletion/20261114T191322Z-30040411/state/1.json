@@ -1,0 +1,97 @@
+{
+  "k": 1,
+  "digest": "sha256:d56cb2582d17e94f91334715cc4ed45c58b8cf364ebb2839067e5ec25ae8a974",
+  "state": {
+    "wm_c6": {
+      "dataset": "wm_c6",
+      "relational": [
+        {
+          "tags": [
+            "C6D2"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        },
+        {
+          "tags": [
+            "C6D3"
+          ],
+          "raw_exists": true,
+          "original_exists": true,
+          "pinned_id": false
+        }
+      ],
+      "graph": {
+        "nodes": {
+          "DocumentChunk": {
+            "C6D2": 1,
+            "C6D3": 1
+          },
+          "Entity": {
+            "acme robotics": 1,
+            "bilal okafor": 1,
+            "borealis foods": 1,
+            "chen wei": 1,
+            "lyon": 1,
+            "oslo": 1
+          },
+          "EntityType": {
+            "city": 1,
+            "organization": 1,
+            "person": 1
+          },
+          "TextDocument": {
+            "C6D2": 1,
+            "C6D3": 1
+          },
+          "TextSummary": {
+            "C6D2": 1,
+            "C6D3": 1
+          }
+        },
+        "edges": {
+          "DocumentChunk:C6D2|contains|Entity:acme robotics": 1,
+          "DocumentChunk:C6D2|contains|Entity:bilal okafor": 1,
+          "DocumentChunk:C6D2|contains|Entity:lyon": 1,
+          "DocumentChunk:C6D2|is_part_of|TextDocument:C6D2": 1,
+          "DocumentChunk:C6D3|contains|Entity:borealis foods": 1,
+          "DocumentChunk:C6D3|contains|Entity:chen wei": 1,
+          "DocumentChunk:C6D3|contains|Entity:oslo": 1,
+          "DocumentChunk:C6D3|is_part_of|TextDocument:C6D3": 1,
+          "Entity:acme robotics|based_in|Entity:lyon": 1,
+          "Entity:acme robotics|is_a|EntityType:organization": 1,
+          "Entity:bilal okafor|is_a|EntityType:person": 1,
+          "Entity:bilal okafor|works_at|Entity:acme robotics": 1,
+          "Entity:borealis foods|based_in|Entity:oslo": 1,
+          "Entity:borealis foods|is_a|EntityType:organization": 1,
+          "Entity:chen wei|is_a|EntityType:person": 1,
+          "Entity:chen wei|works_at|Entity:borealis foods": 1,
+          "Entity:lyon|is_a|EntityType:city": 1,
+          "Entity:oslo|is_a|EntityType:city": 1,
+          "TextSummary:C6D2|made_from|DocumentChunk:C6D2": 1,
+          "TextSummary:C6D3|made_from|DocumentChunk:C6D3": 1
+        },
+        "orphan_edges": 0,
+        "node_count": 15,
+        "edge_count": 20
+      },
+      "provenance": {
+        "C6D2": [
+          "acme robotics",
+          "bilal okafor",
+          "lyon"
+        ],
+        "C6D3": [
+          "borealis foods",
+          "chen wei",
+          "oslo"
+        ]
+      },
+      "vector": {
+        "_unsupported": "no separate vector store to read: the FalkorDB hybrid adapter keeps each vector on its graph node",
+        "graph_nodes_without_vector": {}
+      }
+    }
+  }
+}

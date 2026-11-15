@@ -1,0 +1,522 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261114T153402Z-d2bf713f",
+  "batch": "m3-20261114T131136Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "1fd4dd02eed7b65664b0749181150abffcc8ce68",
+    "dirty": false
+  },
+  "target": {
+    "name": "cognee",
+    "repo": "topoteretes/cognee",
+    "ref": "v1.6.8",
+    "package_version": "1.6.8",
+    "commit": "069f3cc119bdf5628be054bb915992b2fc78cfc5"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "cognee",
+      "version": "1.6.8",
+      "config": {
+        "build": "v1.6.8",
+        "row": "R1",
+        "backend": "R1",
+        "access_control": "default",
+        "access_control_effective": true,
+        "telemetry": "off",
+        "structured_output_framework": "litellm_native",
+        "network": "loopback only (socket guard)",
+        "falkor_vector_port_shim": false,
+        "env": {
+          "DB_PROVIDER": "sqlite",
+          "GRAPH_DATABASE_PROVIDER": "ladybug",
+          "GRAPH_DATABASE_SUBPROCESS_ENABLED": "true",
+          "VECTOR_DB_PROVIDER": "lancedb"
+        }
+      }
+    },
+    {
+      "role": "store",
+      "name": "ladybug",
+      "version": "0.22.3",
+      "config": {
+        "store": "graph",
+        "note": "subprocess worker on"
+      }
+    },
+    {
+      "role": "store",
+      "name": "lancedb",
+      "version": "0.39.0",
+      "config": {
+        "store": "vector",
+        "note": ""
+      }
+    },
+    {
+      "role": "store",
+      "name": "sqlite",
+      "version": "bundled",
+      "config": {
+        "store": "relational",
+        "note": ""
+      }
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-stub-endpoint",
+      "version": "0.1.0",
+      "config": {
+        "transport": "OpenAI-compatible HTTP on 127.0.0.1, shared by every process",
+        "llm": "ideal-model fixture answers, schema-validated",
+        "embedder": "hashed bag of words, 256 dimensions"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "c4.ladder",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "sequential",
+    "clients": 1,
+    "trials": 5,
+    "params": {
+      "ladder": [
+        448,
+        1000,
+        1650,
+        2500,
+        5401
+      ],
+      "batch_size": 16,
+      "chunks_per_batch": 16,
+      "pinned_ids": true,
+      "corpus": "c4: seeded generator, seed 6170, one dated sentence per document",
+      "declared_sweep": [
+        {
+          "documents": 448
+        },
+        {
+          "documents": 1000
+        },
+        {
+          "documents": 1650
+        },
+        {
+          "documents": 2500
+        },
+        {
+          "documents": 5401
+        }
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-14T15:34:02.882463Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+    "known_deviation": null
+  },
+  "controls": [],
+  "trials": [
+    {
+      "k": 1,
+      "rung": 448,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 28,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:62368fa4f22db955208c9f53d91e0cebc5e1ad2bee7a2ed4c252ecd8ee8fb250",
+      "state_file": "",
+      "documents": 448,
+      "elapsed_s": 245.6,
+      "batch_seconds": {
+        "min": 5.81351739999991,
+        "median": 8.4879277,
+        "max": 13.81741829999919,
+        "unit": "s",
+        "batches": 28
+      },
+      "resident_mb_peak": {
+        "helper": 499.6,
+        "children": 699.4
+      },
+      "store": {
+        "graph_bytes": 19812352,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 120683388
+      },
+      "graph": {
+        "nodes": 2688,
+        "edges": 4477,
+        "entities": 1341,
+        "graph_path": "C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T153357115061Z-R1-c4\\g0001\\system\\databases\\b666d85b-9160-45ad-9854-d94234e883ab\\28f5363e-265b-5d3a-913c-24b0ec411f11.lbug"
+      },
+      "stub_calls": {
+        "llm": 449,
+        "embed": 2689,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "1341 entity nodes; the fixture names 1341",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "rung": 1000,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 35,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a6bbfb4160fe43555550b9e02b8df7f6254bcc024de42e3f29ccbfbe34d41a68",
+      "state_file": "",
+      "documents": 1000,
+      "elapsed_s": 764.4,
+      "batch_seconds": {
+        "min": 10.61293459999979,
+        "median": 15.010011599999416,
+        "max": 17.23243629999888,
+        "unit": "s",
+        "batches": 35
+      },
+      "resident_mb_peak": {
+        "helper": 526.6,
+        "children": 1061.6
+      },
+      "store": {
+        "graph_bytes": 41377792,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 261266021
+      },
+      "graph": {
+        "nodes": 5995,
+        "edges": 9992,
+        "entities": 2992,
+        "graph_path": "C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T153357115061Z-R1-c4\\g0001\\system\\databases\\b666d85b-9160-45ad-9854-d94234e883ab\\28f5363e-265b-5d3a-913c-24b0ec411f11.lbug"
+      },
+      "stub_calls": {
+        "llm": 552,
+        "embed": 3312,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "2992 entity nodes; the fixture names 2992",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "rung": 1650,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 41,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:f82bcdfffaa1eae5b7fbeef878a69b0a49ee818bdff134f5b23b156d868e3f34",
+      "state_file": "",
+      "documents": 1650,
+      "elapsed_s": 1552.5,
+      "batch_seconds": {
+        "min": 14.416995300000053,
+        "median": 18.903744799999913,
+        "max": 28.719934500000818,
+        "unit": "s",
+        "batches": 41
+      },
+      "resident_mb_peak": {
+        "helper": 538.4,
+        "children": 1487.1
+      },
+      "store": {
+        "graph_bytes": 62566400,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 359895257
+      },
+      "graph": {
+        "nodes": 9890,
+        "edges": 16487,
+        "entities": 4937,
+        "graph_path": "C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T153357115061Z-R1-c4\\g0001\\system\\databases\\b666d85b-9160-45ad-9854-d94234e883ab\\28f5363e-265b-5d3a-913c-24b0ec411f11.lbug"
+      },
+      "stub_calls": {
+        "llm": 650,
+        "embed": 3900,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "4937 entity nodes; the fixture names 4937",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "rung": 2500,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 54,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3c75b2390c248e5c286e1b8f8875be4f33c550c55289270506e73e8f39f45f7e",
+      "state_file": "",
+      "documents": 2500,
+      "elapsed_s": 2878.4,
+      "batch_seconds": {
+        "min": 14.312110200000461,
+        "median": 24.107630850000533,
+        "max": 41.28390430000036,
+        "unit": "s",
+        "batches": 54
+      },
+      "resident_mb_peak": {
+        "helper": 550.1,
+        "children": 1962.2
+      },
+      "store": {
+        "graph_bytes": 96075776,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 274925571
+      },
+      "graph": {
+        "nodes": 14980,
+        "edges": 24977,
+        "entities": 7477,
+        "graph_path": "C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T153357115061Z-R1-c4\\g0001\\system\\databases\\b666d85b-9160-45ad-9854-d94234e883ab\\28f5363e-265b-5d3a-913c-24b0ec411f11.lbug"
+      },
+      "stub_calls": {
+        "llm": 850,
+        "embed": 5100,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "7477 entity nodes; the fixture names 7477",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "rung": 5401,
+      "valid": true,
+      "precondition_digest": "",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 182,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:4746dd15999030a163b697dba8189b3d437b1d7d82faa75465454e0165c59702",
+      "state_file": "",
+      "documents": 5401,
+      "elapsed_s": 9838.7,
+      "batch_seconds": {
+        "min": 22.45415050000156,
+        "median": 38.38801994999994,
+        "max": 56.46060669999861,
+        "unit": "s",
+        "batches": 182
+      },
+      "resident_mb_peak": {
+        "helper": 604.4,
+        "children": 2694.3
+      },
+      "store": {
+        "graph_bytes": 203440128,
+        "graph_files": [
+          ".lbug"
+        ],
+        "vector_bytes": 377981384
+      },
+      "graph": {
+        "nodes": 32304,
+        "edges": 53905,
+        "entities": 16098,
+        "graph_path": "C:\\myspace\\hacckathons\\gnomon-b2b-harness\\.state\\runs\\20261114T153357115061Z-R1-c4\\g0001\\system\\databases\\b666d85b-9160-45ad-9854-d94234e883ab\\28f5363e-265b-5d3a-913c-24b0ec411f11.lbug"
+      },
+      "stub_calls": {
+        "llm": 2901,
+        "embed": 17406,
+        "errors": 0
+      },
+      "crash": null,
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "entities off",
+          "detail": "16098 entity nodes; the fixture names 16098",
+          "witnesses": []
+        },
+        {
+          "invariant": "CRASH",
+          "held": true,
+          "magnitude": 0,
+          "unit": "crashes",
+          "detail": "no crash",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "ladder": {
+    "documents": 5401,
+    "crash": null,
+    "reopen": {
+      "store": "system/databases/b666d85b-9160-45ad-9854-d94234e883ab/28f5363e-265b-5d3a-913c-24b0ec411f11.lbug",
+      "read_only": {
+        "opened": true,
+        "nodes": 32306,
+        "exit_code": 0
+      },
+      "read_write": {
+        "opened": true,
+        "nodes": 32306,
+        "exit_code": 0
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "entities off"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "CRASH",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 5,
+      "magnitude": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "unit": "crashes"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/topoteretes/cognee/issues/6170",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-14T18:18:06.298965Z"
+}

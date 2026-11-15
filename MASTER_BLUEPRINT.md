@@ -966,6 +966,15 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 
 **Review, M3.** Reviewed and signed off by the maintainer on 2026-11-15, after the closeout commits `4675786` to `57e0049` (support-boundary reporting, the two-node gap, the C0 cause, unit tests, the single-file repros, and the boundary-table fix) and an independent second-reader audit. The C0 repro was re-run for the sign-off and reproduced (exit 0). The decisions on the open items are in the Cognee blueprint, §10 and §11. M3 is closed, and M4 may start.
 
+**Status, M4.** M4's exit criterion is met, on 2026-11-15; the milestone awaits review:
+
+- the re-measured FalkorDB `GRAPH.COPY` curve falls inside the S28 band at all three sizes: 95.3, 441.7 and 1,820.0 ms against 165, 546 and 2,400 (-42%, -19%, -24%), under `appendonly yes` and `appendfsync always`, the conditions S28 was measured under; batch `m4d-20261115T172246Z`, harness `2a02bd8`, run `20261115T172253Z-0adb5788`. The first attempt, on the baseline's `appendonly no`, was 61%, 49% and 57% faster than S28 and stopped by rule (`m4b-20261115T164749Z`);
+- five batches, `m4-20261115T153804Z` (harness `46adb1d`), `m4b-20261115T164749Z` (`48737aa`), `m4c-20261115T165831Z` (`8f7bb3b`), `m4d-20261115T172246Z` (`2a02bd8`, the main batch) and `m4e-20261115T183929Z` (`8bc5fd3`); the target blueprint's §10 says which re-run followed which harness fix;
+- reports in `evidence/M4_OMNIGRAPH.md` and `evidence/M4_OMNIGRAPH_B1.md` to `_B4.md`; results in the Omnigraph blueprint, §10;
+- O4 did not exercise the writer epoch fence: claiming an epoch needs an embedding program, which the harness is not. Its cells are NOT_EXERCISED, or BOUNDARY on the stable release only, and never a pass; the gap is listed as open;
+- not run: the O2, O3 and O6 races, and O5 on MinIO;
+- commit `bfdec20` carries a `Co-Authored-By` trailer by mistake; it is kept because the evidence records harness commit hashes.
+
 ## 13. Open questions
 
 | Question | Settled in |

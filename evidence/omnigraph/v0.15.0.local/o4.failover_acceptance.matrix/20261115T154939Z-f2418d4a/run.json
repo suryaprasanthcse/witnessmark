@@ -1,0 +1,606 @@
+{
+  "schema_version": 1,
+  "run_id": "20261115T154939Z-f2418d4a",
+  "batch": "m4-20261115T153804Z",
+  "started_at": "2026-11-15T15:49:39.782Z",
+  "finished_at": "2026-11-15T15:50:24.905Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "46adb1de2d26c14e5056499079fe18d651afbc2e",
+    "dirty": false
+  },
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "target": {
+    "name": "omnigraph",
+    "repo": "ModernRelay/omnigraph",
+    "ref": "v0.15.0",
+    "digest": "sha256:32caa4e848b2196dd60b5496be53f89dc46d62fa9522ad5d511b5ef96e2871c7"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "omnigraph-server",
+      "version": "v0.15.0",
+      "image": "witnessmark/omnigraph:v0.15.0",
+      "digest": "sha256:32caa4e848b2196dd60b5496be53f89dc46d62fa9522ad5d511b5ef96e2871c7",
+      "config": {
+        "backend": "local"
+      }
+    },
+    {
+      "role": "object-store",
+      "name": "minio",
+      "version": "RELEASE.2025-09-07T16-13-09Z",
+      "image": "witnessmark/minio:RELEASE.2025-09-07T16-13-09Z",
+      "digest": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899"
+    }
+  ],
+  "scenario": {
+    "id": "o4.failover_acceptance",
+    "mode": "matrix",
+    "invariants": [
+      "I1A",
+      "I2"
+    ]
+  },
+  "trials": [
+    {
+      "valid": true,
+      "phase": "p1",
+      "variant": "a",
+      "seed": 20261115,
+      "offset_s": -1.0,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container before staging"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYCTCM6BXH2VF39MQMH0CC.2.01M7FYCYXY1RAV9GTQVYWKJCAC",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYCTCM6BXH2VF39MQMH0CC.1.01M7FYCTCM6BXH2VF39MQMH0CC",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757786558502,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYCTCM6BXH2VF39MQMH0CC.2.01M7FYCYXY1RAV9GTQVYWKJCAC",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYCTCM6BXH2VF39MQMH0CC.1.01M7FYCTCM6BXH2VF39MQMH0CC",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757786558502,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757786558502
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    },
+    {
+      "valid": true,
+      "phase": "p1",
+      "variant": "b",
+      "seed": 20261115,
+      "offset_s": -1.0,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container before staging"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYD1SR0YPYV4BT0GFT4BTX.2.01M7FYD69J241AKKCMRH5GBW59",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYD1SR0YPYV4BT0GFT4BTX.1.01M7FYD1SR0YPYV4BT0GFT4BTX",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757794098959,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYD1SR0YPYV4BT0GFT4BTX.2.01M7FYD69J241AKKCMRH5GBW59",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYD1SR0YPYV4BT0GFT4BTX.1.01M7FYD1SR0YPYV4BT0GFT4BTX",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757794098959,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757794098959
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    },
+    {
+      "valid": true,
+      "phase": "p2",
+      "variant": "a",
+      "seed": 20261115,
+      "offset_s": 0.001,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container at seeded p2 offset 0.001s"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYD939S0S7E56NW71HTNTE.2.01M7FYD93V602ZKW78EYABRG0S",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYD939S0S7E56NW71HTNTE.1.01M7FYD939S0S7E56NW71HTNTE",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757796987512,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYD939S0S7E56NW71HTNTE.2.01M7FYD93V602ZKW78EYABRG0S",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYD939S0S7E56NW71HTNTE.1.01M7FYD939S0S7E56NW71HTNTE",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757796987512,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757796987512
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    },
+    {
+      "valid": true,
+      "phase": "p2",
+      "variant": "b",
+      "seed": 20261115,
+      "offset_s": 0.001,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container at seeded p2 offset 0.001s"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYDGEKXZFK3RF3WJ7HFRCR.2.01M7FYDGF6P5W0BQYH4SHKCS76",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYDGEKXZFK3RF3WJ7HFRCR.1.01M7FYDGEKXZFK3RF3WJ7HFRCR",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757804518431,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYDGEKXZFK3RF3WJ7HFRCR.2.01M7FYDGF6P5W0BQYH4SHKCS76",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYDGEKXZFK3RF3WJ7HFRCR.1.01M7FYDGEKXZFK3RF3WJ7HFRCR",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757804518431,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757804518431
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    },
+    {
+      "valid": true,
+      "phase": "p3",
+      "variant": "a",
+      "seed": 20261115,
+      "offset_s": 0.005,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container at seeded p3 offset 0.005s"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYDQPZRF5NKAG8CVHXZ5H2.2.01M7FYDQQH6P6PGRMA8PRWHRN2",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYDQPZRF5NKAG8CVHXZ5H2.1.01M7FYDQPZRF5NKAG8CVHXZ5H2",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757811953237,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYDQPZRF5NKAG8CVHXZ5H2.2.01M7FYDQQH6P6PGRMA8PRWHRN2",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYDQPZRF5NKAG8CVHXZ5H2.1.01M7FYDQPZRF5NKAG8CVHXZ5H2",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757811953237,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757811953237
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    },
+    {
+      "valid": true,
+      "phase": "p3",
+      "variant": "b",
+      "seed": 20261115,
+      "offset_s": 0.005,
+      "status": "BOUNDARY",
+      "boundary": "the pinned server exposes no branch writer-claim route",
+      "fault_actions": [
+        {
+          "client": "nemesis",
+          "kind": "pause",
+          "target": "wm-omnigraph-a",
+          "assertion": "pause our A test container at seeded p3 offset 0.005s"
+        },
+        {
+          "client": "nemesis",
+          "kind": "resume",
+          "target": "wm-omnigraph-a",
+          "assertion": "resume our stale A test container and observe its pending publication"
+        }
+      ],
+      "successor_start_exit": 0,
+      "successor_ready": false,
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7FYDZ2T6FS86HGPV5YH6NSN.2.01M7FYDZ3BCH75MWX8H1M372WK",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7FYDZ2T6FS86HGPV5YH6NSN.1.01M7FYDZ2T6FS86HGPV5YH6NSN",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794757819499515,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "b_write": null,
+      "writer_fenced_observed": false,
+      "branch_list": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branches": [
+            "main"
+          ],
+          "details": [
+            {
+              "name": "main",
+              "head": {
+                "graph_commit_id": "hb1.01M7FYDZ2T6FS86HGPV5YH6NSN.2.01M7FYDZ3BCH75MWX8H1M372WK",
+                "graph_branch": null,
+                "graph_manifest_version": 3,
+                "parent_commit_id": "hb1.01M7FYDZ2T6FS86HGPV5YH6NSN.1.01M7FYDZ2T6FS86HGPV5YH6NSN",
+                "merged_parent_commit_id": null,
+                "actor_id": null,
+                "created_at": 1794757819499515,
+                "published": true,
+                "kind": "published",
+                "root_commit_id": null
+              },
+              "updated_at": 1794757819499515
+            }
+          ]
+        }
+      },
+      "graph_open_and_scan": true,
+      "referenced_objects_exist": "not_exercised_without_a_claimed_epoch",
+      "single_epoch": "epoch_zero_unclaimed_boundary"
+    }
+  ],
+  "seed": 20261115,
+  "matrix": {
+    "phases": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "variants": [
+      "a",
+      "b"
+    ],
+    "storage": "local",
+    "build": "v0.15.0"
+  },
+  "boundary_probes": [
+    {
+      "operation": "branch create/delete",
+      "status": "BOUNDARY",
+      "reason": "requires a claimed epoch unavailable on HTTP/CLI"
+    },
+    {
+      "operation": "cleanup",
+      "status": "BOUNDARY",
+      "reason": "requires a claimed epoch unavailable on HTTP/CLI"
+    },
+    {
+      "operation": "optimize",
+      "status": "BOUNDARY",
+      "reason": "requires a claimed epoch unavailable on HTTP/CLI"
+    },
+    {
+      "operation": "several failovers",
+      "status": "BOUNDARY",
+      "reason": "requires a claimed epoch unavailable on HTTP/CLI"
+    },
+    {
+      "operation": "simultaneous claims",
+      "status": "BOUNDARY",
+      "reason": "requires a claimed epoch unavailable on HTTP/CLI"
+    }
+  ],
+  "support": "boundary",
+  "basis": "documented",
+  "basis_ref": "docs/user/operations/troubleshooting.md#writer-epoch"
+}

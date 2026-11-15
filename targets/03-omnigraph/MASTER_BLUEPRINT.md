@@ -80,7 +80,7 @@ These are specifications, not source. The `.pg` and `.gq` files are written in M
 
 | Name | Does |
 |---|---|
-| `q_task` | Reads a task's state and holder, with the `graph_commit_id` |
+| `q_task` | Reads a task's state, with the response's `graph_commit_id`; `q_task_holder` reads its at-most-one holder. The pinned [query](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md) and [traversal](https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md) guides do not document an optional traversal/projection that can return both when no holder exists, so phase 2 checks whether these can be collapsed [docs] [unmeasured: O2]. |
 | `m_claim_cond` | Sets `state = claimed` and inserts `HeldBy`, under `--if-commit` (over HTTP, the conditional route) |
 | `m_claim_card` | Inserts `HeldBy` with no condition, relying on `@card(0..1)` |
 | `q_live` | Counts `HeldBy` per task |

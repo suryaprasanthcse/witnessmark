@@ -1,0 +1,45 @@
+// Witnessmark M4 workload schema.
+// Syntax: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/schema/index.md
+// Edge cardinality: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/schema/index.md#edge-cardinality
+
+node Agent {
+  id: String @key
+}
+
+node Skill {
+  id: String @key
+}
+
+node Task {
+  id: String @key
+  state: enum(open, claimed, done)
+}
+
+edge HasSkill: Agent -> Skill
+
+edge Needs: Task -> Skill
+
+edge HeldBy: Task -> Agent @card(0..1) {
+  from_seq: I64
+  until_pt: I64
+  rw: String
+}
+
+node LeaseEvent {
+  id: String @key
+  task: String
+  agent: String
+  from_seq: I64
+  until_seq: I64
+}
+
+node Entry {
+  id: String @key
+  seq: I64
+  rule: String
+  hash: String
+  prev: String
+  ts: I64
+}
+
+edge Next: Entry -> Entry @card(0..1)

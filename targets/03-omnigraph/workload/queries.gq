@@ -1,0 +1,105 @@
+// Witnessmark M4 Omnigraph workload.
+// Read syntax: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/index.md
+// Traversal syntax: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/queries/traversal.md
+// Mutation syntax: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/index.md
+// Commit guard: https://github.com/ModernRelay/omnigraph/blob/b2dbaff7584eb849a98fa139876e0ae474e929ea/docs/user/mutations/conditional.md
+
+// The response envelope supplies graph_commit_id. The pinned docs do not
+// document an optional traversal/projection, so q_task returns the state row
+// and q_task_holder separately returns the at-most-one live holder. Phase 2
+// checks whether the two can be collapsed without changing their semantics.
+query q_task($task_id: String) {
+  match {
+    $task: Task { id: $task_id }
+  }
+  return { $task.id as task, $task.state as state }
+}
+
+query q_task_holder($task_id: String) {
+  match {
+    $task: Task { id: $task_id }
+    $task heldBy $holder
+  }
+  return { $holder.id as holder }
+}
+
+// Send this mutation through the conditional route with the graph commit id
+// from q_task in Omnigraph-If-Graph-Commit. The precondition is transport
+// metadata, not part of GQ.
+query m_claim_cond(
+  $task_id: String,
+  $agent_id: String,
+  $from_seq: I64,
+  $until_pt: I64,
+  $rw: String
+) {
+  update Task set { state: "claimed" }
+    where id = $task_id and state = "open"
+  insert HeldBy {
+    from: $task_id,
+    to: $agent_id,
+    from_seq: $from_seq,
+    until_pt: $until_pt,
+    rw: $rw
+  }
+}
+
+// No graph-commit precondition: HeldBy @card(0..1) is the one-winner guard.
+query m_claim_card(
+  $task_id: String,
+  $agent_id: String,
+  $from_seq: I64,
+  $until_pt: I64,
+  $rw: String
+) {
+  update Task set { state: "claimed" }
+    where id = $task_id and state = "open"
+  insert HeldBy {
+    from: $task_id,
+    to: $agent_id,
+    from_seq: $from_seq,
+    until_pt: $until_pt,
+    rw: $rw
+  }
+}
+
+// Aggregate-only returns produce one row and count 0 when no edge matches.
+query q_live($task_id: String) {
+  match {
+    $task: Task { id: $task_id }
+    $task heldBy $holder
+  }
+  return { count($holder) as live }
+}
+
+query q_eligible() {
+  match {
+    $agent: Agent
+    $agent hasSkill $skill
+    $task: Task
+    $task needs $skill
+  }
+  return distinct { $agent.id as agent, $task.id as task }
+  order { agent asc, task asc }
+}
+
+// Fixtures seed a genesis Entry. Each call appends one Entry and its Next edge
+// in the same atomic mutation query.
+query m_ledger(
+  $id: String,
+  $seq: I64,
+  $rule: String,
+  $hash: String,
+  $prev: String,
+  $ts: I64
+) {
+  insert Entry {
+    id: $id,
+    seq: $seq,
+    rule: $rule,
+    hash: $hash,
+    prev: $prev,
+    ts: $ts
+  }
+  insert Next { from: $prev, to: $id }
+}

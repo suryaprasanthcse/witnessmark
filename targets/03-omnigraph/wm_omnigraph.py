@@ -20,6 +20,7 @@ from witnessmark.scenarios import Expectation  # noqa: E402
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
 from witnessmark_omnigraph.capture import OperationCapture, repro_command  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
+from witnessmark_omnigraph.costcurve import print_table, run_o2b, run_o2b_falkordb  # noqa: E402
 from witnessmark_omnigraph.part2 import Stack, run_i6, run_o1, run_o4, run_o5, run_o6, storage_components  # noqa: E402
 from witnessmark_omnigraph.runner_scenarios import ClaimScenario, MergeScenario  # noqa: E402
 
@@ -123,8 +124,34 @@ def main(argv: list[str] | None = None) -> int:
         if name == "parity":
             sub.add_argument("--falkordb-port", type=int, default=16380)
             sub.add_argument("--neo4j-port", type=int, default=17474)
+    sub = commands.add_parser("costcurve", help="run the declared O2b disjoint-claim cost curve")
+    sub.add_argument("--engine", choices=["omnigraph", "falkordb"], default="omnigraph")
+    sub.add_argument("--build", choices=sorted(BUILDS), default=None, help="required for --engine omnigraph")
+    sub.add_argument("--storage", choices=["local", "minio", "proxy"], default="local")
+    sub.add_argument("--batch", required=True)
+    sub.add_argument("--evidence", default=str(REPO / "evidence"))
+    sub.add_argument("--seed", type=int, default=0)
+    sub.add_argument("--smoke", action="store_true", help="N in {1, 2}, one warm-up and one measured repetition")
+    sub.add_argument("--spread-gate-ms", type=float, default=None,
+                     help="gate on the release spread; off (recorded) until Omnigraph's delta is set")
+    sub.add_argument("--falkordb-port", type=int, default=16380)
     args = parser.parse_args(argv)
     command = repro_command(REPO, argv if argv is not None else sys.argv[1:])
+
+    if args.command == "costcurve":
+        evidence = Path(args.evidence)
+        if args.engine == "falkordb":
+            manifest, path = run_o2b_falkordb(REPO, evidence, args.batch, command=command, smoke=args.smoke,
+                                              gate_ms=args.spread_gate_ms, seed=args.seed, port=args.falkordb_port)
+        else:
+            if args.build is None:
+                parser.error("--build is required for --engine omnigraph")
+            manifest, path = run_o2b(REPO, evidence, args.batch, args.build, BUILDS[args.build], args.storage,
+                                     command=command, smoke=args.smoke, gate_ms=args.spread_gate_ms, seed=args.seed)
+        print(f"{manifest['scenario']['id']}: {len(manifest['trials'])} trial(s), status {manifest['status']}")
+        print_table(manifest)
+        print(f"evidence: {path}")
+        return 0 if manifest["status"] == "complete" else 1
 
     if args.command in ("curve", "failover", "visibility", "i6", "parity"):
         build = BUILDS[args.build]

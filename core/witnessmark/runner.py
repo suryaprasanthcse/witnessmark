@@ -13,6 +13,7 @@ import shlex
 import threading
 import time
 import traceback
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -84,7 +85,7 @@ def _race_trial(config: RunConfig, k: int, admin: Session, sessions: list[Sessio
         reasons.append("the engine was unhealthy before the trial")
     engine.reset(admin)
     scenario.setup(admin, n)
-    precondition_digest = digest(scenario.observe(admin, n))
+    precondition_digest = digest(scenario.precondition(scenario.observe(admin, n)))
     if precondition_digest != expected_digest:
         reasons.append("the precondition digest did not match")
 
@@ -199,7 +200,7 @@ def default_command(config: RunConfig) -> str:
     return shlex.join(args)
 
 
-def run(config: RunConfig) -> dict:
+def run(config: RunConfig, *, prepare=None) -> dict:
     engine, scenario, n = config.engine, config.scenario, config.clients
     expectation = config.expectation or EXPECTATIONS.get((engine.name, config.scenario_id))
     if expectation is None:
@@ -237,17 +238,20 @@ def run(config: RunConfig) -> dict:
     }
     run_id = make_run_id(started, header)
     run_dir = RunDir(config.evidence_root, config.evidence_dir or engine.name, config.scenario_id, run_id)
+    history: list[Op] = []
     try:
-        return _run_body(config, expectation, header, run_id, run_dir, component, harness)
+        with prepare(run_id, history) if prepare else nullcontext():
+            return _run_body(config, expectation, header, run_id, run_dir, component, harness, history)
     except Exception:
+        if prepare and history:
+            run_dir.write_history(history)
         crash_note(run_dir.path, run_id, traceback.format_exc())
         raise
 
 
 def _run_body(config: RunConfig, expectation: Expectation, header: dict, run_id: str, run_dir: RunDir,
-              component: dict, harness: dict) -> dict:
+              component: dict, harness: dict, history: list[Op]) -> dict:
     engine, scenario, n = config.engine, config.scenario, config.clients
-    history: list[Op] = []
     trials: list[dict] = []
     admin = engine.session(config.timeout_s)
     sessions: list[Session] = []
@@ -257,7 +261,7 @@ def _run_body(config: RunConfig, expectation: Expectation, header: dict, run_id:
         # Sequential control (k = 0): the same operations, one at a time, from the same reset.
         engine.reset(admin)
         scenario.setup(admin, n)
-        expected_digest = digest(scenario.observe(admin, n))
+        expected_digest = digest(scenario.precondition(scenario.observe(admin, n)))
         control_ops = []
         for i in range(n):
             sessions[i].ping()

@@ -21,7 +21,9 @@ x-omnigraph: &omnigraph
     OMNIGRAPH_CLUSTER_LEASE_SECONDS: ${WM_CLUSTER_LEASE_SECONDS:-2}
   volumes:
     - omnigraph-root:/var/lib/omnigraph
-    - ../workload:/config:ro
+    - ${WM_OMNIGRAPH_CLUSTER_CONFIG:-../workload/cluster.yaml}:/config/cluster.yaml:ro
+    - ../workload/schema.pg:/config/schema.pg:ro
+    - ../workload/queries.gq:/config/queries.gq:ro
 
 services:
   wm-omnigraph-a:

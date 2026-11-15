@@ -54,44 +54,15 @@ def repro_command(repo: Path, argv: list[str]) -> str:
                        *(redact_text(arg, repo) for arg in args)])
 
 
-class RunCapture:
-    def __init__(self, repo: Path, evidence: Path, manifest: dict, command: str):
+class OperationCapture:
+    def __init__(self, repo: Path, run_id: str, emit):
         self.repo = repo
-        self.run_id = manifest["run_id"]
-        component = manifest["components"][0]
-        self.storage = component["config"]["backend"]
-        scenario = manifest["scenario"]
-        self.directory = RunDir(evidence, f"omnigraph/{component['version']}.{self.storage}",
-                                f"{scenario['id']}.{scenario['mode']}", self.run_id)
-        self.path = self.directory.path
-        harness = manifest["harness"]
-        images = "\n".join(f"- {part['name']}: `{part.get('image', 'unknown')}` "
-                           f"(`{part.get('digest', 'unknown')}`)" for part in manifest["components"])
-        self.directory.write_repro(
-            f"# Reproduce run {self.run_id}\n\n"
-            "From the repository root, use the pinned images and run:\n\n"
-            f"```bash\n{command}\n```\n\n"
-            f"- Harness commit: `{harness['commit']}` (dirty: {str(harness['dirty']).lower()})\n"
-            f"- Build: `{component['version']}`\n- Storage: `{self.storage}`\n{images}\n"
-        )
-        self.write_manifest(manifest)
-        self.history = (self.path / "history.jsonl").open("w", encoding="utf-8", newline="\n")
+        self.run_id = run_id
+        self.emit = emit
         self.lock = threading.Lock()
         self.sequence = 0
         self.k = 0
         self.phase = "setup"
-
-    def write_manifest(self, manifest: dict) -> None:
-        # Preserve schema field names (including the normal operation token).
-        self.directory.write_manifest(self._manifest_value(manifest))
-
-    def _manifest_value(self, value):
-        if isinstance(value, dict):
-            return {key: ("<redacted>" if key != "token" and SENSITIVE_KEY.search(key) else
-                          self._manifest_value(item)) for key, item in value.items()}
-        if isinstance(value, list):
-            return [self._manifest_value(item) for item in value]
-        return redact_text(value, self.repo) if isinstance(value, str) else value
 
     def trial(self, k: int, phase: str = "race") -> None:
         self.k, self.phase = k, phase
@@ -103,7 +74,7 @@ class RunCapture:
             op = Op(self.run_id, self.k, phase or self.phase, f"{self.k}-{client}-{self.sequence}",
                     client, kind, safe(inputs, self.repo), inv, ret if outcome != UNKNOWN else None, outcome,
                     result=safe(result, self.repo), error=safe(error, self.repo), token=token)
-            self.history.write(json.dumps(op.to_json(), ensure_ascii=False, separators=(",", ":")) + "\n")
+            self.emit(op)
 
     def client(self, endpoint: str, graph: str = "witnessmark", *, timeout: float = 60,
                label: str = "c00") -> OmnigraphClient:
@@ -128,18 +99,63 @@ class RunCapture:
 
         return OmnigraphClient(endpoint, graph, timeout=timeout, observed=observed)
 
-    def action(self, kind: str, target: str, invoke, **inputs):
+    def action(self, kind: str, target: str, invoke, *, phase: str = "nemesis", decode=None, **inputs):
         inv = stamp()
         try:
             result = invoke()
+            ret = stamp()
+            code = result.returncode
+            output = decode(result.stdout) if code == 0 and decode else None
         except Exception as exc:
             self.record("nemesis", kind, {"target": target, **inputs}, inv, stamp(), UNKNOWN,
-                        error={"type": type(exc).__name__, "message": str(exc)}, phase="nemesis")
+                        error={"type": type(exc).__name__, "message": str(exc)}, phase=phase)
             raise
-        code = result.returncode
-        self.record("nemesis", kind, {"target": target, **inputs}, inv, stamp(), OK if code == 0 else FAIL,
-                    result={"exit": code}, phase="nemesis")
-        return result
+        self.record("nemesis", kind, {"target": target, **inputs}, inv, ret, OK if code == 0 else FAIL,
+                    result={"exit": code, **({"output": output} if decode else {})}, phase=phase)
+        return output if decode and code == 0 else result
+
+
+class RunCapture(OperationCapture):
+    def __init__(self, repo: Path, evidence: Path, manifest: dict, command: str):
+        super().__init__(repo, manifest["run_id"], self._append)
+        component = manifest["components"][0]
+        self.storage = component["config"]["backend"]
+        scenario = manifest["scenario"]
+        self.directory = RunDir(evidence, f"omnigraph/{component['version']}.{self.storage}",
+                                f"{scenario['id']}.{scenario['mode']}", self.run_id)
+        self.path = self.directory.path
+        self.command = command
+        self.write_repro(manifest)
+        self.write_manifest(manifest)
+        self.history = (self.path / "history.jsonl").open("w", encoding="utf-8", newline="\n")
+
+    def write_repro(self, manifest: dict) -> None:
+        harness = manifest["harness"]
+        component = manifest["components"][0]
+        images = "\n".join(f"- {part['name']}: `{part.get('image', 'unknown')}` "
+                           f"(`{part.get('digest', 'unknown')}`)" for part in manifest["components"])
+        self.directory.write_repro(
+            f"# Reproduce run {self.run_id}\n\n"
+            "From the repository root, use the pinned images and run:\n\n"
+            f"```bash\n{self.command}\n```\n\n"
+            f"- Harness commit: `{harness['commit']}` (dirty: {str(harness['dirty']).lower()})\n"
+            f"- Build: `{component['version']}`\n- Storage: `{self.storage}`\n{images}\n"
+        )
+
+    def _append(self, op: Op) -> None:
+        self.history.write(json.dumps(op.to_json(), ensure_ascii=False, separators=(",", ":")) + "\n")
+
+    def write_manifest(self, manifest: dict) -> None:
+        # Preserve schema field names (including the normal operation token).
+        self.directory.write_manifest(self._manifest_value(manifest))
+
+    def _manifest_value(self, value):
+        if isinstance(value, dict):
+            return {key: ("<redacted>" if key != "token" and SENSITIVE_KEY.search(key) else
+                          self._manifest_value(item)) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self._manifest_value(item) for item in value]
+        return redact_text(value, self.repo) if isinstance(value, str) else value
 
     def final_state(self, trial: dict, state: dict) -> None:
         trial["k"] = self.k

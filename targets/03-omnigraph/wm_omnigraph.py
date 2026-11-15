@@ -12,15 +12,16 @@ sys.path[:0] = [str(REPO / "core"), str(HERE)]
 
 import argparse  # noqa: E402
 import json  # noqa: E402
+from contextlib import contextmanager  # noqa: E402
 
-from witnessmark.runner import RunConfig, run, run_sequential_control  # noqa: E402
+from witnessmark.runner import THREAD_SPREAD_GATE_MS, RunConfig, run, run_sequential_control  # noqa: E402
 from witnessmark.scenarios import Expectation  # noqa: E402
 
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
-from witnessmark_omnigraph.capture import repro_command  # noqa: E402
+from witnessmark_omnigraph.capture import OperationCapture, repro_command  # noqa: E402
 from witnessmark_omnigraph.engine import OmnigraphEngine  # noqa: E402
-from witnessmark_omnigraph.part2 import run_i6, run_o1, run_o4, run_o5, storage_components  # noqa: E402
-from witnessmark_omnigraph.runner_scenarios import ClaimScenario  # noqa: E402
+from witnessmark_omnigraph.part2 import Stack, run_i6, run_o1, run_o4, run_o5, run_o6, storage_components  # noqa: E402
+from witnessmark_omnigraph.runner_scenarios import ClaimScenario, MergeScenario  # noqa: E402
 
 BUILDS = {
     "v0.15.0": {
@@ -37,6 +38,18 @@ BUILDS = {
 def _engine(args) -> OmnigraphEngine:
     build = BUILDS[args.build]
     return OmnigraphEngine(args.endpoint, args.build, build["image"], build["digest"], storage=args.storage)
+
+
+@contextmanager
+def _race_stack(args, run_id, history):
+    capture = OperationCapture(REPO, run_id, history.append)
+    stack = Stack(REPO, f"wm-m5-race-{args.build.replace('.', '-')}-{args.storage}", BUILDS[args.build],
+                  args.storage, capture=capture)
+    try:
+        stack.provision()
+        yield
+    finally:
+        stack.down()
 
 
 def _write(path: str | None, value: dict) -> None:
@@ -64,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     for name, help_text in (("smoke", "run every checked-in GQ declaration"),
                             ("cases", "run Part 1 sequential controls"),
-                            ("race", "run O2 through the core thread runner")):
+                            ("race", "run O2 or O3 through the core thread runner")):
         sub = commands.add_parser(name, help=help_text)
         sub.add_argument("--build", choices=sorted(BUILDS), required=True)
         sub.add_argument("--endpoint", default="http://127.0.0.1:18080")
@@ -78,17 +91,22 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--falkordb-port", type=int, default=16380)
             sub.add_argument("--neo4j-port", type=int, default=17474)
         if name == "race":
-            sub.add_argument("--scenario", choices=["o2a", "o2c"], required=True)
+            sub.add_argument("--scenario", choices=["o2a", "o2c", "o3"], required=True)
             sub.add_argument("--clients", type=int, default=50)
             sub.add_argument("--trials", type=int, default=20)
             sub.add_argument("--seed", type=int, default=0)
             sub.add_argument("--batch", default=None)
             sub.add_argument("--evidence", default=str(REPO / "evidence"))
+            sub.add_argument("--provision", action="store_true", help="start a fresh disposable Omnigraph stack")
+            gate = sub.add_mutually_exclusive_group()
+            gate.add_argument("--no-spread-gate", action="store_true", help="record Δ without gating on it")
+            gate.add_argument("--spread-gate-ms", type=float, default=THREAD_SPREAD_GATE_MS)
     for name, help_text, storages in (
         ("curve", "run the declared O1 cost curve", ["local", "minio", "proxy"]),
         ("failover", "run the O4 phase/variant matrix", ["local", "minio"]),
         ("visibility", "run O5 across two server processes", ["local", "minio"]),
         ("i6", "run the I6a and I6b controls alone", ["local", "minio", "proxy"]),
+        ("parity", "run O6 against both reference engines", ["local", "minio"]),
     ):
         sub = commands.add_parser(name, help=help_text)
         sub.add_argument("--build", choices=sorted(BUILDS), required=True)
@@ -101,10 +119,14 @@ def main(argv: list[str] | None = None) -> int:
         if name == "failover":
             sub.add_argument("--seed", type=int, default=20261115)
             sub.add_argument("--smoke", action="store_true", help="one pause/resume cell")
+            sub.add_argument("--variant", choices=["matrix", "clean-stop"], default="matrix")
+        if name == "parity":
+            sub.add_argument("--falkordb-port", type=int, default=16380)
+            sub.add_argument("--neo4j-port", type=int, default=17474)
     args = parser.parse_args(argv)
     command = repro_command(REPO, argv if argv is not None else sys.argv[1:])
 
-    if args.command in ("curve", "failover", "visibility", "i6"):
+    if args.command in ("curve", "failover", "visibility", "i6", "parity"):
         build = BUILDS[args.build]
         evidence = Path(args.evidence)
         if args.command == "curve":
@@ -119,9 +141,14 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
         elif args.command == "i6":
             manifest, path = run_i6(REPO, evidence, args.batch, args.build, build, args.storage, command=command)
+        elif args.command == "parity":
+            manifest, path = run_o6(REPO, evidence, args.batch, args.build, build, args.storage, command=command,
+                                    neo4j_port=args.neo4j_port, falkordb_port=args.falkordb_port)
         elif args.command == "failover":
+            if args.variant == "clean-stop" and args.storage != "local":
+                parser.error("the clean-stop transfer variant requires local storage")
             manifest, path = run_o4(REPO, evidence, args.batch, args.build, build, args.storage, args.seed,
-                                    command=command, smoke=args.smoke)
+                                    command=command, smoke=args.smoke, variant=args.variant)
         else:
             manifest, path = run_o5(REPO, evidence, args.batch, args.build, build, args.storage, command=command)
         print(f"{manifest['scenario']['id']}: {len(manifest['trials'])} trial(s)")
@@ -157,14 +184,18 @@ def main(argv: list[str] | None = None) -> int:
         _write(args.write, output)
         return 0 if output["met"] else 1
 
-    scenario = ClaimScenario(args.scenario == "o2a")
+    if args.provision and args.endpoint != "http://127.0.0.1:18080":
+        parser.error("--provision requires the default loopback endpoint")
+    scenario = MergeScenario() if args.scenario == "o3" else ClaimScenario(args.scenario == "o2a")
     expectation = Expectation("negative", "documented", scenario.basis_ref)
     config = RunConfig(engine=engine, scenario=scenario, shape="thread", clients=args.clients,
                        trials=args.trials, seed=args.seed, evidence_root=Path(args.evidence), repo_root=REPO,
                        evidence_dir=f"omnigraph/{args.build}.{args.storage}", batch=args.batch,
+                       spread_gate_ms=None if args.no_spread_gate else args.spread_gate_ms,
                        command=command, expectation=expectation,
                        additional_components=tuple(storage_components(args.storage)))
-    manifest = run(config)
+    manifest = run(config, prepare=(lambda run_id, history: _race_stack(args, run_id, history))
+                   if args.provision else None)
     print(f"{manifest['scenario']['id']}: {manifest['verdicts'][0]['status']}")
     print(f"evidence: {manifest['path']}")
     return 0 if manifest["verdicts"][0]["status"] != "INVALID" else 1

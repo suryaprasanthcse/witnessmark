@@ -106,7 +106,10 @@ class StackReadinessTest(unittest.TestCase):
         stack = part2.Stack(Path.cwd(), "wm-m4-unit", {"image": "x", "digest": "sha256:0"}, "local")
         waits = []
         done = mock.Mock(stdout="Admission lock: ABC123\n", returncode=0)
+        status = mock.Mock(stdout='{"lock_id": "ABC123"}\n', returncode=0)
         with mock.patch.object(stack, "compose", return_value=done), \
+                mock.patch.object(stack, "_assert_fresh_root"), \
+                mock.patch.object(stack, "_cluster", side_effect=[done, status, done]), \
                 mock.patch.object(stack, "_wait_url", side_effect=waits.append):
             stack.provision()
             stack.start_b()

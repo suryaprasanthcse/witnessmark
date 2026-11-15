@@ -39,6 +39,10 @@ class Scenario:
     def observe(self, session: Session, n: int) -> dict:
         raise NotImplementedError
 
+    def precondition(self, state: dict) -> dict:
+        """Return the observed state used to check that reset recreated the fixture."""
+        return state
+
     def check(self, ops: list[Op], state: dict, n: int) -> Check:
         raise NotImplementedError
 

@@ -33,6 +33,10 @@ class OmnigraphSession(Session):
                               str(data.get("code")) if data.get("code") is not None else None)
 
     def run(self, query: str, params: dict | None = None, *, write: bool = True) -> Reply:
+        if query == "merge_agent_branch":
+            result = self.client.merge((params or {})["source"], target="main")
+            self._raise(result)
+            return Reply([], [], _token(result))
         if query not in self.queries:
             raise ValueError(f"unknown Omnigraph workload query {query!r}")
         arguments = dict(params or {})

@@ -7,7 +7,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 | Status | Specification v0.1, 2026-11-13. Nothing has been measured yet; every expectation below is [unmeasured] until a run says otherwise. |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
-| Binaries | `omnigraph` and `omnigraph-server`, built from the pinned commits in a Linux container. Release binaries are acceptable if checked against published checksums. Never a piped install script. |
+| Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |
 | Storage | A local filesystem root. MinIO (S3-compatible), with and without a proxy that adds a fixed delay per request; the delay follows the method of [#642](https://github.com/ModernRelay/omnigraph/issues/642). |
 | Baselines | FalkorDB 6.0.4 `GRAPH.COPY` for I6. FalkorDB 6.0.4 and Neo4j 5.26.2 for I1 controls and I4 parity (master §7). |
 | Out of scope | Omnigraph Cloud, Azure roots, the MCP surface |
@@ -201,8 +201,10 @@ A write acknowledged by server A is read back by a second process, either the CL
 
 | Component | Pin |
 |---|---|
-| Omnigraph | v0.15.0 (`373834b4c1`) and edge-20261113-b2dbaff (`b2dbaff7`). Both are built with the Rust toolchain from the repository's `rust-toolchain.toml`. The build needs `protobuf-compiler`. |
-| MinIO | Pinned by digest at first pull; the version is recorded. |
+| Omnigraph v0.15.0 | Source commit `373834b4c1c4b29cf0ddd64bee9565f98c60cc26`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `d7312ce49abca47a6bb47956b6987d32f650fa91678be1abd10e02824937bb15`; local image `witnessmark/omnigraph:v0.15.0`, digest `sha256:32caa4e848b2196dd60b5496be53f89dc46d62fa9522ad5d511b5ef96e2871c7` [measured: Docker build output, 2026-11-15]. |
+| Omnigraph edge-20261113-b2dbaff | Source commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`; official `omnigraph-linux-x86_64.tar.gz` SHA-256 `6b5b449cd4c292eae37ebd8d61a667b293714a5ad573b43a97a2299607297b8d`; local image `witnessmark/omnigraph:edge-b2dbaff`, digest `sha256:9fd617ad5d7590ec66e8c32fc9eeba92395a2fde0550ce7866a31db0a9279a2a` [measured: Docker build output, 2026-11-15]. |
+| Image build | `targets/03-omnigraph/docker/Dockerfile` uses digest-pinned Debian trixie-slim `sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2`; `build.ps1` downloads only the two pinned release archives, verifies each checksum, and labels the image with its exact source commit [code: `targets/03-omnigraph/docker/`]. The published-binary alternative is used, so a Rust toolchain and `protobuf-compiler` are not part of this image path. |
+| MinIO | `RELEASE.2025-09-07T16-13-09Z`, byte-identical public mirror `dappros/minio@sha256:624bad2fe79a8613aa3c5c9b765ebcab365080b8445cf1b05c357cc7753725f0`; the image labels identify MinIO Inc and the recorded release [measured: `docker image inspect`, 2026-11-15]. |
 | Delay proxy | A fixed delay per request, matching #642's method; it runs only in matched repetitions. |
 | FalkorDB | 6.0.4 by digest (master §7.2) |
 | Neo4j | 5.26.2 (master §7.3) |

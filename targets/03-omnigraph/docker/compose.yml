@@ -1,0 +1,64 @@
+name: witnessmark-m4
+
+x-omnigraph: &omnigraph
+  image: ${WM_OMNIGRAPH_IMAGE:-witnessmark/omnigraph@sha256:9fd617ad5d7590ec66e8c32fc9eeba92395a2fde0550ce7866a31db0a9279a2a}
+  command:
+    - --cluster
+    - ${WM_OMNIGRAPH_CLUSTER:-file:///var/lib/omnigraph}
+    - --bind
+    - 0.0.0.0:8080
+    - --unauthenticated
+  environment: &omnigraph-environment
+    AWS_ACCESS_KEY_ID: witnessmark
+    AWS_SECRET_ACCESS_KEY: witnessmark-local-only
+    AWS_REGION: us-east-1
+    AWS_ENDPOINT_URL_S3: ${WM_S3_ENDPOINT:-http://wm-minio:9000}
+    AWS_S3_FORCE_PATH_STYLE: "true"
+    OMNIGRAPH_CLUSTER_LEASE_SECONDS: ${WM_CLUSTER_LEASE_SECONDS:-2}
+  volumes:
+    - omnigraph-root:/var/lib/omnigraph
+
+services:
+  wm-omnigraph-a:
+    <<: *omnigraph
+    container_name: wm-omnigraph-a
+    ports:
+      - "127.0.0.1:18080:8080"
+
+  # Started explicitly by the failover acceptance test. Keeping B behind a
+  # profile prevents a normal `compose up` from racing A for writer admission.
+  wm-omnigraph-b:
+    <<: *omnigraph
+    container_name: wm-omnigraph-b
+    profiles: [failover-b]
+    ports:
+      - "127.0.0.1:18081:8080"
+
+  wm-minio:
+    image: dappros/minio@sha256:624bad2fe79a8613aa3c5c9b765ebcab365080b8445cf1b05c357cc7753725f0
+    container_name: wm-minio
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: witnessmark
+      MINIO_ROOT_PASSWORD: witnessmark-local-only
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+
+  wm-object-proxy:
+    image: witnessmark/proxy:17ms
+    container_name: wm-object-proxy
+    environment:
+      WM_PROXY_BIND: 0.0.0.0:9010
+      WM_PROXY_UPSTREAM: http://wm-minio:9000
+      WM_PROXY_DELAY_MS: "17"
+    depends_on:
+      - wm-minio
+    ports:
+      - "127.0.0.1:19010:9010"
+
+volumes:
+  omnigraph-root:
+  minio-data:

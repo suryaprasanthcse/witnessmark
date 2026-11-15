@@ -420,9 +420,17 @@ A trial is valid only if every one of these holds:
   - Omnigraph's O2 and O3 races do this (the Omnigraph blueprint, O2 runner wiring).
 - Δ ≤ δ.
   - **`thread` mode.** M1 calibrated δ = 40 ms on this host against FalkorDB and Neo4j with 50 clients. It used 1.5 × p99 rounded up over 240 race trials (p50 7.88 ms, p99 26.65 ms, max 32.53 ms) [measured: `evidence/M1_CALIBRATION.md`].
-    For Omnigraph, 40 ms is provisional. The first O2 batch records Δ for
-    every trial without a spread gate. Set Omnigraph's δ by the same
-    1.5 × p99 rule before reporting any O2 or O3 result (§12.1, Phase B).
+    **Omnigraph (M5).** Batch `m5-20261115T222957Z` ran O2a and O2c on
+    both builds with 50 clients and no spread gate. Over its 80 valid
+    trials (4 runs × 20) the release spread had p50 8.671 ms, p99 36.365 ms
+    and max 36.365 ms, so δ = ⌈1.5 × 36.365⌉ = 55 ms
+    [measured: `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`,
+    `20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d`;
+    `evidence/M5_OMNIGRAPH_CALIBRATION.md`]. It is the Omnigraph race
+    default, `OMNIGRAPH_THREAD_SPREAD_GATE_MS` beside
+    `THREAD_SPREAD_GATE_MS` in `core/witnessmark/runner.py`; the M1 40 ms
+    gate is unchanged. That batch's O2 runs are calibration only and are
+    not O2 results (§12.1, Phase B).
   - **Other modes.** M2 recorded the spread without gating on it, in batch `m2-20261113T174128Z` [measured: `evidence/M2_GRAPHITI.md`]. In `process` mode the spread is taken over each worker's first operation. δ follows the same 1.5 × p99 rule. Since M3 the gates apply to memory races (`SPREAD_GATE_MS` in `core/witnessmark/memory.py`). A scenario that staggers its clients on purpose, a declared offset sweep, turns its own gate off and records the sweep. Since M3 a trial is also invalid when the stub could not answer one of its calls (section 8). The provisional 50 ms `container` gate is unused (section 3.4).
 
     | Mode | Trials | p50 | p99 | δ |

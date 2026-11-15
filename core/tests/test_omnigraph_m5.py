@@ -99,14 +99,23 @@ class PhaseBRunsTest(unittest.TestCase):
         self.assertNotEqual(scenario.precondition(final),
                             scenario.precondition(final | {"holders": {TASK: ["c01"]}}))
 
-    def test_o2_calibration_flag_preserves_default_gate(self):
+    def test_o2_calibration_flag_and_the_calibrated_omnigraph_default_gate(self):
         args = ["race", "--build", "v0.15.0", "--scenario", "o2a"]
         manifest = {"scenario": {"id": "o2"}, "verdicts": [{"status": "PASS"}], "path": "fake"}
         with mock.patch.object(cli, "run", return_value=manifest) as run, mock.patch("builtins.print"):
             self.assertEqual(cli.main(args + ["--no-spread-gate"]), 0)
             self.assertIsNone(run.call_args.args[0].spread_gate_ms)
             self.assertEqual(cli.main(args), 0)
+            self.assertEqual(run.call_args.args[0].spread_gate_ms, 55.0)
+            self.assertEqual(cli.main(args + ["--spread-gate-ms", "40"]), 0)
             self.assertEqual(run.call_args.args[0].spread_gate_ms, 40.0)
+
+    def test_the_omnigraph_gate_is_its_own_constant_beside_the_m1_gate(self):
+        from witnessmark import runner
+        # M5 batch m5-20261115T222957Z: ceil(1.5 * 36.365) = 55; the M1 thread-mode gate stays 40 ms.
+        self.assertEqual(runner.OMNIGRAPH_THREAD_SPREAD_GATE_MS, 55.0)
+        self.assertEqual(runner.THREAD_SPREAD_GATE_MS, 40.0)
+        self.assertEqual(runner.RunConfig.spread_gate_ms, 40.0)
 
     def test_o6_writes_both_engine_references_and_valid_history(self):
         def reply(query, params, *, write=True):

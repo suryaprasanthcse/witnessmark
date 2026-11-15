@@ -29,6 +29,9 @@ UNKNOWN_LIMIT = 0.05  # at most 5% of a trial's operations may have an unknown o
 # δ for thread mode: 1.5 × the p99 release spread of the M1 calibration (section 6.3,
 # evidence/M1_CALIBRATION.md). `calibrate` records the spread without gating on it.
 THREAD_SPREAD_GATE_MS = 40.0
+# δ for Omnigraph's thread-mode races (O2, O3): 1.5 × the p99 release spread over the 80 valid O2a and O2c
+# trials of batch m5-20261115T222957Z, both builds (p50 8.671 ms, p99 36.365 ms, max 36.365 ms), rounded up.
+OMNIGRAPH_THREAD_SPREAD_GATE_MS = 55.0
 
 
 @dataclass

@@ -14,7 +14,7 @@ import argparse  # noqa: E402
 import json  # noqa: E402
 from contextlib import contextmanager  # noqa: E402
 
-from witnessmark.runner import THREAD_SPREAD_GATE_MS, RunConfig, run, run_sequential_control  # noqa: E402
+from witnessmark.runner import OMNIGRAPH_THREAD_SPREAD_GATE_MS, RunConfig, run, run_sequential_control  # noqa: E402
 from witnessmark.scenarios import Expectation  # noqa: E402
 
 from witnessmark_omnigraph.controls import run_o3_sequential, run_o6_sequential, run_query_smoke  # noqa: E402
@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--provision", action="store_true", help="start a fresh disposable Omnigraph stack")
             gate = sub.add_mutually_exclusive_group()
             gate.add_argument("--no-spread-gate", action="store_true", help="record Δ without gating on it")
-            gate.add_argument("--spread-gate-ms", type=float, default=THREAD_SPREAD_GATE_MS)
+            gate.add_argument("--spread-gate-ms", type=float, default=OMNIGRAPH_THREAD_SPREAD_GATE_MS)
     for name, help_text, storages in (
         ("curve", "run the declared O1 cost curve", ["local", "minio", "proxy"]),
         ("failover", "run the O4 phase/variant matrix", ["local", "minio"]),

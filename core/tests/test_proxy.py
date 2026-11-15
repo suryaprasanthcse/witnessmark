@@ -36,6 +36,7 @@ class UpstreamHandler(BaseHTTPRequestHandler):
             self.wfile.write(response)
 
     do_GET = handle_request
+    do_HEAD = handle_request
     do_POST = handle_request
     do_PUT = handle_request
 
@@ -85,6 +86,18 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(counts["methods"], {
             "PUT": {"requests": 1, "request_bytes": 5, "response_bytes": 9}
         })
+
+    def test_head_keeps_the_upstream_content_length(self):
+        # Regression: the proxy rewrote a HEAD reply's Content-Length to 0, so an
+        # object-store client read every object as empty ("Range started at 0 and
+        # ended at 0").
+        host, port = self.proxy.server_address
+        connection = http.client.HTTPConnection(host, port, timeout=2)
+        connection.request("HEAD", "/bucket/key")
+        response = connection.getresponse()
+        self.assertEqual(response.read(), b"")
+        self.assertEqual(response.getheader("Content-Length"), str(len(b"HEAD:")))
+        connection.close()
 
     def test_reset_endpoint_is_not_forwarded_or_counted(self):
         self.request("GET", "/bucket")

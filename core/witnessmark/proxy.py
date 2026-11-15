@@ -160,7 +160,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
             response = connection.getresponse()
             response_body = response.read()
             response_headers = self._filtered_headers(response.headers)
-            response_headers["Content-Length"] = str(len(response_body))
+            # A HEAD reply carries the object's length but no body, so its own
+            # Content-Length must pass through; overwriting it with the empty
+            # body's length makes a client see a zero-byte object.
+            if self.command != "HEAD" and response.status not in (204, 304):
+                response_headers["Content-Length"] = str(len(response_body))
             self.send_response(response.status, response.reason)
             for key, value in response_headers.items():
                 self.send_header(key, value)

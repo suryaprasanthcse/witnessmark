@@ -157,9 +157,54 @@ maps that documented constraint message to the definite typed refusal
   - 50 agents, each a thread with its own HTTP connection, read the task (`q_task` plus the commit id) and submit `m_claim_cond`. A barrier releases them together. T = 20.
   - Expected [docs]: exactly one success and 49 `precondition_failure` replies. After re-reading, all 50 agents see the same holder.
   - Checked: I1 Form A, rules (a) to (d).
-- **O2b, conditional claims on disjoint tasks.**
-  - 50 agents claim 50 different tasks.
-  - Any intervening commit invalidates a condition (O-K3), so the run measures rounds to completion, wasted attempts and latency.
+- **O2b, conditional claims on disjoint tasks.** The sweep below was declared by
+  the maintainer on 2026-11-16, before any O2b batch ran (master §10).
+  - **Sweep.** N agents claim N different tasks, N ∈ {1, 2, 5, 10, 25, 50}. N = 1 is the no-contention baseline.
+    Each agent is a thread with its own `OmnigraphClient`, released together by a barrier, as in O2.
+  - **Policy** (re-read and decide again, never retry blindly
+    [docs: [mutations/conditional.md](https://github.com/ModernRelay/omnigraph/blob/9fb5b48e65d09db5ca8206ced437a0e4ec07cef6/docs/user/mutations/conditional.md),
+    the page O-K3 cites]). An agent reads its task with `q_task` and takes the graph commit id from the response.
+    It submits `m_claim_cond` on that commit id. On `precondition_failure` it reads again and resubmits,
+    until the claim succeeds or it has submitted 200 claims. A task that no longer reads as open, any other
+    refusal, a failed read and an unknown outcome each end that agent and are recorded.
+  - **Measured per trial.**
+    - Total attempts, where an attempt is one claim submission, and wasted attempts, meaning attempts minus the claims that succeeded (attempts minus N when every agent claims).
+    - Attempts per agent: median and maximum.
+    - Time until all N agents have claimed, from the first agent's first operation to the last acknowledgement.
+    - Latency of each claim submission: p50 and p99. Read latency is recorded the same way.
+    - Medians and interquartile ranges are reported over the measured repetitions.
+  - **Protocol** (master §6.5). Three warm-up repetitions are discarded, then five are measured, for each N.
+    The configurations are interleaved: each round runs every N once. Warm-ups are kept in the evidence, flagged
+    `warmup`, and left out of the summary. The release spread, taken over each agent's first operation, is recorded
+    for every repetition. No spread gate applies until Phase B sets Omnigraph's δ: the manifest records
+    `spread_gate: {"state": "off", "gate_ms": null}`, and `--spread-gate-ms` turns the gate on and records it.
+    Omnigraph and FalkorDB run one after the other, never together.
+  - **Checked as well** (a sanity check, not the purpose). After each trial every task has exactly one holder,
+    its own agent. An agent that did not finish its claim holds nothing, and one whose outcome was unknown may or
+    may not hold its task. A violation is reported as a finding with its run id.
+  - **FalkorDB side.** The same sweep and protocol with the naive guarded claim (master §7.6, `claim.state` naive)
+    on N different `WMTask` nodes, with N sessions. Expected [ours: GNOMON S3]: every claim succeeds on its first
+    attempt, serialised. It sends no read: the guard is part of the claim.
+  - **Expected.** Omnigraph: [unmeasured]. The hypothesis [inference from O-K3] is that wasted attempts grow with N,
+    because every publish invalidates every other agent's condition. FalkorDB: no wasted attempts.
+  - **Label.** The result is the cost of documented behaviour, not a defect (master §10, §11.4). It shows what a
+    branch-wide precondition costs on a workload with no logical conflicts.
+  - **Command.** `wm_omnigraph.py costcurve` rather than `race --scenario o2b --sweep`. The race command runs one
+    operation per client for T trials at one N, through the core runner, and judges an invariant. O2b has several
+    operations per agent, sweeps N and has no verdict, so it needs its own loop. It uses the same barrier
+    pattern, and core stays unchanged. `costcurve --engine omnigraph --build <build> --storage <storage>` runs the Omnigraph
+    side, `costcurve --engine falkordb` the FalkorDB side, and `--smoke` runs N ∈ {1, 2} with one warm-up and one
+    measured repetition, recorded in the manifest.
+  - **Evidence.** Omnigraph: `evidence/omnigraph/<build>.<storage>/o2b.disjoint_claims.sweep/<run_id>/`.
+    FalkorDB: `evidence/falkordb/o2b.claim_state_disjoint.sweep/<run_id>/`, its own run with its own four
+    files, next to the other FalkorDB baselines. The O1 FalkorDB curve sits inside the Omnigraph manifest
+    and has no history, so it is not the pattern here. Every claim and read is a history record (phase `race`, kind `claim` or `read`,
+    outcome `ok`, `fail` or `unknown`, error type `precondition_failure` where it applies), and fixture and observation
+    calls are `setup` and `observe` records from client `admin`. `state/<k>.json` holds each trial's task rows with their
+    holders. A trial is invalid under the master §6.3 gates (health, precondition digest, at most 5% unknown outcomes,
+    no client fault, the spread gate when on).
+    [code: `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py:96,152,217,254,328,453,548` and
+    `targets/03-omnigraph/wm_omnigraph.py:127–154` @ `6e2d1af`]
   - This is a cost curve, not a correctness test. It shows what a branch-wide precondition costs on a workload with no logical conflicts. On FalkorDB, disjoint guarded claims are serialised but never refuse one another.
 - **O2c, claims enforced by the constraint.**
   - 50 agents submit `m_claim_card` for one task, with no condition.
@@ -177,6 +222,28 @@ their requests together [code:
 `core/witnessmark/runner.py`]. The O2 and O3 races will use this thread
 runner on the Windows host (master §3.4) and the Omnigraph release-spread
 gate calibrated in master §6.3.
+
+**Precondition hook.** Before each trial the runner resets the engine,
+rebuilds the fixture and digests `Scenario.precondition(state)` of what it
+observed. The trial is valid only if that digest equals the sequential
+control's [code: `core/witnessmark/runner.py:83–90,264` @ `9e755b6`]. The
+default returns the full observed state
+[code: `core/witnessmark/scenarios.py:42–44` @ `9e755b6`]. A scenario may
+override it to leave out fields that change on every reset but carry no
+logical state, and must list them. The Omnigraph task races (`_TaskRace`,
+which O2a, O2c and O3 share) leave out two, because every fixture setup
+publishes a new head even when the rows are identical:
+
+- `snapshot`, the graph commit id of the observation;
+- `observed_graph_commit_id` in each lease record.
+
+What stays in the digest is the task rows, the holders, and each lease record's
+id, task, agent, sequence numbers and order. The run still writes the full
+state, commit ids included, to `state/<k>.json`
+[code: `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py:17–25`
+and `core/witnessmark/runner.py:144–145` @ `9e755b6`]. O2b needs no override: its
+precondition digest covers only each task's id and state, and carries no commit id
+[code: `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py:417` @ `6e2d1af`].
 
 ### O3. One branch per agent, then merge (I1 at merge)
 
@@ -328,7 +395,7 @@ also record the proxy image ID
 | ID | Deliverable |
 |---|---|
 | B1 | Branch-cost curves (creation time, stall, bytes, resident memory) against n, s and storage, next to `GRAPH.COPY`'s curve |
-| B2 | Claim-race tables for O2a to O2c and O3 |
+| B2 | Claim-race tables for O2a to O2c and O3, and the O2b cost curve |
 | B3 | The fence acceptance matrix: phase × variant × storage × build |
 | B4 | One single-file repro for each FAIL |
 | Drafts | Kept in `drafts/`, never committed: comments for #642 and #643 with curves on current builds, and a note offering B3 to the maintainers of the fence work |
@@ -666,7 +733,8 @@ window. The M4 main-reader fields retain their calculation
 `race --scenario o3` uses the core thread runner and shares its merge fixture
 with the O3 sequential control. In O2 and O3, the reset check compares
 logical task and lease state because setup publishes a fresh commit ID on
-each reset. The full state retains those IDs. `race --no-spread-gate` keeps
+each reset (the precondition hook, described under O2's runner wiring). The
+full state retains those IDs. `race --no-spread-gate` keeps
 per-trial Δ and records `spread_gate_ms: null` for calibration. The default
 stays 40 ms [code: `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py:18,111`,
 `targets/03-omnigraph/wm_omnigraph.py:92–103` and
@@ -691,6 +759,8 @@ and `targets/03-omnigraph/witnessmark_omnigraph/part2.py:567` @ `9e755b6`].
 - Run the O2 claim races, O3 merge races and O6 traversal parity beyond the
   Part 1 sequential controls, and run O5 on MinIO [unmeasured: O2, O3, O6
   and O5 on MinIO].
+- Run the O2b cost curve, with the sweep declared under O2b, on both
+  engines after Omnigraph's δ is set [unmeasured: O2b].
 - Exercise the [O4 clean-stop local transfer](#o4-clean-stop-local-transfer)
   variant in Phase B [unmeasured: O4 local transfer].
 

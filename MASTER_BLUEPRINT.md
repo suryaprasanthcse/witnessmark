@@ -415,6 +415,9 @@ A positive or overlap control shows that the runner can see a race before a clea
 A trial is valid only if every one of these holds:
 
 - The precondition digest matched.
+  - By default the digest covers the scenario's full observed state after reset [code: `core/witnessmark/scenarios.py:42–44` and `core/witnessmark/runner.py:88` @ `9e755b6`].
+  - A scenario may override `Scenario.precondition()` to leave out fields that change on every reset but carry no logical state, such as a commit id that each fixture publish advances. It must list the fields it leaves out in its target blueprint. The full observed state is still written to `state/<k>.json`.
+  - Omnigraph's O2 and O3 races do this (the Omnigraph blueprint, O2 runner wiring).
 - Δ ≤ δ.
   - **`thread` mode.** M1 calibrated δ = 40 ms on this host against FalkorDB and Neo4j with 50 clients. It used 1.5 × p99 rounded up over 240 race trials (p50 7.88 ms, p99 26.65 ms, max 32.53 ms) [measured: `evidence/M1_CALIBRATION.md`].
     For Omnigraph, 40 ms is provisional. The first O2 batch records Δ for
@@ -1044,15 +1047,16 @@ scenario with its sequential control and the applicable controls in §6.2.
 1. Use `--no-spread-gate` for the first O2 batch to record Δ for every trial. Treat 40 ms as
    provisional for Omnigraph, and set its δ using the 1.5 × p99 rule in §6.3
    before reporting O2 or O3 results.
-2. Run the O2 claim races with the calibrated gate.
-3. Run the O3 merge races with the calibrated gate.
-4. Run O6 traversal parity beyond the Part 1 sequential control.
-5. Run O5 on MinIO.
-6. Exercise O4 local ownership transfer with `failover --variant clean-stop`.
+2. Run the O2b cost curve (declared sweep, both engines).
+3. Run the O2 claim races with the calibrated gate.
+4. Run the O3 merge races with the calibrated gate.
+5. Run O6 traversal parity beyond the Part 1 sequential control.
+6. Run O5 on MinIO.
+7. Exercise O4 local ownership transfer with `failover --variant clean-stop`.
    Stop A gracefully and read `cluster status --json`. Start B only after
    a clean exit and confirmed release. Mark retained or unclean cells
    NOT_EXERCISED and capture their logs.
-7. Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
+8. Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
    before any public FalkorDB comparison. Follow §6.5 for the cost curve
    and §11.5 for publication.
 

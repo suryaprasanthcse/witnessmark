@@ -85,5 +85,12 @@ class M4ReportTest(unittest.TestCase):
         self.assertIn("## Runs that did not complete", text)
         self.assertIn("RuntimeError: it broke", text)
 
+    def test_the_first_versions_hard_coded_boundary_label_is_marked_superseded(self):
+        matrix = run("matrix", "o4.failover_acceptance", [{
+            "phase": "p1", "variant": "a", "successor_ready": False, "a_write": {"outcome": "ok"},
+            "b_write": None, "writer_fenced_observed": False, "graph_open_and_scan": True,
+            "status": "BOUNDARY", "boundary": "the pinned server exposes no branch writer-claim route"}])
+        self.assertIn("BOUNDARY (first-version label, superseded)", memory_markdown([matrix], "m4", "M4"))
+
 if __name__ == "__main__":
     unittest.main()

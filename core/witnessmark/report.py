@@ -400,6 +400,8 @@ def omnigraph_failover_table(runs: list[dict]) -> str:
             a, b = trial.get("a_write") or {}, trial.get("b_write") or {}
             integrity = trial.get("integrity") or {}
             missing = integrity.get("acknowledged_missing")
+            # The first harness version hard-coded BOUNDARY for every cell and gave no reason.
+            legacy = " (first-version label, superseded)" if trial.get("boundary") and "reason" not in trial else ""
             missing_cell = "–" if not integrity else ("unknown" if missing is None else (", ".join(missing) or "none"))
             lines.append(f"| {build} | {storage} | {trial.get('phase')} | {trial.get('variant')} | "
                          f"{'yes' if trial.get('successor_ready') else 'no'} | {a.get('kind') or a.get('outcome') or '–'} | "
@@ -407,7 +409,7 @@ def omnigraph_failover_table(runs: list[dict]) -> str:
                          f"{'WriterFenced' if trial.get('writer_fenced_observed') else 'not engaged'} | "
                          f"{integrity.get('scanned_via', 'A (stale server)')} | "
                          f"{'ok' if trial.get('graph_open_and_scan') else 'NOT checked'} | {missing_cell} | "
-                         f"{trial.get('status')} | `{run['run_id']}` |")
+                         f"{trial.get('status')}{legacy} | `{run['run_id']}` |")
     return "\n".join(lines)
 
 

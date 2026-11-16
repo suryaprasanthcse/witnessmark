@@ -5,6 +5,7 @@ Kept apart from the instruments in observe.py so the unit tests can exercise it 
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections import Counter
 
@@ -159,6 +160,31 @@ def uc_report(samples: list[dict], builds: list[dict], graph=None, database: str
         "ready_seen": ready_at is not None,
         "samples": len(mine),
     }
+
+
+# --- bounded calls ---------------------------------------------------------------------------------------------
+
+
+def _retrieve(task: asyncio.Task) -> None:
+    if not task.cancelled():
+        task.exception()  # an abandoned call's late failure is not "never retrieved"
+
+
+async def bounded(awaitable, timeout_s: float):
+    """Await ``awaitable`` for at most ``timeout_s``, then raise asyncio.TimeoutError.
+
+    asyncio.wait_for cancels a late call and then waits for it to finish cancelling, so a call that answers
+    cancellation with more waiting (for example, tidying a connection to a stuck server) holds wait_for forever. This
+    asks the call to stop and returns at the deadline without waiting for it. A call that blocks the event loop
+    synchronously cannot be bounded from inside the loop at all.
+    """
+    task = asyncio.ensure_future(awaitable)
+    done, _ = await asyncio.wait({task}, timeout=timeout_s)
+    if task in done:
+        return task.result()
+    task.add_done_callback(_retrieve)
+    task.cancel()
+    raise asyncio.TimeoutError(f"no answer in {timeout_s} s")
 
 
 # --- recovery after a stalled search ----------------------------------------------------------------------------

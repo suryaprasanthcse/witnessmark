@@ -22,7 +22,7 @@ from witnessmark.memory import (SPREAD_GATE_MS, MemoryRunConfig, _finish, _heade
 from witnessmark.timing import stamp, utc_now
 
 from .fixtures import G6_EPISODES, G6_FACTS, G6_PROBE_TERM, G6C_FACTS, G6C_GROUPS, G6C_PROBE_TERM, g6_queries, g6c_query
-from .measure import classify, index_keys, leftover_transactions, state_before, suite_summary, uc_report
+from .measure import bounded, classify, index_keys, leftover_transactions, state_before, suite_summary, uc_report
 from .nemesis import Nemesis
 from .observe import (BuildTracker, IndexMonitor, LoopWatch, build_measures, build_ops, items_digest, make_probe,
                       wait_answers, watch_ops, watch_summary)
@@ -56,7 +56,7 @@ async def run_suite(target, queries: list[tuple[str, str]], group: str, run_id: 
         record = {"group": group, "query": query, "pass": label}
         inv = stamp()
         try:
-            facts = await asyncio.wait_for(target.search(query, group), timeout_s)
+            facts = await bounded(target.search(query, group), timeout_s)
         except asyncio.TimeoutError:
             error = {"type": "unavailable.timeout", "message": f"no answer in {timeout_s:.0f} s"}
             ops.append(Op(run_id, k, phase, f"{k}-c00-{label}-{n:02d}", "c00", "search", record, inv, None, UNKNOWN,
@@ -94,7 +94,7 @@ async def wait_no_indexes(probe, graph, timeout_s: float) -> bool:
     deadline = loop.time() + timeout_s
     while loop.time() < deadline:
         try:
-            if not await asyncio.wait_for(probe.index_rows(graph), 30):
+            if not await bounded(probe.index_rows(graph), 30):
                 return True
         except asyncio.TimeoutError:
             return False
@@ -148,7 +148,7 @@ class ProbeStalled(Exception):
 
 async def _bounded(awaitable, what: str, timeout_s: float = SEARCH_TIMEOUT_S):
     try:
-        return await asyncio.wait_for(awaitable, timeout_s)
+        return await bounded(awaitable, timeout_s)
     except asyncio.TimeoutError:
         raise ProbeStalled(f"the harness's {what} gave no answer within {timeout_s:.0f} s") from None
 
@@ -195,7 +195,7 @@ async def _stalled_trial(target, monitor, monitor_task, tracker, watch, run_id: 
     monitor.stop()
     await monitor_task
     try:
-        await asyncio.wait_for(target.close(), SEARCH_TIMEOUT_S)
+        await bounded(target.close(), SEARCH_TIMEOUT_S)
     except Exception:  # noqa: BLE001 - the stall is the observation; closing is best effort
         target.graphiti = None
     recovery, probe = await recover_server(probe, nemesis, container, target, run_id, k, ready_timeout_s)

@@ -1,5 +1,6 @@
 """M5 Phase C: the Graphiti G6-G8 logic that runs without Graphiti, an engine or Docker (fakes only)."""
 
+import asyncio
 import sys
 import unittest
 from collections import Counter
@@ -107,6 +108,56 @@ class RecoveryTest(unittest.TestCase):
                 {"transactionId": "neo4j-transaction-5", "currentQuery": "  terminate transactions $ids"}]
         self.assertEqual(measure.leftover_transactions(rows), ["neo4j-transaction-3", "neo4j-transaction-4"])
         self.assertEqual(measure.leftover_transactions([]), [])
+
+
+class BoundedTest(unittest.TestCase):
+    """Why the row 11 search timeout could fail to fire, and the bound that does not depend on the callee."""
+
+    @staticmethod
+    async def _absorbs_cancellation(release):
+        try:
+            await asyncio.Event().wait()  # a call to a stuck server
+        except asyncio.CancelledError:
+            await release.wait()  # it answers cancellation with more waiting (tidying the connection)
+            raise
+
+    def test_wait_for_waits_for_a_call_that_absorbs_cancellation(self):
+        async def main():
+            release = asyncio.Event()
+            guard = asyncio.ensure_future(asyncio.wait_for(self._absorbs_cancellation(release), 0.05))
+            done, _ = await asyncio.wait({guard}, timeout=0.5)
+            still_waiting = guard not in done
+            release.set()
+            with self.assertRaises(asyncio.TimeoutError):
+                await guard
+            return still_waiting
+
+        self.assertTrue(asyncio.run(main()))
+
+    def test_bounded_returns_at_the_deadline(self):
+        async def main():
+            release = asyncio.Event()
+            loop = asyncio.get_running_loop()
+            start = loop.time()
+            with self.assertRaises(asyncio.TimeoutError):
+                await measure.bounded(self._absorbs_cancellation(release), 0.05)
+            elapsed = loop.time() - start
+            release.set()
+            await asyncio.sleep(0)
+            return elapsed
+
+        self.assertLess(asyncio.run(main()), 0.4)
+
+    def test_bounded_passes_results_and_errors_through(self):
+        async def ok():
+            return 7
+
+        async def fails():
+            raise ValueError("no")
+
+        self.assertEqual(asyncio.run(measure.bounded(ok(), 1)), 7)
+        with self.assertRaises(ValueError):
+            asyncio.run(measure.bounded(fails(), 1))
 
 
 class AnswersTest(unittest.TestCase):

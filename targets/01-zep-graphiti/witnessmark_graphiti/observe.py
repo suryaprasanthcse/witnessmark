@@ -23,7 +23,7 @@ from witnessmark.evidence import digest, redact
 from witnessmark.history import FAIL, OK, UNKNOWN, Op
 from witnessmark.timing import stamp
 
-from .measure import compress, index_summary
+from .measure import bounded, compress, index_summary
 
 NEVER_RETRIEVED = "Task exception was never retrieved"
 
@@ -370,14 +370,13 @@ class IndexMonitor:
         sample = {"graph": graph, "inv": inv, "inv_ns": inv.mono_ns, "summary": None, "error": None,
                   "probe_rows": None, "probe_error": None}
         try:
-            rows = await asyncio.wait_for(self.probe.index_rows(graph), self.read_timeout_s)
+            rows = await bounded(self.probe.index_rows(graph), self.read_timeout_s)
             sample["summary"] = index_summary(self.probe.backend, rows, expected)
         except Exception as exc:  # noqa: BLE001 - an unanswered sample is an observation
             sample["error"] = f"{type(exc).__name__}: {redact(str(exc))[:120]}"
         if term is not None:
             try:
-                sample["probe_rows"] = await asyncio.wait_for(self.probe.probe(graph, group, term),
-                                                              self.read_timeout_s)
+                sample["probe_rows"] = await bounded(self.probe.probe(graph, group, term), self.read_timeout_s)
             except Exception as exc:  # noqa: BLE001
                 sample["probe_error"] = f"{type(exc).__name__}: {redact(str(exc))[:120]}"
         ret = stamp()

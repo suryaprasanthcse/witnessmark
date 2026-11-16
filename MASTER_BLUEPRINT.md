@@ -1143,7 +1143,7 @@ Phase D follows Phase C and ends when C2 and any approved R4 runs have recorded 
   approves pinning the PostgreSQL baseline and separately approves any
   #4167 pull-request build needed for the C1 advisory-lock case.
 
-**Status, Phase D (2026-11-16).** C2 ran through `improve`; Phase D awaits the maintainer's review.
+**Status, Phase D (2026-11-16).** C2 ran through `improve`. Reviewed and signed off by the maintainer on 2026-11-16, after verifying the four Phase D commits, batch `m5k-20261116T123513Z` (5 of 5 exit 0), the three runs' evidence and the `m5j` false start.
 
 - [x] Phase C sign-off recorded (`b8b35d8`).
 - [x] `improve` read at the pin, and its prompts listed and scripted (Cognee blueprint §1.3, C29–C33, `f339e3e`). With no session ids only the graph-fed stages run: `review_conflicts` sends one scripted `ReviewResponse` prompt per call, and `global_context_index` makes no model call at v1.6.8. At cognee 1.6.1 (R3) it is opt-in, and its `GlobalContextSummaryContent` prompts get fixed strings (maintainer-approved). The seven session-fed stages are NOT_EXERCISED, "no session ids in C2's design" (C31).

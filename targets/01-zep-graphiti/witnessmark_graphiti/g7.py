@@ -19,7 +19,8 @@ from witnessmark.timing import stamp, utc_now
 
 from .fixtures import G7_EPISODES
 from .measure import lost_items
-from .nemesis import G7_COMPOSE, G7_PROJECT, G7_VARIANTS, Nemesis, g7_action_steps, g7_fresh_steps, run_command
+from .nemesis import (G7_APPENDONLY, G7_COMPOSE, G7_PROJECT, G7_VARIANTS, Nemesis, g7_action_steps, g7_fresh_steps,
+                      run_command)
 from .observe import FalkorProbe, wait_answers
 
 GROUP = "wm_g7"
@@ -47,17 +48,24 @@ def g7_check(before: dict, after: dict, ops: list[Op]) -> tuple[Check, dict]:
     return Check("I2", held, lost["lost_total"], "items lost", detail, witnesses), lost
 
 
-async def run_persistence(config: MemoryRunConfig, variant: str, action: str, ready_timeout_s: float = 120.0) -> dict:
+async def run_persistence(config: MemoryRunConfig, variant: str, action: str, ready_timeout_s: float = 120.0,
+                          appendonly: bool = False) -> dict:
+    """``appendonly``: the explanatory control (maintainer ruling 4): the same layouts with appendonly yes and
+    appendfsync everysec, from compose-g7-appendonly.yml layered over compose-g7.yml."""
     if variant not in G7_VARIANTS or action not in ACTIONS:
         raise ValueError("unknown G7 variant or action")
     v = G7_VARIANTS[variant]
+    files = (G7_COMPOSE, G7_APPENDONLY) if appendonly else (G7_COMPOSE,)
     started = utc_now()
-    scenario_id = f"g7.{variant}.{action}.persistence"
+    scenario_id = f"g7.{variant}.{action}{'.appendonly' if appendonly else ''}.persistence"
     first = config.spec.build()
     params = {"support": "none", "variant": variant, "action": action, "episodes": G7_EPISODES, "group": GROUP,
-              "compose_file": G7_COMPOSE, "project": G7_PROJECT, "service": v["service"], "container": v["container"],
+              "compose_file": G7_COMPOSE, "compose_files": list(files),
+              "redis_args": "--appendonly yes --appendfsync everysec" if appendonly else None,
+              "project": G7_PROJECT, "service": v["service"], "container": v["container"],
               "port": v["port"], "volume": f"{G7_PROJECT}_{v['volume']}", "volume_mount": v["mount"],
-              "steps": [{"kind": kind, "command": " ".join(args)} for kind, args, _ in g7_action_steps(action, variant)],
+              "steps": [{"kind": kind, "command": " ".join(args)}
+                        for kind, args, _ in g7_action_steps(action, variant, files)],
               "op_timeout_s": config.op_timeout_s}
     header = _header(config, first, scenario_id, ("I2",), "persistence", 1, config.trials, started, params)
     run_id = make_run_id(started, header)
@@ -71,7 +79,7 @@ async def run_persistence(config: MemoryRunConfig, variant: str, action: str, re
     try:
         for k in range(0, config.trials + 1):
             reasons: list[str] = []
-            for kind, args, inputs in g7_fresh_steps(variant):
+            for kind, args, inputs in g7_fresh_steps(variant, files):
                 nemesis.act(k, kind, args, phase="setup", client="compose", **inputs)
             setup = nemesis.drain()
             if any(op.outcome != OK for op in setup if op.kind != "delete_volume"):
@@ -101,7 +109,7 @@ async def run_persistence(config: MemoryRunConfig, variant: str, action: str, re
                 reasons.append(f"the stub could not answer {len(stub_errors(stub_ops))} call(s)")
             action_ops: list[Op] = []
             if k > 0:
-                for kind, args, inputs in g7_action_steps(action, variant):
+                for kind, args, inputs in g7_action_steps(action, variant, files):
                     nemesis.act(k, kind, args, **inputs)
                 action_ops = nemesis.drain()
                 if any(op.outcome != OK for op in action_ops):
@@ -144,7 +152,7 @@ async def run_persistence(config: MemoryRunConfig, variant: str, action: str, re
                 trials.append(trial)
             else:
                 run_dir.write_state("control", trial["g7"])
-        for kind, args, inputs in g7_fresh_steps(variant)[:2]:  # leave nothing running and no volume behind
+        for kind, args, inputs in g7_fresh_steps(variant, files)[:2]:  # leave nothing running and no volume behind
             nemesis.act(config.trials, kind, args, phase="setup", client="compose", cleanup=True, **inputs)
         history += nemesis.drain()
         manifest = {

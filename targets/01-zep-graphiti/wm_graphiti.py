@@ -83,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("--variant", choices=["root", "mcp"], required=True)
             sub.add_argument("--action", choices=["compose_restart", "down_up", "kill_start"], required=True)
             sub.add_argument("--trials", type=int, required=True)
+            sub.add_argument("--appendonly", action="store_true",
+                             help="the explanatory control: appendonly yes, appendfsync everysec")
     args = parser.parse_args(argv)
     if args.command == "race" and args.scenario == "g6c.many_groups" and args.backend != "falkordb":
         parser.error("g6c.many_groups runs on FalkorDB only (Neo4j's clone returns the same driver)")
@@ -130,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "persistence":
         from witnessmark_graphiti.g7 import run_persistence
 
-        manifest = asyncio.run(run_persistence(config, args.variant, args.action))
+        manifest = asyncio.run(run_persistence(config, args.variant, args.action, appendonly=args.appendonly))
     elif args.command == "cases":
         suite = scenarios.G3Temporal(anchor, args.entry) if args.suite == "g3" else scenarios.G5SharedSearchLimit(anchor)
         manifest = asyncio.run(run_cases(config, suite))

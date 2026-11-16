@@ -165,6 +165,12 @@ class NemesisTest(unittest.TestCase):
         self.assertIn("witnessmark-g7_g7_root_data", fresh[1][1])
         with self.assertRaises(ValueError):
             nemesis.g7_action_steps("pause", "root")
+        layered = (nemesis.G7_COMPOSE, nemesis.G7_APPENDONLY)
+        start = nemesis.g7_fresh_steps("mcp", layered)[2][1]
+        self.assertEqual(start.count("-f"), 2)
+        self.assertIn(nemesis.G7_APPENDONLY, start)
+        self.assertEqual(nemesis.g7_action_steps("kill_start", "mcp", layered)[0][1], ["docker", "kill", "wm-g7-mcp"])
+        self.assertEqual(nemesis.compose("down").count("-f"), 1)
 
     def test_records_validate(self):
         import tempfile

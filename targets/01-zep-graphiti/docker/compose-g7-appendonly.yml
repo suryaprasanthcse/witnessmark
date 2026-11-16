@@ -1,0 +1,14 @@
+# Witnessmark G7 explanatory control (target blueprint section 5, G7, amendment after the main batch).
+#
+#   docker compose -p witnessmark-g7 -f targets/01-zep-graphiti/docker/compose-g7.yml \
+#       -f targets/01-zep-graphiti/docker/compose-g7-appendonly.yml up -d falkordb-root
+#
+# Layered over compose-g7.yml: the same two volume layouts and pinned image, with FalkorDB's append-only file on.
+# The pinned image's run.sh passes REDIS_ARGS to redis-server ahead of its own arguments.
+services:
+  falkordb-root:
+    environment:
+      - REDIS_ARGS=--appendonly yes --appendfsync everysec
+  falkordb-mcp:
+    environment:
+      - REDIS_ARGS=--appendonly yes --appendfsync everysec

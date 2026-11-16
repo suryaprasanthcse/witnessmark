@@ -377,6 +377,22 @@ Every command runs from the repository root with the build's environment's Pytho
 
 The batch brings the baselines up only through `baselines/docker-compose.yml`, and G7's containers only through its compose file.
 
+#### Amendments after the main batch (2026-11-16), declared before they ran
+
+Under the maintainer's rulings of 2026-11-16, recorded while the main batch ran:
+
+1. **Re-run of row 11 (harness fix).** In the main batch `m5g-20261116T051149Z`, row 11 (G6a on Neo4j, main) hung. A search stalled and was timed out, but closing the instance in-process did not end its server transactions, and the next trial's data read waited behind them. The run was killed, so it left no `run.json`; the driver's note is in `evidence/graphiti/errors/`. Commit `425e22e` bounds every probe read. After a stall the harness now ends the leftover transactions (Neo4j `TERMINATE TRANSACTIONS`) and restarts the test container if any remain; each step is a setup or nemesis record.
+   - Terminating first, with the restart as a fallback, is the conservative choice: it disturbs the next trial least and always leaves a clean server.
+   - Row 11 alone is re-run, with its seed (20261127), in its own batch `m5h-<UTC time>`. Rows 10 and 12 completed and are not re-run.
+2. **G7 explanatory control (ruling 4).** G7 `kill_start` on both layouts, with FalkorDB's append-only file on: `appendonly yes`, `appendfsync everysec`. `compose-g7-appendonly.yml` is layered over `compose-g7.yml` and sets `REDIS_ARGS`, which the pinned image's `run.sh` passes to `redis-server` (K26). Everything else is the main cell's procedure: v0.31.2, K = 10, T = 10.
+   - Scenario ids `g7.<variant>.kill_start.appendonly.persistence`, seeds 20261140 (root) and 20261141 (mcp), in their own batch `m5i-<UTC time>`, reported next to the main cells.
+   - Expectation [inference]: with `appendfsync everysec`, a kill can lose up to about a second of acknowledged writes, so some loss is possible. The harness does not control the gap between the last write and the kill.
+
+| Batch | Rows | Command |
+|---|---|---|
+| `m5h-…` | 11 | `startup --scenario g6a.fresh --backend neo4j --trials 20 --build main-ebef986a --commit ebef986a… --seed 20261127` |
+| `m5i-…` | 24–25 | `persistence --variant root\|mcp --action kill_start --appendonly --trials 10 --seed 20261140\|20261141` on v0.31.2 |
+
 ## 6. Checks
 
 The canonical dump (`target.py: dump`) contains, per group:

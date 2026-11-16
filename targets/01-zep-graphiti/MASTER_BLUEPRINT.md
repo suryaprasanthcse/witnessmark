@@ -481,9 +481,11 @@ The tracker was checked on 2026-11-13 (read-only).
 
 | Batch | Harness | Commands | What it holds | Report |
 |---|---|---|---|---|
-| `m5g-20261116T051149Z` (main) | `8b9785a`, clean | 24, of which 23 exit 0 | The 23 declared rows (§5, command table). Row 11 hung and was ended; it left no `run.json` (§12.6). | [evidence/M5_GRAPHITI.md](../../evidence/M5_GRAPHITI.md) |
-| `m5h-20261116T071955Z` (re-run) | `425e22e`, clean | 1, exit 4294967295 | Row 11 again, after the stall-recovery fix. It hung again and was ended under the maintainer's ruling. No `run.json`, so no report. | none (the reporter builds from manifests only) |
-| `m5i-20261116T092138Z` (explanatory control) | `0395799`, clean | 2, both exit 0 | G7 `kill_start` on both layouts with `appendonly yes` (maintainer ruling 4) | [evidence/M5_GRAPHITI_B1.md](../../evidence/M5_GRAPHITI_B1.md) |
+| `m5g-20261116T051149Z` (main) | `8b9785a`, clean | 25, of which 24 exit 0 | The 2 baseline commands and the 23 declared rows (§5, command table). Row 11 hung and was ended (exit 4294967295); it left no `run.json` (§12.6). | [evidence/M5_GRAPHITI.md](../../evidence/M5_GRAPHITI.md) |
+| `m5h-20261116T071955Z` (re-run) | `425e22e`, clean | 3, of which 2 exit 0 | The 2 baseline commands, then row 11 again after the stall-recovery fix. It hung again (exit 4294967295) and was ended under the maintainer's ruling. No `run.json`, so no report. | none (the reporter builds from manifests only) |
+| `m5i-20261116T092138Z` (explanatory control) | `0395799`, clean | 4, all exit 0 | The 2 baseline commands and G7 `kill_start` on both layouts with `appendonly yes` (maintainer ruling 4) | [evidence/M5_GRAPHITI_B1.md](../../evidence/M5_GRAPHITI_B1.md) |
+
+Command counts follow master §12.1's counting rule: every command the driver logs, baselines included (corrected at Phase E from 24 and 23, 1 and 2).
 
 - **False start.** The first launch, `m5g-20261116T044019Z`, ran no runs. The batch driver, which is kept uncommitted under `.state` by design, passed a relative interpreter path that Windows `CreateProcess` could not resolve. It stopped before row 1 and wrote nothing to `evidence/`. The fixed driver launched the main batch.
 - **Ended runs.** Two runs were ended while hung. Their partial directories are kept as written: `20261116T055056Z-3d69b1c9` (states 0–5) and `20261116T071959Z-74370fb1` (states 0–3). The driver wrote an ERROR.md for each under `evidence/graphiti/errors/<batch>/`.

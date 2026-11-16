@@ -795,6 +795,23 @@ evidence/<target>/<scenario>/<run_id>/
 }
 ```
 
+**Measurement runs (amended 2026-11-16, maintainer ruling at M5 Phase E).** A measurement run, meaning a cost curve, a latency curve, or a visibility, failover or parity measurement, computes no §5.8 verdict. Its manifest records `controls` and `verdicts` as null, and its checks live in the run's own fields, named per scenario. The other `required` fields above stand. As written, these manifests leave both keys out, which every reader takes as null. O1's curve and O6 keep their named checks in an object under `controls` (`i6` and `falkordb`; `sequential`), never in the control array above. The kinds this covers, at the commit that wrote their evidence:
+
+| Scenario id (mode) | Run kind | Where its checks live | Written by |
+|---|---|---|---|
+| `o1.branch_cost` (`curve`) | O1 branch-cost curve, with the FalkorDB `GRAPH.COPY` curve | `summary`, `copy_weight`, `controls.i6`, `controls.falkordb` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:651,731,734` @ `fb97518`] |
+| `o1.i6_controls` (`controls`) | O1's I6a and I6b controls on their own (M4 only) | `i6` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:411,422` @ `8bc5fd3`] |
+| `o2b.disjoint_claims` (`sweep`) | O2b attempt curve, Omnigraph | `summary` and per-trial `attempts`, `wasted_attempts`, `holders_ok` | [code: `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py:489,529` @ `4212c99`] |
+| `o2b.claim_state_disjoint.sweep` (`sweep`) | O2b attempt curve, FalkorDB side | the same fields | [code: `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py:637,640` @ `4212c99`] |
+| `o4.failover_acceptance` (`matrix`) | O4 failover matrix (M4 only) | per-cell `trials` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:805` @ `8bc5fd3`] |
+| `o4.clean_stop_transfer` (`transfer`) | O4 clean-stop local transfer | per-trial `trials` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:976` @ `6a15b9c`] |
+| `o5.cross_process_ryw` (`visibility`) | O5 cross-process visibility | per-trial `trials` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:1140,1183` @ `6a15b9c`] |
+| `o6.traversal_parity` (`cases`) | O6 traversal parity | `controls.sequential`, `trials` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:580,613` @ `6a15b9c`] |
+
+- No validator reads `run.json`: `validate_history` checks `history.jsonl` only [code: `core/witnessmark/history.py:108` @ `f25653d`]. The rule therefore lives in the Omnigraph manifest writer. `check_manifest_fields` accepts null `controls` and `verdicts` only for the scenario ids above and refuses them for every other run (`targets/03-omnigraph/witnessmark_omnigraph/capture.py`, `core/tests/test_m5_phase_e.py`). The same test checks every committed manifest against the rule.
+- These manifests also carry `schema_version` 1, the integer, where the schema above says `"0.1"`. They are kept as written, like all evidence. Whether to amend the schema or the writer is open for the maintainer.
+- No report changed: every committed report still regenerates byte for byte.
+
 ### 9.3 `history.jsonl`, one object per line
 
 ```json
@@ -871,6 +888,19 @@ evidence/<target>/<scenario>/<run_id>/
 ### 9.6 Regeneration rule
 
 The reporter produces every number in a report, an issue comment or a draft from `evidence/`. Hand-typed numbers are not allowed. Every table cell names its run_id.
+
+### 9.7 Reading a verdict: too few valid trials
+
+Adopted 2026-11-16 (maintainer ruling at M5 Phase E).
+
+- **Rule.** A verdict computed on fewer than half of the run's declared trials (`trials_valid` × 2 < `scenario.trials`) is read as **insufficient valid trials**. It is not quoted as PASS or FAIL, nor as BOUNDARY for a violation, whatever the manifest says. The Results text names the cause, for example "1 of 20 valid; the other 19 hit the Ladybug lock".
+- **Evidence and reports stay as written.** The verdict code is not changed in M5, because a change would alter committed reports. Enforcing the rule in code, with a report column, is an M6 candidate (§12.1, Phase E).
+- **Cells it touches in M3 to M5.** Checked over every committed manifest with a verdict list. Three cells were quoted with a verdict, and their text is corrected:
+  - Cognee M3 R2 `c1.k4`: 2 of 20 valid. The other 18 raised `AfterRunHookError` [measured: `20261114T133423Z-70f45910`].
+  - Cognee M3 R2 `c1.disjoint.k4`: 5 of 20 valid, the rest `AfterRunHookError` [measured: `20261114T212346Z-a6f1985e`].
+  - Cognee M5 R1 `c2.improve`: 1 of 20 valid, the Ladybug lock [measured: `20261116T123522Z-49f0100f`].
+- **Cells already unquoted.** The other M3 runs below half are INVALID in their reports, and the Results text quotes no PASS or FAIL for them: the Ladybug-lock runs of §12's boundary paragraph, R2 `c1.k8` and R3's C3 runs. So is the superseded batch-1 run `20261114T143626Z-f94d7606`, 9 of 20 valid. M4 and the Omnigraph and Graphiti M5 runs have no verdict below half.
+- **Outside M3 to M5.** M2's G3 case-suite manifests declare 6 trials and record `trials_valid` 1 for I7C, I2 and MR1, because each of those is judged only in the one case that checks it. Every case was valid [measured: for example `20261113T174543Z-20792bcd`]. That is how case suites count, not a shortage of valid trials. M6's code rule has to tell the two apart.
 
 ## 10. Reporting rules
 
@@ -1005,6 +1035,8 @@ The sequential control reproduced the fixture graph in all 11 race runs, on Falk
 
 Each phase has its own prompt and starts after the maintainer gives that phase the go-ahead.
 
+**Counting rule for the phase statuses (adopted 2026-11-16 at Phase E).** A batch's command count is every command its driver logs, numbered from 00, with the baseline commands included. Its exit count is those that ended with exit 0. A false start that ran only its baseline commands is counted the same way. The counts come from the driver logs under `.state/scratch/` (kept locally, not committed).
+
 - [x] **Maintainer decision (2026-11-16).** Run O2 and O3 in `thread` mode
   on the Windows host (§3.4). `container` mode is out of scope for M5.
 
@@ -1077,8 +1109,9 @@ scenario with its sequential control and the applicable controls in §6.2.
 **Status, Phase B (2026-11-16).** Steps 1 to 8 ran. Reviewed and signed off by the maintainer on 2026-11-16, after verifying the ten Phase B commits, the six batches, the 58 M5 runs' evidence and the superseded O1 and O2b runs.
 
 - [x] Run plan declared in the Omnigraph blueprint, §12 (`772ef96`).
-- [x] Step 1: batch `m5-20261115T222957Z` (`772ef96`). Its Neo4j control
-  cells were re-run in `m5c-20261115T223540Z` (`772ef96`). δ = 55 ms (§6.3),
+- [x] Step 1: batch `m5-20261115T222957Z` (`772ef96`), 17 commands, 10 exit 0;
+  the seven Neo4j control cells exited 1. They were re-run in
+  `m5c-20261115T223540Z` (`772ef96`), 9 of 9 commands exit 0. δ = 55 ms (§6.3),
   set in `fffe48b`. Reports: `evidence/M5_OMNIGRAPH_CALIBRATION.md` and
   `evidence/M5_OMNIGRAPH_B1.md`.
 - [x] Maintainer decision (2026-11-16): one actor per client with N = 50, HTTP
@@ -1088,7 +1121,8 @@ scenario with its sequential control and the applicable controls in §6.2.
   (Omnigraph blueprint, §12 amendment and §13).
 - [x] Steps 2 to 8: batch `m5b-20261115T230235Z` (`6a15b9c`), 37 commands,
   36 exit 0. The O1 cell that failed on a harness bug (host port exhaustion,
-  fixed in `f7ae8f2`) was re-run in `m5d-20261116T003205Z`, where the FalkorDB
+  fixed in `f7ae8f2`) was re-run in `m5d-20261116T003205Z` (3 of 3 commands
+  exit 0), where the FalkorDB
   curve met the S28 band. Reports: `evidence/M5_OMNIGRAPH.md` and
   `evidence/M5_OMNIGRAPH_B2.md`. Results: Omnigraph blueprint §14.
 - [x] O1 method change: from `f7ae8f2` each O1 load keeps one connection,
@@ -1122,9 +1156,9 @@ Phase C follows Phase B and ends when G6, G7 and G8 have recorded outcomes and e
 **Status, Phase C (2026-11-16).** G6, G7 and G8 ran. Reviewed and signed off by the maintainer on 2026-11-16.
 
 - [x] Phase B sign-off recorded (`9761daa`). The run plan was declared before any batch (`886f4c6`), with pre-batch amendments (`8b9785a`) and the #2119 review (K21).
-- [x] Main batch `m5g-20261116T051149Z` (`8b9785a`): 24 commands, 23 exit 0. Row 11 (G6a on Neo4j, main) hung and was ended. The false start `m5g-20261116T044019Z` ran nothing (a driver path bug). Report: `evidence/M5_GRAPHITI.md`.
-- [x] Re-run `m5h-20261116T071955Z` (`425e22e`): row 11 hung again and was ended under the maintainer's ruling. The cell is INVALID, "harness could not bound a stalled search on this build", with no third run. `0395799` changes how the harness bounds a search.
-- [x] Explanatory control `m5i-20261116T092138Z` (`0395799`, maintainer ruling 4): G7 kill-then-start with `appendonly yes`, 2 of 2 exit 0. Report: `evidence/M5_GRAPHITI_B1.md`.
+- [x] Main batch `m5g-20261116T051149Z` (`8b9785a`): 25 commands, 24 exit 0 (corrected at Phase E from "24 commands, 23 exit 0" by the counting rule above). Row 11 (G6a on Neo4j, main), driver command 12, hung and was ended. The false start `m5g-20261116T044019Z` ran its 2 baseline commands (both exit 0) and no row (a driver path bug). Report: `evidence/M5_GRAPHITI.md`.
+- [x] Re-run `m5h-20261116T071955Z` (`425e22e`), 3 commands, 2 exit 0 (the baselines): row 11 hung again and was ended under the maintainer's ruling. The cell is INVALID, "harness could not bound a stalled search on this build", with no third run. `0395799` changes how the harness bounds a search.
+- [x] Explanatory control `m5i-20261116T092138Z` (`0395799`, maintainer ruling 4): G7 kill-then-start with `appendonly yes`, 4 of 4 commands exit 0 (corrected at Phase E from "2 of 2", which counted the two rows only). Report: `evidence/M5_GRAPHITI_B1.md`.
 - Results, findings and the choices taken without the maintainer are in the Graphiti blueprint, §12. In brief:
   - FalkorDB fulltext under construction returns fewer rows without an error (§13).
   - On #2119 the indexes were still under construction after the awaited build returned (KD-F4).
@@ -1148,9 +1182,9 @@ Phase D follows Phase C and ends when C2 and any approved R4 runs have recorded 
 - [x] Phase C sign-off recorded (`b8b35d8`).
 - [x] `improve` read at the pin, and its prompts listed and scripted (Cognee blueprint §1.3, C29–C33, `f339e3e`). With no session ids only the graph-fed stages run: `review_conflicts` sends one scripted `ReviewResponse` prompt per call, and `global_context_index` makes no model call at v1.6.8. At cognee 1.6.1 (R3) it is opt-in, and its `GlobalContextSummaryContent` prompts get fixed strings (maintainer-approved). The seven session-fed stages are NOT_EXERCISED, "no session ids in C2's design" (C31).
 - [x] C2 run plan declared before the batch (`951ccf9`). I7 stays NOT_APPLICABLE (Cognee blueprint §10).
-- [x] Batch `m5k-20261116T123513Z` (`951ccf9`): 5 commands, 5 exit 0. The false start `m5j-20261116T123344Z` ran nothing (a driver path bug). Report: `evidence/M5_COGNEE.md`. Results: Cognee blueprint §13.
+- [x] Batch `m5k-20261116T123513Z` (`951ccf9`): 5 commands, 5 exit 0. The false start `m5j-20261116T123344Z` ran its 2 baseline commands (both exit 0) and no row (a driver path bug). Report: `evidence/M5_COGNEE.md`. Results: Cognee blueprint §13.
   - R2 was clean in 20 of 20 valid trials: no duplicate vector id, no writer conflict, no partial index, nothing lost or left behind (`20261116T125700Z-b7ebcfbc`).
-  - R1 reached the Ladybug boundary in 19 of 20 trials, and in the valid trial's `improve` stage (`20261116T123522Z-49f0100f`).
+  - R1 reached the Ladybug boundary in 19 of 20 trials, and in the valid trial's `improve` stage (`20261116T123522Z-49f0100f`). Under §9.7 its verdicts read as insufficient valid trials (1 of 20), not PASS.
   - R3 is INVALID by rule: its control was not met, the C27 edge (`20261116T131854Z-43702faa`).
 - [x] #5253: every cell NOT_EXERCISED by the maintainer's ruling. Its head is based on main `c4cd8ceb`, 1,783 commits behind v1.6.8, and 11 of 16 `LanceDBAdapter.py` hunks do not apply (Cognee blueprint C32). R4 stays deferred.
 
@@ -1181,6 +1215,19 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 - (c) Recorded 2026-11-16 at the Phase D ruling, for a Phase E draft under §11.1: #5253's head is based on main
   `c4cd8ceb`, 1,783 commits behind cognee v1.6.8, and 11 of its 16 `LanceDBAdapter.py` hunks do not apply
   to v1.6.8 (Cognee blueprint C32).
+
+**Maintainer rulings on these notes (2026-11-16, at the Phase E go-ahead).**
+
+- (a) Settled by amending §9.2 ("Measurement runs"); the manifests are not filled in. The rule is enforced in the Omnigraph manifest writer and covered by a unit test. Every report stays byte-identical.
+- (b) and (c) are inputs to the Phase E drafts (§11.1), kept in `drafts/m5/` and never committed.
+- (d) New: a verdict on fewer than half of the declared trials reads as insufficient valid trials (§9.7). Three Results cells were corrected in text; no verdict code changed.
+- (e) New: one counting rule for the phase statuses (top of §12.1). The Phase C main batch and `m5i` lines were corrected, and the counts for the other batches were added.
+- No reruns, and no harness fix is pending. G6a on Neo4j with main stays INVALID as ruled. R3 stays INVALID by rule. #5253 stays NOT_EXERCISED.
+
+**M6 candidates (recorded at Phase E, not started).**
+
+- Enforce §9.7 in the verdict code from M6, with a report column for runs below half their declared trials. Case suites such as G3 need their own count (§9.7).
+- Decide whether the measurement manifests' `schema_version` 1 amends the §9.2 schema or the writer (§9.2).
 
 ## 13. Open questions
 

@@ -29,7 +29,7 @@ from witnessmark.scenarios import ClaimState, client_name
 from witnessmark.timing import Stamp, iso, stamp, utc_now
 
 from .actors import describe as describe_actors
-from .capture import OperationCapture, RunCapture, repro_command
+from .capture import OperationCapture, RunCapture, check_manifest_fields, repro_command
 from .client import KEPT_CONNECTION_DROPPED, OmnigraphClient, OperationResult, Outcome
 from .engine import _token
 from .part2 import Stack, _check, _error_note, _manifest, _percentile, _run_id, _summary, _utc
@@ -637,7 +637,7 @@ def run_o2b_falkordb(repo: Path, evidence: Path, batch: str, *, command: str, sm
         manifest = {"schema_version": 1, "run_id": run_id, "batch": batch, **header, **extra,
                     "finished_at": iso(utc_now()), **fields}
         run_dir.write_history(history)
-        run_dir.write_manifest(manifest)
+        run_dir.write_manifest(check_manifest_fields(manifest))
         run_dir.write_repro(falkordb_repro(run_id, command, header, component))
         return manifest, run_dir.path
     except Exception as exc:

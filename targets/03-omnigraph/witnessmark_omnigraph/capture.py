@@ -36,6 +36,33 @@ def redact_text(value: str, repo: Path) -> str:
     return KEY_VALUE.sub(r"\1<redacted>", value)
 
 
+# Master §9.2, as amended in M5 Phase E: a measurement run (a cost curve, a latency curve, a visibility, failover
+# or parity measurement) computes no §5.8 verdict. Its manifest records `controls` and `verdicts` as null (these
+# writers leave both keys out, which readers take as null), and its checks live in the run's own fields, named per
+# scenario. O1's curve and O6 keep those named checks in an object under `controls` (`i6` and `falkordb`;
+# `sequential`), never in the §9.2 control array. Every other run must carry both arrays.
+MEASUREMENT_SCENARIOS = frozenset({
+    "o1.branch_cost", "o1.i6_controls", "o2b.disjoint_claims", "o2b.claim_state_disjoint.sweep",
+    "o4.failover_acceptance", "o4.clean_stop_transfer", "o5.cross_process_ryw", "o6.traversal_parity",
+})
+
+
+def check_manifest_fields(manifest: dict) -> dict:
+    """Accept null `controls` and `verdicts` only for the measurement runs of master §9.2; refuse them elsewhere."""
+    scenario = (manifest.get("scenario") or {}).get("id")
+    controls, verdicts = manifest.get("controls"), manifest.get("verdicts")
+    if scenario in MEASUREMENT_SCENARIOS:
+        if verdicts is not None:
+            raise ValueError(f"{scenario} is a measurement run: its verdicts must be null (master §9.2)")
+        if controls is not None and not isinstance(controls, dict):
+            raise ValueError(f"{scenario} is a measurement run: controls must be null or named checks (master §9.2)")
+        return manifest
+    if not isinstance(controls, list) or not isinstance(verdicts, list):
+        raise ValueError(f"{scenario} is not a measurement run: it needs the controls and verdicts arrays "
+                         "(master §9.2)")
+    return manifest
+
+
 def safe(value, repo: Path):
     if isinstance(value, str):
         return redact_text(value, repo)
@@ -148,7 +175,7 @@ class RunCapture(OperationCapture):
 
     def write_manifest(self, manifest: dict) -> None:
         # Preserve schema field names (including the normal operation token).
-        self.directory.write_manifest(self._manifest_value(manifest))
+        self.directory.write_manifest(self._manifest_value(check_manifest_fields(manifest)))
 
     def _manifest_value(self, value):
         if isinstance(value, dict):

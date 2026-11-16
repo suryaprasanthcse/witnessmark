@@ -809,7 +809,7 @@ evidence/<target>/<scenario>/<run_id>/
 | `o6.traversal_parity` (`cases`) | O6 traversal parity | `controls.sequential`, `trials` | [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py:580,613` @ `6a15b9c`] |
 
 - No validator reads `run.json`: `validate_history` checks `history.jsonl` only [code: `core/witnessmark/history.py:108` @ `f25653d`]. The rule therefore lives in the Omnigraph manifest writer. `check_manifest_fields` accepts null `controls` and `verdicts` only for the scenario ids above and refuses them for every other run (`targets/03-omnigraph/witnessmark_omnigraph/capture.py`, `core/tests/test_m5_phase_e.py`). The same test checks every committed manifest against the rule.
-- These manifests also carry `schema_version` 1, the integer, where the schema above says `"0.1"`. They are kept as written, like all evidence. Whether to amend the schema or the writer is open for the maintainer.
+- These manifests also carry `schema_version` 1, the integer, where the schema above says `"0.1"`. They are kept as written, like all evidence. Settled by the maintainer on 2026-11-16: manifests written before `4153b02` carry the integer 1; the writer emits `"0.1"` from `4153b02` (unit test in `core/tests/test_m5_phase_e.py`).
 - No report changed: every committed report still regenerates byte for byte.
 
 ### 9.3 `history.jsonl`, one object per line
@@ -1222,12 +1222,12 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 - (b) and (c) are inputs to the Phase E drafts (§11.1), kept in `drafts/m5/` and never committed.
 - (d) New: a verdict on fewer than half of the declared trials reads as insufficient valid trials (§9.7). Three Results cells were corrected in text; no verdict code changed.
 - (e) New: one counting rule for the phase statuses (top of §12.1). The Phase C main batch and `m5i` lines were corrected, and the counts for the other batches were added.
+- `schema_version` (ruled at the Phase E resume): the 64 measurement manifests that carry the integer 1 stay as written, and the writer emits `"0.1"` from `4153b02` (§9.2).
 - No reruns, and no harness fix is pending. G6a on Neo4j with main stays INVALID as ruled. R3 stays INVALID by rule. #5253 stays NOT_EXERCISED.
 
 **M6 candidates (recorded at Phase E, not started).**
 
 - Enforce §9.7 in the verdict code from M6, with a report column for runs below half their declared trials. Case suites such as G3 need their own count (§9.7).
-- Decide whether the measurement manifests' `schema_version` 1 amends the §9.2 schema or the writer (§9.2).
 
 ## 13. Open questions
 

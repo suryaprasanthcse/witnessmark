@@ -30,7 +30,7 @@ from witnessmark.timing import Stamp, iso, stamp, utc_now
 
 from .actors import describe as describe_actors
 from .capture import OperationCapture, RunCapture, repro_command
-from .client import OmnigraphClient, OperationResult, Outcome
+from .client import KEPT_CONNECTION_DROPPED, OmnigraphClient, OperationResult, Outcome
 from .engine import _token
 from .part2 import Stack, _check, _error_note, _manifest, _percentile, _run_id, _summary, _utc
 from .runner_scenarios import SKILL
@@ -57,6 +57,16 @@ INTERPRETATION = ("a cost of documented behaviour (any intervening commit invali
                   "O-K3), not a defect")
 
 
+# The agents' connection model (method change, M5 batch m5f): batch m5b-20261115T230235Z opened a new HTTP
+# connection per Omnigraph request, and two agents' reads hit host port exhaustion (WinError 10048).
+OMNIGRAPH_AGENT_CONNECTIONS = {"model": "kept", "per": "agent",
+                               "note": "one HTTP/1.1 connection per agent; a read dropped by the server is its own "
+                                       "history record and is sent again on a fresh connection; a dropped claim "
+                                       "is an unknown outcome and is never resent"}
+FALKORDB_AGENT_CONNECTIONS = {"model": "kept", "per": "agent",
+                              "note": "one RESP connection per agent session, unchanged since 6e2d1af"}
+
+
 def task_name(i: int) -> str:
     return f"task-{i}"
 
@@ -76,6 +86,8 @@ class Step:
     error: dict | None = None
     token: str | None = None
     is_open: bool = True  # reads: the task still read as open
+    # Reads only: attempts the server dropped on a kept connection before this read; each is its own record.
+    dropped: list = field(default_factory=list)
 
     @property
     def error_type(self) -> str | None:
@@ -108,6 +120,7 @@ def drive_agent(client: str, read: Callable[[int], Step] | None, claim: Callable
         commit = None
         if read is not None:
             seen = read(run.attempts + 1)
+            run.steps.extend(seen.dropped)
             run.steps.append(seen)
             if seen.outcome == UNKNOWN:
                 run.status = "unknown"
@@ -155,9 +168,15 @@ def omnigraph_agent(client: OmnigraphClient, queries: dict[str, str], i: int, *,
 
     def read(attempt: int) -> Step:
         inputs = {"query": "q_task", "task": task, "attempt": attempt}
+        before = len(getattr(client, "dropped_attempts", []))
         inv = stamp()
         result = client.query(queries["q_task"], {"task_id": task}, name="q_task")
         step = _step_from_result("read", inputs, inv, stamp(), result)
+        # A read the server dropped on the agent's kept connection: its own record (outcome unknown, no reply),
+        # then the read sent again on a fresh connection, which is this step. A dropped claim is never resent.
+        step.dropped = [Step("read", {**inputs, "dropped_kept_connection": True}, dropped_inv, None, UNKNOWN,
+                             error={"type": KEPT_CONNECTION_DROPPED, "message": message})
+                        for dropped_inv, _ret, message in getattr(client, "dropped_attempts", [])[before:]]
         if step.outcome == OK:
             data = result.data if isinstance(result.data, dict) else {}
             rows = data.get("rows") or []
@@ -244,7 +263,10 @@ def trial_metrics(runs: list[AgentRun]) -> dict:
         "claim_latency_ms": _latency_summary(_latencies(runs, "claim")),
         "read_latency_ms": _latency_summary(_latencies(runs, "read")),
         "operations": len(steps),
-        "unknown_operations": sum(1 for step in steps if step.outcome == UNKNOWN),
+        # A dropped read attempt is retried and changes nothing, so it is counted here, not as an unknown outcome.
+        "read_retries": sum(1 for step in steps if step.error_type == KEPT_CONNECTION_DROPPED),
+        "unknown_operations": sum(1 for step in steps
+                                  if step.outcome == UNKNOWN and step.error_type != KEPT_CONNECTION_DROPPED),
     }
 
 
@@ -463,7 +485,7 @@ def run_o2b(repo: Path, evidence: Path, batch: str, build_name: str, build: dict
     extra = {"sweep": plan, "spread_gate": spread_gate(gate_ms), "smoke": smoke, "seed": seed,
              "interpretation": INTERPRETATION, "invariants_note": "I1A is a sanity check here, not the purpose",
              "expected": {"omnigraph": "[unmeasured]; hypothesis [inference from O-K3]: wasted attempts grow with N"},
-             "actors": describe_actors(actor_tokens)}
+             "actors": describe_actors(actor_tokens), "agent_connections": OMNIGRAPH_AGENT_CONNECTIONS}
     planned = _manifest(repo, batch, build, build_name, storage, OMNIGRAPH_ID, OMNIGRAPH_MODE, started, [],
                         run_id=run_id, invariants=["I1A"], status="planned-before-execution", **extra)
     capture = RunCapture(repo, evidence, planned, command)
@@ -483,7 +505,8 @@ def run_o2b(repo: Path, evidence: Path, batch: str, build_name: str, build: dict
             _setup_omnigraph(admin, queries, n)
             before = digest(observe_omnigraph(admin, queries, n, holders=False))
             precondition_ok = expected_pre.setdefault(n, before) == before
-            clients = [OmnigraphClient(endpoint, timeout=60, bearer_token=tokens[i + 1] if tokens else None)
+            clients = [OmnigraphClient(endpoint, timeout=60, bearer_token=tokens[i + 1] if tokens else None,
+                                       keep_alive=True)
                        for i in range(n)]
             runs, faults, hung = race_agents(
                 n, lambda i: clients[i].health(),
@@ -574,7 +597,8 @@ def run_o2b_falkordb(repo: Path, evidence: Path, batch: str, *, command: str, sm
     history: list = []
     capture = OperationCapture(repo, run_id, history.append)
     extra = {"sweep": plan, "spread_gate": spread_gate(gate_ms), "smoke": smoke, "interpretation": INTERPRETATION,
-             "expected": {"falkordb": "every claim succeeds on its first attempt, serialised [ours: GNOMON S3]"}}
+             "expected": {"falkordb": "every claim succeeds on its first attempt, serialised [ours: GNOMON S3]"},
+             "agent_connections": FALKORDB_AGENT_CONNECTIONS}
     rng = random.Random(seed)
     trials: list[dict] = []
     expected_pre: dict[int, str] = {}

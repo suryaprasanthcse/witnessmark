@@ -153,6 +153,8 @@ class OmnigraphClient:
         self.keep_alive = keep_alive
         self._kept: http.client.HTTPConnection | None = None
         self.dropped_reads: list[int] = []  # perf_counter_ns of each read retried after a dropped kept connection
+        # (inv, ret, message) of each dropped read attempt, for callers that write their own history (O2b).
+        self.dropped_attempts: list[tuple] = []
 
     def _connection(self) -> http.client.HTTPConnection:
         cls = http.client.HTTPSConnection if self._scheme == "https" else http.client.HTTPConnection
@@ -164,7 +166,7 @@ class OmnigraphClient:
     def _request(self, method: str, path: str, body: dict | bytes | None = None, *, protected: bool = True,
                  extra_headers: dict[str, str] | None = None,
                  content_type: str = "application/json") -> OperationResult:
-        inv = stamp() if self._observed is not None else None
+        inv = stamp()
         options = {"protected": protected, "extra_headers": extra_headers, "content_type": content_type}
         try:
             result = self._send(method, path, body, **options)
@@ -173,6 +175,9 @@ class OmnigraphClient:
             # record (outcome unknown: no reply arrived), its time is kept for the O1 stall metrics, and the
             # read is sent once more on a fresh connection as a separate record. Nothing is hidden.
             self.dropped_reads.append(time.perf_counter_ns())
+            dropped_message = (f"the server closed the kept connection before replying ({exc}); "
+                               "the read is sent again on a fresh connection")
+            self.dropped_attempts.append((inv, stamp(), dropped_message))
             if self._observed is not None:
                 self._observed(method, path, body, inv, stamp(), OperationResult(
                     Outcome.UNKNOWN, kind=KEPT_CONNECTION_DROPPED,

@@ -196,6 +196,26 @@ maps that documented constraint message to the definite typed refusal
     for every repetition. No spread gate applies until Phase B sets Omnigraph's δ: the manifest records
     `spread_gate: {"state": "off", "gate_ms": null}`, and `--spread-gate-ms` turns the gate on and records it.
     Omnigraph and FalkorDB run one after the other, never together.
+  - **Connection model (method change in M5).** Batch `m5b-20261115T230235Z`'s
+    Omnigraph agents opened a new HTTP connection for every read and claim.
+    Two agents' reads failed on host port exhaustion (`WinError 10048`)
+    [measured: `20261115T230248Z-b1c0842e` trial 30,
+    `20261115T230816Z-91a819a6` trial 29]. From batch `m5f` on, each agent
+    keeps one HTTP/1.1 connection with its own actor, as O1's loads do (§3 O1,
+    "Connection model").
+    - A read that the server drops on a kept connection before replying is its
+      own history record: outcome unknown, error `kept_connection_dropped`,
+      input `dropped_kept_connection: true`. The read is then sent again on a
+      fresh connection as the next record.
+    - Each trial counts such reads as `read_retries`, separately from
+      `unknown_operations`, because a dropped read changes nothing. The retried
+      read's latency runs from the agent's first attempt.
+    - A dropped claim is an unknown outcome, ends the agent, and is never
+      resent.
+    - The FalkorDB side already kept one RESP connection per agent session.
+    - The manifest records both models as `agent_connections`
+      [code: `targets/03-omnigraph/witnessmark_omnigraph/costcurve.py` and
+      `client.py`].
   - **Checked as well** (a sanity check, not the purpose). After each trial every task has exactly one holder,
     its own agent. An agent that did not finish its claim holds nothing, and one whose outcome was unknown may or
     may not hold its task. A violation is reported as a finding with its run id.
@@ -939,6 +959,17 @@ local --include-falkor` first (it carries the FalkorDB S28 curve and stops
 the batch if the band is missed), then v0.15.0 MinIO and proxy, then edge
 local, MinIO and proxy. Batch 2's O1 runs and the `m5d` re-run stay in
 `evidence/` and are reported as superseded by `m5e`.
+
+**Amendment 3, the O2b re-run (maintainer decision, 2026-11-16).** Declared
+before the batch ran. O2b's Omnigraph agents now keep one connection each
+(§3 O2b, "Connection model"). Batch `m5f-<UTC>` re-runs both engines' full
+declared sweep, in batch 2's order, on the commit that records the change:
+`costcurve --engine omnigraph --build v0.15.0 --storage local
+--spread-gate-ms 55`, the same for edge-b2dbaff, then `costcurve --engine
+falkordb --spread-gate-ms 40`. That is N ∈ {1, 2, 5, 10, 25, 50}, 3
+warm-ups and 5 measured repetitions per N, interleaved over N, each
+Omnigraph agent with its own actor. Batch 2's O2b runs stay in `evidence/`
+and are reported as superseded by `m5f`.
 
 **Re-runs.** Only a harness bug, fixed with a unit test and committed first,
 re-runs a cell, under a new batch id (`m5c-`, `m5d-`, ...). The affected

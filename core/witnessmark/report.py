@@ -539,6 +539,11 @@ def sweep_table(runs: list[dict]) -> str:
              "Time to all claimed, median [IQR] (ms) | Claim latency p50 / p99, medians (ms) | "
              "Holder check failed (measured repetitions) | Agents that did not claim (measured repetitions) | Run |",
              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    retries = any("read_retries" in t for run in runs for t in run.get("trials", []))
+    if retries:
+        lines[0] = lines[0].replace(" | Run |", " | Read retries after a dropped kept connection (measured "
+                                                "repetitions) | Run |")
+        lines[1] += "---|"
     for run in runs:
         engine, build, storage = _engine_where(run)
         gate = (run.get("spread_gate") or {}).get("gate_ms")
@@ -557,7 +562,9 @@ def sweep_table(runs: list[dict]) -> str:
                          f"{_fmt((row.get('claim_latency_p50_ms') or {}).get('median'))} / "
                          f"{_fmt((row.get('claim_latency_p99_ms') or {}).get('median'))} | "
                          f"{holder_failures} of {len(measured)} | "
-                         f"{unclaimed}{' (' + ', '.join(ended) + ')' if ended else ''} | `{run['run_id']}` |")
+                         f"{unclaimed}{' (' + ', '.join(ended) + ')' if ended else ''} | "
+                         + (f"{sum(t.get('read_retries', 0) for t in measured)} | " if retries else "")
+                         + f"`{run['run_id']}` |")
     return "\n".join(lines)
 
 

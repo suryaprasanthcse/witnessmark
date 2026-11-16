@@ -662,6 +662,96 @@ def phase_b_invalid_table(runs: list[dict]) -> str | None:
     return "\n".join(lines) if len(lines) > 2 else None
 
 
+# --- Graphiti G6-G8 (M5 Phase C): each table appears only when its runs exist -----------------------------------
+
+
+def _sum_suite(trials: list[dict], key: str) -> tuple[int, int, int]:
+    found = [t["g6"][key] for t in trials if (t.get("g6") or {}).get(key)]
+    return (sum(s["identical"] for s in found), sum(s["different"] for s in found), sum(s["errors"] for s in found))
+
+
+def g6_startup_table(runs: list[dict]) -> str:
+    """G6a and G6b: answers at once and after every index was ready, summed over valid trials' queries."""
+    lines = ["| Build | Backend | Scenario | Sequential control | Valid trials | First query met an index that was "
+             "not ready | At once: identical / different / error | After ready: identical / different / error | "
+             "Never-retrieved task exceptions | Error log records | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        build, backend = _where(run)
+        trials = run.get("trials", [])
+        valid = [t for t in trials if t.get("valid")]
+        sequential = _control(run, "sequential") or {}
+        unready = sum(1 for t in valid if t["g6"].get("first_query_met_unready_index"))
+        at_once, ready = _sum_suite(valid, "at_once"), _sum_suite(valid, "ready")
+        watch = [t["g6"].get("watch") or {} for t in trials]
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | "
+                     f"{'met' if sequential.get('met') else 'NOT met'} | {len(valid)} of {len(trials)} | "
+                     f"{unready} of {len(valid)} | {at_once[0]} / {at_once[1]} / {at_once[2]} | "
+                     f"{ready[0]} / {ready[1]} / {ready[2]} | {sum(w.get('unretrieved', 0) for w in watch)} | "
+                     f"{sum(w.get('log_errors', 0) for w in watch)} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
+def _uc_rows(run: dict) -> list[dict]:
+    """One KD-F4 record per valid trial (G6a, G6b) or per valid trial and graph (G6c)."""
+    rows = []
+    for trial in run.get("trials", []):
+        if not trial.get("valid"):
+            continue
+        uc = (trial.get("g6") or {}).get("uc") or {}
+        rows += list(uc.values()) if uc and "ready_seen" not in uc else ([uc] if uc else [])
+    return rows
+
+
+def g6_uc_table(runs: list[dict]) -> str | None:
+    """KD-F4 and master section 13: index state after the first index build on the graph returned."""
+    lines = ["| Build | Backend | Scenario | Observations | UNDER CONSTRUCTION seen | Not ready after creation "
+             "returned, ms (largest lower bound / largest upper bound) | Why not ready | Probe rows while UNDER "
+             "CONSTRUCTION (min / max; control) | Run |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        rows = _uc_rows(run)
+        if not rows:
+            continue
+        build, backend = _where(run)
+        bounds = [r["not_ready_after_creation_ms"] for r in rows if r.get("not_ready_after_creation_ms")]
+        kinds = sorted({k for r in rows for k in r.get("not_ready_after_creation_kinds") or []})
+        probes = [r["probe_rows_while_under_construction"] for r in rows if r.get("probe_rows_while_under_construction")]
+        control = run["scenario"]["params"].get("facts")
+        probe_cell = (f"{min(p['min'] for p in probes)} / {max(p['max'] for p in probes)}; {control}" if probes
+                      else "–")
+        bound_cell = (f"{_fmt(max(b['at_least_ms'] for b in bounds))} / {_fmt(max(b['at_most_ms'] for b in bounds))}"
+                      if bounds else "–")
+        lines.append(f"| {build} | {backend} | {run['scenario']['id']} | {len(rows)} | "
+                     f"{sum(1 for r in rows if r.get('under_construction_seen'))} of {len(rows)} | {bound_cell} | "
+                     f"{', '.join(kinds) or '–'} | {probe_cell} | `{run['run_id']}` |")
+    return "\n".join(lines) if len(lines) > 2 else None
+
+
+def g7_table(runs: list[dict]) -> str:
+    """G7: what survived each container action, with the persistence settings the server reported."""
+    lines = ["| Variant | Action | Sequential control | Valid trials | Trials with loss | Items lost per trial "
+             "(episodes / entities / facts, largest) | appendonly / appendfsync / save | Graph module arguments | "
+             "Volume at | Verdict | Run |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for run in runs:
+        params = run["scenario"]["params"]
+        trials = run.get("trials", [])
+        valid = [t for t in trials if t.get("valid")]
+        lost = [t["g7"]["lost"]["lost"] for t in valid]
+        settings = next((t["g7"].get("settings_before") for t in trials if t["g7"].get("settings_before")), {}) or {}
+        module = (settings.get("graph_module") or {}).get("args")
+        sequential = _control(run, "sequential") or {}
+        largest = (" / ".join(str(max(l[k] for l in lost)) for k in ("episodes", "entities", "facts"))
+                   if lost else "–")
+        lines.append(f"| {params['variant']} | {params['action']} | {'met' if sequential.get('met') else 'NOT met'} | "
+                     f"{len(valid)} of {len(trials)} | {sum(1 for t in valid if t['g7']['lost']['lost_total'])} of "
+                     f"{len(valid)} | {largest} | {settings.get('appendonly', '?')} / "
+                     f"{settings.get('appendfsync', '?')} / {settings.get('save', '?')} | "
+                     f"{' '.join(module) if module else 'none'} | {params['volume_mount']} | "
+                     f"{'; '.join(_verdict_cell(v) for v in run['verdicts'])} | `{run['run_id']}` |")
+    return "\n".join(lines)
+
+
 def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     if not runs:
         return f"# {title}\n\nNo runs found for batch `{batch}`.\n"
@@ -680,6 +770,9 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     parity = [run for run in runs if run["scenario"]["mode"] == "cases"]
     transfers = [run for run in runs if run["scenario"]["mode"] == "transfer"]
     phase_b = thread_races + sweeps + parity + transfers
+    startups = [run for run in runs if run["scenario"]["mode"] == "startup"]
+    persistence = [run for run in runs if run["scenario"]["mode"] == "persistence"]
+    phase_c = startups + persistence + [run for run in races if run["scenario"]["id"].startswith(("g6c.", "g8."))]
     first = runs[0]
     host, harness = first.get("host", {}), first.get("harness", {})
     run_summary = f"- Runs: {len(runs)} ({len(races)} races, {len(suites)} case suites, {len(visibility)} visibility)"
@@ -699,6 +792,13 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
         run_summary,
         "",
     ]
+    if phase_c:
+        commits = sorted({run.get("harness", {}).get("commit", "?")[:7] for run in runs})
+        lines[-1:] = [f"- Runs added in M5 Phase C: {len(startups)} G6a/G6b startup runs, "
+                      f"{sum(1 for r in races if r['scenario']['id'].startswith('g6c.'))} G6c races, "
+                      f"{len(persistence)} G7 persistence runs, "
+                      f"{sum(1 for r in races if r['scenario']['id'].startswith('g8.'))} G8 races",
+                      "- Harness commits in this batch: " + ", ".join(f"`{c}`" for c in commits), ""]
     if phase_b:
         commits = sorted({run.get("harness", {}).get("commit", "?")[:7] for run in runs})
         lines[-1:] = [f"- Runs added in M5: {len(thread_races)} thread-mode races, {len(sweeps)} O2b cost "
@@ -755,6 +855,19 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
                   "", cases_table(suites), ""]
     if visibility:
         lines += ["## Read your writes", "", visibility_table(visibility), ""]
+    if startups:
+        lines += ["## G6 index readiness at startup", "",
+                  "Each valid trial runs the ten-query suite at once and again after every expected index is ready; "
+                  "each query's answer is compared, as a multiset, with the control's.", "",
+                  g6_startup_table(startups), ""]
+    uc_table = g6_uc_table(startups + [run for run in races if run["scenario"]["id"].startswith("g6c.")])
+    if uc_table:
+        lines += ["### Index state after creation returned (KD-F4)", "",
+                  "Bounds come from discrete samples of the index state: at least until the last sample that still "
+                  "saw an index not ready was taken, at most until the first sample that saw every index ready "
+                  "returned.", "", uc_table, ""]
+    if persistence:
+        lines += ["## G7 persistence across container actions", "", g7_table(persistence), ""]
     if omnigraph_curves or omnigraph_controls:
         i6 = i6_table(omnigraph_curves + omnigraph_controls)
         if i6:
@@ -793,6 +906,9 @@ def memory_markdown(runs: list[dict], batch: str | None, title: str) -> str:
     phase_b_invalid = phase_b_invalid_table(phase_b)
     if phase_b_invalid:
         lines += ["## Invalid trials (M5 runs)", "", phase_b_invalid, ""]
+    phase_c_invalid = invalid_table(phase_c)
+    if phase_c_invalid:
+        lines += ["## Invalid trials (M5 Phase C runs)", "", phase_c_invalid, ""]
     return "\n".join(lines)
 
 

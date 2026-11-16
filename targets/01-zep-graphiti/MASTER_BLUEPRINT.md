@@ -350,6 +350,17 @@ Running the two operations in the other order gives the same state.
 
 **Support.** None: no Graphiti document covers `remove_episode` running at the same time as `add_episode`, and K15's sequential requirement names `add_episode` only. The basis is inferred (master §5.5). A violation is reported as OBSERVED.
 
+#### Amendments before the batch (2026-11-16)
+
+Scratch smoke runs (kept out of `evidence/`) changed three details before the first batch. Nothing else in the plan changed.
+
+1. **Which facts the queries name.** The stub embedder hashes each word into one of 1,024 signed buckets. Both engines score cosine similarity as (1 + cos) / 2, and Graphiti keeps scores above 0.6, so any fact with a word in the query word's bucket and sign is also returned. To keep exactly one right answer per query, query n starts at episode n × 40 and takes the first fact, in order, whose own token shares no bucket and sign with another word of the load (`fixtures.g6_queries`). G6c does the same within each group (`fixtures.g6c_query`). The rule depends only on the fixture and the stub, never on a result.
+2. **Search timeout.** Every search carries the per-operation timeout τ_op = 60 s (master §6.6).
+   - A search with no answer is recorded with an unknown outcome and error `unavailable.timeout`.
+   - Its trial stops there and is invalid, with that reason. The instance is then closed, which ends its server transactions, and the next trial starts.
+   - In one Neo4j G6a smoke trial, the at-once searches and two transactions opened as Graphiti was constructed were still open after ten minutes. Killing the client ended them. A second smoke run, already under this timeout, stopped one of its three trials the same way. A scratch repro without the harness's index monitor (six rounds) and with a 2 ms poller in its place (five rounds) did not repeat it, so its cause is unknown [unmeasured: G6a on Neo4j].
+3. **G6b's own connection.** The harness's probe connection is closed before each restart and opened again after it. A pooled connection that the restart killed logs a client error under the same logger names Graphiti's driver uses.
+
 #### Command table (one main batch, `m5g-<UTC time>`)
 
 Every command runs from the repository root with the build's environment's Python, as `targets/01-zep-graphiti/wm_graphiti.py <command> … --seed <20261116 + row> --batch <id>`. Every G6 command for main or #2119 also passes `--build` and `--commit`.

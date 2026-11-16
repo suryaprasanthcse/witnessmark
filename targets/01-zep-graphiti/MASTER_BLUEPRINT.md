@@ -488,7 +488,7 @@ The tracker was checked on 2026-11-13 (read-only).
 Command counts follow master §12.1's counting rule: every command the driver logs, baselines included (corrected at Phase E from 24 and 23, 1 and 2).
 
 - **False start.** The first launch, `m5g-20261116T044019Z`, ran no runs. The batch driver, which is kept uncommitted under `.state` by design, passed a relative interpreter path that Windows `CreateProcess` could not resolve. It stopped before row 1 and wrote nothing to `evidence/`. The fixed driver launched the main batch.
-- **Ended runs.** Two runs were ended while hung. Their partial directories are kept as written: `20261116T055056Z-3d69b1c9` (states 0–5) and `20261116T071959Z-74370fb1` (states 0–3). The driver wrote an ERROR.md for each under `evidence/graphiti/errors/<batch>/`.
+- **Ended runs.** Two runs were ended while hung. Their partial directories are kept as written: `20261116T055056Z-3d69b1c9` (states 0–7; corrected at Phase E from "0–5" by its committed `state/` files) and `20261116T071959Z-74370fb1` (states 0–3). The driver wrote an ERROR.md for each under `evidence/graphiti/errors/<batch>/`.
 - **Maintainer rulings, 2026-11-16.** The G6 size of 2,000 facts is accepted as declared. The #2119 review order is accepted: the diff was read before installing, and the review was written into this blueprint after the environment was built (K21, `886f4c6`).
 - **Changes after the main batch.** Three harness commits, each declared in §5 before the batch that used it:
   - `425e22e` ends a stalled search's server transactions before the next G6 trial;
@@ -496,13 +496,13 @@ Command counts follow master §12.1's counting rule: every command the driver lo
   - `0395799` bounds searches and probe reads without waiting for cancellation.
 
   No completed cell was re-run, and no evidence was edited.
-- Every number below is [measured] from the run named beside it, through the reports above or the run's own `run.json` and `history.jsonl`.
+- Every number below is [measured] from the run named beside it, in batches `m5g-20261116T051149Z`, `m5h-20261116T071955Z` and `m5i-20261116T092138Z`, through the reports above or the run's own `run.json` and `history.jsonl`. The P5 repro's counts in §12.5 are the exception: they carry their own tag and come from the repro's console output, which is kept outside `evidence/`.
 
 ### 12.2 Controls first
 
-- **Sequential controls.** Met in all 24 completed runs: 22 in the main batch and 2 in the control batch.
-- **G6.** The control load reproduced 800 entities, 2,000 facts and 400 episodes. Every query returned exactly its fact, and the probe counted 2,000.
-- **Races.** The overlap control was met in all five races: 20 of 20 valid trials had two or more operations in flight. Over the 100 valid race trials the release spread had p99 3.49 ms and max 5.87 ms, under the 92 ms gate.
+- **Sequential controls.** Met in all 24 completed runs: 22 in the main batch `m5g-20261116T051149Z` and 2 in the control batch `m5i-20261116T092138Z`.
+- **G6.** The control load reproduced 800 entities, 2,000 facts and 400 episodes. Every query returned exactly its fact, and the probe counted 2,000 [measured: batch `m5g-20261116T051149Z`, the sequential control of each of the 11 completed G6a and G6b runs in §12.3].
+- **Races.** The overlap control was met in all five races: 20 of 20 valid trials had two or more operations in flight. Over the 100 valid race trials the release spread had p99 3.49 ms and max 5.87 ms, under the 92 ms gate [measured: batch `m5g-20261116T051149Z`, the three G6c runs in §12.3 and the two G8 runs in §12.5; `evidence/M5_GRAPHITI.md`, "Release spread by mode"].
 - **Validity.** Every completed run had all its trials valid.
 
 ### 12.3 G6. Index readiness at startup
@@ -528,7 +528,7 @@ Command counts follow master §12.1's counting rule: every command the driver lo
 
 **Findings.**
 
-- **G6-F1, master §13's question** [measured, history monitor records, RELATES_TO fulltext index only]. On FalkorDB 6.0.4, a fulltext query against an index in `UNDER CONSTRUCTION` returned fewer rows than the control, or all of them, and never an error.
+- **G6-F1, master §13's question** [measured: `20261116T051153Z-2e987ec0`, `20261116T051801Z-c9fd6666`, `20261116T052409Z-5885a291`, `20261116T054555Z-85bc1662`, `20261116T064351Z-20ab7a28`; history monitor records, RELATES_TO fulltext index only]. On FalkorDB 6.0.4, a fulltext query against an index in `UNDER CONSTRUCTION` returned fewer rows than the control, or all of them, and never an error.
   - In G6a, counted in monitor samples:
     - v0.31.2: 3 samples with fewer rows, 5 with all 2,000 (`20261116T051153Z-2e987ec0`);
     - main: 1 and 4 (`20261116T051801Z-c9fd6666`);
@@ -546,7 +546,7 @@ Command counts follow master §12.1's counting rule: every command the driver lo
 - **Clean results, with credit to the project.**
   - No G6 run recorded a never-retrieved task exception, so #1643's "Task exception was never retrieved" did not appear under these conditions.
   - G6b was clean on both backends and all three builds. After a restart, every index was already `OPERATIONAL` or `ONLINE` when the first at-once query ran (no trial in any cell met an index that was not ready), and every answer was identical.
-  - G6c was clean on all three builds. Eight concurrent ingests into eight new graphs lost nothing, duplicated nothing and answered as the control did, which is credit to the #1676 fix. Its 320 builds per run all completed.
+  - G6c was clean on all three builds. Eight concurrent ingests into eight new graphs lost nothing, duplicated nothing and answered as the control did, which is credit to the #1676 fix. Its 320 race-phase builds per run all completed. In the observe phase, 21 of 320 builds on v0.31.2 and on main, and 1 of 32 control builds on each, were still running when the run drained its build tracker (`target.running`, "the build ended running"), against none on #2119 [measured: `20261116T054448Z-74713339`, `20261116T054508Z-0928df36`, `20261116T054530Z-07a4e09a`; added at Phase E]. They are recorded, not explained; no G6c check depends on them.
 
 ### 12.4 G7. Persistence across container actions
 
@@ -603,7 +603,7 @@ Command counts follow master §12.1's counting rule: every command the driver lo
 
     - **What happened.** On Neo4j, with `remove_episode(G8E)` and `add_episode(G8N)` released together, the acknowledged episode G8N survived, but its own fact "Alice audited Payments" and the entity Payments did not. That held in 19 of 20 iterations on both builds. G8S, G8N, Alice, Acme and "Alice works at Acme" (carried by one episode) were present every time, and G8E and its own fact were gone every time. The one iteration per build that kept everything was iteration 8 on v0.31.2 and iteration 11 on main. On FalkorDB, with the driver bound to the group's graph, all 20 iterations on both builds ended in the expected state. The sequential control, the remove and then the add, reached the expected state in all four runs.
     - **Against the declared rule.** The repro did not reproduce in 20 of 20 on Neo4j, where G8 did: it gave 19 of 20 on each build. Per the declaration, the counts are recorded and the gap is not chased.
-    - **Console output.** The Neo4j driver logged `Neo.TransientError.Transaction.DeadlockDetected` and retried the transaction 11 times in the v0.31.2 run and 7 times in the main run, with none on FalkorDB [measured: the repro's console output under `.state/scratch/m5e-repro/`]. The retries are recorded, not explained.
+    - **Console output.** The Neo4j driver logged `Neo.TransientError.Transaction.DeadlockDetected` and retried the transaction 11 times in the v0.31.2 run and 7 times in the main run, with none on FalkorDB [measured: repro_g8_remove_vs_add.py at `37aefe8`, v0.31.2 and main-ebef986a, neo4j, console output]. The retries are recorded, not explained.
     - **Likely mechanism** [inference from K25 and the code]. `remove_episode` counts each mentioned entity's `MENTIONS` edges and marks an entity with a count of 1 for deletion ([graphiti.py L2193–2202](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L2193-L2202)). It deletes the marked entities a few statements later ([L2211–2213](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L2211-L2213)). On Neo4j that delete is a `DETACH DELETE` run `IN TRANSACTIONS`, which removes every relationship of the node ([nodes.py L285–309](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/nodes.py#L285-L309)); FalkorDB's branch is a plain `DETACH DELETE` (L247–256). If G8N's mention of Payments and its fact edge are written after the count and before the delete, Payments looks orphaned, and deleting it also takes the edge G8N attached to it. Why FalkorDB kept everything is not established. FalkorDB serialises write queries to one graph (master §7.2, S3), but the count and the delete are separate queries, so that alone does not explain it [inference].
     - **Documentation at v0.31.2** [docs]. No document at the tag says anything about running `remove_episode` concurrently with `add_episode`. `remove_episode` has no docstring ([graphiti.py L2174](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L2174)). `add_episode`'s docstring asks for episodes to be added sequentially and names `add_episode` only (K15). The README's concurrency section is about `SEMAPHORE_LIMIT` and model rate limits ([README.md L255–264](https://github.com/getzep/graphiti/blob/v0.31.2/README.md#L255-L264)). The MCP server's README describes its `delete_episode` tool as one that deletes "the entities/facts it solely created" ([mcp_server/README.md L578](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/README.md#L578)), which states the intended scope of a delete but not its behaviour under concurrency. So the behaviour is undocumented, and the support level stays none (OBSERVED).
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
@@ -611,7 +611,7 @@ Command counts follow master §12.1's counting rule: every command the driver lo
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j
 
 - **INVALID: the harness could not bound a stalled search on this build.** Runs `20261116T055056Z-3d69b1c9` (main batch) and `20261116T071959Z-74370fb1` (re-run batch `m5h`).
-  - The first hung in its sixth trial, after writing states 0–5. A search stalled, and closing the instance did not end its server transactions; the next trial's data read waited behind them.
+  - The first wrote states 0–7, so trials 1 to 7 completed, about 6 s apart, and then it hung [measured: the committed `state/` files of `20261116T055056Z-3d69b1c9`]. A search stalled, and closing the instance did not end its server transactions; the next trial's data read waited behind them. At `8b9785a` a trial whose search stalls writes no state [code: `targets/01-zep-graphiti/witnessmark_graphiti/g6.py:296,308` @ `8b9785a`], so the stall was most likely in trial 8 and the wait in trial 9 [inference]. Corrected at Phase E from "hung in its sixth trial, after writing states 0–5".
   - After the fix in `425e22e`, the re-run hung in its fourth trial, after writing states 0–3. This time the 60 s search timeout itself never fired, and the process showed no CPU change.
   - Both were ended (driver notes in `evidence/graphiti/errors/m5g-20261116T051149Z/` and `evidence/graphiti/errors/m5h-20261116T071955Z/`), and `wm-neo4j` was restarted afterwards with no transaction left open. Row 11 is not run a third time (maintainer ruling).
 - In the batches it reproduced on main only: v0.31.2 and #2119 completed G6a on Neo4j. Two scratch smoke runs on v0.31.2 before the batch, kept out of `evidence/`, also saw a stalled search (§5, amendments).

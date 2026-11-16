@@ -1043,7 +1043,7 @@ Each phase has its own prompt and starts after the maintainer gives that phase t
 The existing thread runner releases clients together through a barrier, with
 one connection per client [code: `core/witnessmark/runner.py` @ `2e0dbd7`].
 M1 calibrated the 40 ms gate on this host with 50 clients, using FalkorDB and
-Neo4j [measured: `evidence/M1_CALIBRATION.md`]. Omnigraph serves HTTP, so
+Neo4j [measured: batch `m1-20261113T162442Z`, `evidence/M1_CALIBRATION.md`]. Omnigraph serves HTTP, so
 either client layout can send the same concurrent operations to its server
 concurrency controls [inference from the workload and §3.4]. O4 pauses A's
 test server container and fails over to B independently of the client mode

@@ -1010,7 +1010,10 @@ cell. No harness code changed, and `m5c` ran on the same commit as batch 1.
 Batch 1 ran O2a and O2c on both builds with 50 clients. All 80 trials
 (4 runs × 20) were valid. Their release spread had p50 8.671 ms,
 p99 36.365 ms and max 36.365 ms. Omnigraph's thread-mode δ is
-⌈1.5 × 36.365⌉ = **55 ms** [measured: the four O2 runs above]. It is recorded
+⌈1.5 × 36.365⌉ = **55 ms** [measured: `20261115T223017Z-22107db4`,
+`20261115T223104Z-bcff6931`, `20261115T223149Z-b1b52c9c`,
+`20261115T223237Z-3658b53d`; `evidence/M5_OMNIGRAPH_CALIBRATION.md`, "Release
+spread"]. It is recorded
 in master §6.3 and was set as `OMNIGRAPH_THREAD_SPREAD_GATE_MS` in `fffe48b`.
 The M1 40 ms gate is unchanged.
 
@@ -1020,7 +1023,9 @@ Batch 1's O2 runs are calibration runs, not O2 results. The core verdict for
 all four is FAIL, in 20 of 20 trials, but not because of a second winner. In
 every one of the 80 trials exactly one client was acknowledged, the task had
 exactly one holder, and the only lease record was the winner's [measured: the
-four O2 runs; every trial's check detail reads "1 winner(s)"]. The checker
+four runs above, `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`,
+`20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d`; every trial's check detail
+reads "1 winner(s)"]. The checker
 also requires each loser's refusal to be the scenario's one expected type:
 `precondition_failure` for O2a, `CardinalityViolation` for O2c [code:
 `targets/03-omnigraph/witnessmark_omnigraph/runner_scenarios.py:39,72–79` @
@@ -1037,9 +1042,13 @@ run, the refusals were:
 - `too_many_requests` (HTTP 429), "actor in-flight count cap 16 exceeded",
   came back 34 times in every trial of every run. All 50 harness clients send
   without credentials. The server appears to treat them as one actor, so at
-  most 16 of the 50 claims were admitted at once [measured: the four runs]
+  most 16 of the 50 claims were admitted at once [measured:
+  `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`,
+  `20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d`]
   [inference: one actor, from the message and the constant count 50 − 16].
-  Whether the pinned docs describe this cap is [unmeasured: docs check].
+  Whether the pinned docs describe this cap is answered under Classification
+  below: the server guide documents the 429, not the value 16 [docs: server.md
+  at v0.15.0 and b2dbaff] (retagged at Phase E from [unmeasured: docs check]).
 - `conflict` on v0.15.0 O2c: "write authority 'graph_head:main' changed during
   preparation, reprepare from the current branch state". This is O-K2's
   retryable conflict. In the same position the edge build returned
@@ -1154,12 +1163,12 @@ amendment), and the race gate at δ = 55 ms.
 | O3, 50 concurrent merges of `agent/<i>` into main, T = 20 | 1 merge landed and 1 holder in 20 of 20; the other 980 merges were refused with `CardinalityViolation`; none picked a winner silently [measured: `20261115T231810Z-701d1d1d`] | 20 of 20 the same [measured: `20261115T232110Z-c67ea540`] | PASS on both |
 | O6, traversal parity against Neo4j (primary) and FalkorDB | `q_eligible`, `q_live` and `q_live_open` identical on all three engines [measured: `20261115T232412Z-8935cb2f`] | identical [measured: `20261115T232421Z-31c6fa46`] | PASS on both |
 | O5, read your writes on a second server, MinIO | seen on the first poll, 1,439.9 ms after A's acknowledgement, including stopping A and starting B [measured: `20261115T232428Z-7b3675aa`] | first poll, 1,498.6 ms [measured: `20261115T232445Z-74a4b9d4`] | OBSERVED |
-| O5, local root (for comparison with M4's 1,523.8 and 1,334.6 ms) | first poll, 1,644.0 ms [measured: `20261115T232500Z-bc9d3caf`] | first poll, 1,456.4 ms [measured: `20261115T232509Z-b97455a1`] | OBSERVED |
+| O5, local root (for comparison with M4's 1,523.8 and 1,334.6 ms, `20261115T183504Z-eb41bb89` and `20261115T183511Z-4d593c85`) | first poll, 1,644.0 ms [measured: `20261115T232500Z-bc9d3caf`] | first poll, 1,456.4 ms [measured: `20261115T232509Z-b97455a1`] | OBSERVED |
 | O4, clean-stop local transfer | A's write acknowledged; A exited 0, neither killed nor out of memory; `cluster status` showed admission released; B started and its write was acknowledged; the scan through B found both writes, none missing [measured: `20261115T232518Z-4a2c639b`] | the same [measured: `20261115T232527Z-f549fc44`] | OBSERVED: the documented transfer works on both builds. The fence was not engaged (no epoch claim, §3 O4) |
 
 **Release spread in batch 2.** The 120 Omnigraph race trials had p50 8.30 ms,
 p99 18.90 ms and max 19.66 ms, inside δ = 55 ms; the gate invalidated none
-[measured: `evidence/M5_OMNIGRAPH.md`, "Release spread"].
+[measured: batch `m5b-20261115T230235Z`, `evidence/M5_OMNIGRAPH.md`, "Release spread"].
 
 **O2b, the cost of documented behaviour (`m5f`, kept agent connections).**
 Local root, both builds, the declared sweep, 3 warm-ups and 5 measured
@@ -1182,8 +1191,8 @@ Omnigraph agent had its own actor and kept one connection (§3 O2b). All
 - **Omnigraph.** Every agent claimed in every trial of both builds, and no
   holder check failed. No read was retried after a dropped kept connection,
   and there was no unknown outcome: every refusal was `precondition_failure`,
-  12,564 on v0.15.0 and 12,528 on edge [measured: the two runs; `read_retries`
-  0 in every trial]. Median attempts equal N(N + 1)/2 up to N = 25, and are
+  12,564 on v0.15.0 and 12,528 on edge [measured: `20261116T021606Z-a0862379`,
+  `20261116T022103Z-8b10eb2d`; `read_retries` 0 in every trial]. Median attempts equal N(N + 1)/2 up to N = 25, and are
   just below it at N = 50 (1,275). That is what one success per round of
   re-reads gives when every publish invalidates every other agent's condition
   [inference from O-K3 and the counts]. The hypothesis of §3 O2b holds on
@@ -1215,8 +1224,9 @@ create/delete warm-ups and five measured repetitions per cell:
 
 - **Read retries.** No read was retried after a dropped kept connection in
   any of the six runs. No `kept_connection_dropped` record appears in their
-  histories, and every sample's `read_retries` is 0 [measured: the six `m5e`
-  O1 runs; `evidence/M5_OMNIGRAPH_B3.md`, "Read retries" columns]. Their only
+  histories, and every sample's `read_retries` is 0 [measured: the six O1
+  runs of batch `m5e-20261116T004953Z`; `evidence/M5_OMNIGRAPH_B3.md`, "Read
+  retries" columns]. Their only
   unknown outcomes are 1 to 4 readiness polls per MinIO and proxy run, during
   stack start-up, answered with a closed connection (trial 0, kind
   `readiness`). Batch 2 had the same kind.
@@ -1236,7 +1246,7 @@ create/delete warm-ups and five measured repetitions per cell:
   On MinIO, the unrelated reader's longest gap was 0.34 to 0.96 (v0.15.0) and
   0.24 to 0.91 (edge) times the create time per cell, and under half of it in
   3 and 4 of 12 cells. In those cells it kept completing reads during
-  creation [measured: the two `m5e` MinIO runs].
+  creation [measured: `20261116T005740Z-b787c6ff`, `20261116T013014Z-7bf20e6c`].
 - **Comparison with M4, with the method change.** M4's O1 had one load, the
   main reader, and it opened a new TCP connection per request. M5's O1 has
   three loads, each on one kept connection (§3 O1). With that difference:
@@ -1271,11 +1281,14 @@ create/delete warm-ups and five measured repetitions per cell:
   34 of 300 (v0.15.0) and 38 of 300 (edge) admitted losers. Batch 2, all 980
   losers admitted: 447 of 980 and 496 of 980. The documented refusal is
   `precondition_failure` [docs: mutations/conditional.md]. Both types are
-  typed and write nothing, and every trial kept one holder [measured: the four
-  O2a runs]. Not chased.
+  typed and write nothing, and every trial kept one holder [measured:
+  `20261115T223017Z-22107db4`, `20261115T223104Z-bcff6931`,
+  `20261115T231454Z-7f2e75a3`, `20261115T231539Z-c7be08c9`]. Not chased.
 - **OBSERVED: O2c refusal type differs by build.** v0.15.0 answered
   `conflict` (reprepare, O-K2) 263 times in batch 1 and 381 times in batch 2,
-  where edge answered `CardinalityViolation` [measured: the four O2c runs].
+  where edge answered `CardinalityViolation` [measured:
+  `20261115T223149Z-b1b52c9c`, `20261115T223237Z-3658b53d`,
+  `20261115T231626Z-b28d5aff`, `20261115T231715Z-071a8831`].
   Not chased.
 - **OBSERVED: FalkorDB's own admission limit.** `Max pending queries
   exceeded` refused 60 to 118 claims per FalkorDB claim-control run, with no

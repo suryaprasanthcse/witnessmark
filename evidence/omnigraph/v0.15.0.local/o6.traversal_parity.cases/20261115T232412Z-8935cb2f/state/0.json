@@ -1,0 +1,112 @@
+{
+  "k": 0,
+  "digest": "sha256:9440012610ccc0675f0099cbba5358468df40854601f13abf438bed1c5075d24",
+  "state": {
+    "rows": {
+      "omnigraph": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ]
+      },
+      "neo4j": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ]
+      },
+      "falkordb": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ]
+      }
+    },
+    "errors": {
+      "omnigraph": {},
+      "neo4j": {},
+      "falkordb": {}
+    }
+  }
+}

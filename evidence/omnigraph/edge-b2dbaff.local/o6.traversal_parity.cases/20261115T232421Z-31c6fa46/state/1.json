@@ -1,0 +1,127 @@
+{
+  "k": 1,
+  "digest": "sha256:58fa7ca6a973b4cf327f32d9e333c047b9586ac777765b8ce6ffdd3abc13e8a6",
+  "state": {
+    "rows": {
+      "omnigraph": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ],
+        "q_live_open": [
+          {
+            "live": 0
+          }
+        ]
+      },
+      "neo4j": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ],
+        "q_live_open": [
+          {
+            "live": 0
+          }
+        ]
+      },
+      "falkordb": {
+        "q_eligible": [
+          {
+            "agent": "c00",
+            "task": "task-0"
+          },
+          {
+            "agent": "c00",
+            "task": "task-1"
+          },
+          {
+            "agent": "c01",
+            "task": "task-0"
+          },
+          {
+            "agent": "c01",
+            "task": "task-1"
+          },
+          {
+            "agent": "c02",
+            "task": "task-0"
+          },
+          {
+            "agent": "c02",
+            "task": "task-1"
+          }
+        ],
+        "q_live": [
+          {
+            "live": 1
+          }
+        ],
+        "q_live_open": [
+          {
+            "live": 0
+          }
+        ]
+      }
+    },
+    "errors": {
+      "omnigraph": {},
+      "neo4j": {},
+      "falkordb": {}
+    }
+  }
+}

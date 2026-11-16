@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "run_id": "20261115T232445Z-74a4b9d4",
+  "batch": "m5b-20261115T230235Z",
+  "started_at": "2026-11-15T23:24:45.114Z",
+  "finished_at": "2026-11-15T23:24:54.827Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "6a15b9c950505f412ddd17891f3b2f16be3bc8e5",
+    "dirty": false
+  },
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "target": {
+    "name": "omnigraph",
+    "repo": "ModernRelay/omnigraph",
+    "ref": "edge-b2dbaff",
+    "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "omnigraph-server",
+      "version": "edge-b2dbaff",
+      "image": "witnessmark/omnigraph:edge-b2dbaff",
+      "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792",
+      "config": {
+        "backend": "minio"
+      }
+    },
+    {
+      "role": "object-store",
+      "name": "minio",
+      "version": "RELEASE.2025-09-07T16-13-09Z",
+      "image": "witnessmark/minio@sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "digest": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "image_id": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "config": {
+        "in_use": true
+      }
+    }
+  ],
+  "scenario": {
+    "id": "o5.cross_process_ryw",
+    "mode": "visibility",
+    "invariants": [
+      "I3"
+    ]
+  },
+  "trials": [
+    {
+      "valid": true,
+      "write_acknowledged": true,
+      "second_process": "wm-omnigraph-b",
+      "seen": true,
+      "attempts": 1,
+      "write_ms": 130.4483,
+      "staleness_ms": 1498.6118,
+      "last_read": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "query_name": "q_task_holder",
+          "target": {
+            "branch": "main",
+            "snapshot": null
+          },
+          "row_count": 1,
+          "columns": [
+            "holder",
+            "from_seq",
+            "rw"
+          ],
+          "rows": [
+            {
+              "holder": "c00",
+              "from_seq": 1,
+              "rw": "o5-lease"
+            }
+          ],
+          "graph_commit_id": "hb1.01M7GRE99B6DM0W1YGYD8T0G2E.3.01M7GRE9KFS0WDZ4RWJ6KHNEWZ"
+        }
+      },
+      "k": 1,
+      "state_file": "state/1.json"
+    }
+  ],
+  "cluster_lease_seconds": 30
+}

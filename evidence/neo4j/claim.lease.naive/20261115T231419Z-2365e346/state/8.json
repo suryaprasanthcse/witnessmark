@@ -1,0 +1,15 @@
+{
+  "k": 8,
+  "digest": "sha256:c26255c3adff9afbf5fa5844fdebd8fb242ffd00ed99de961a7de1a47c7e0f94",
+  "state": {
+    "holders": [
+      "c00",
+      "c03",
+      "c12",
+      "c19",
+      "c21",
+      "c22",
+      "c27"
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "k": 9,
+  "digest": "sha256:73caaba89067e230c50e6ab2f7a6d99a11aa69e8e2634beb5d34154d739e2559",
+  "state": {
+    "branches": {
+      "branches": [
+        "main"
+      ],
+      "details": [
+        {
+          "name": "main",
+          "head": {
+            "graph_commit_id": "hb1.01M7GW9HPKGXP15XA0NQVJDAJR.255.01M7GWH7V9RWV0XQ3BRR054C84",
+            "graph_branch": null,
+            "graph_manifest_version": 256,
+            "parent_commit_id": "hb1.01M7GW9HPKGXP15XA0NQVJDAJR.254.01M7GWH7542W2JR1N9AANET85X",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794789384041938,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "updated_at": 1794789384041938
+        }
+      ]
+    },
+    "unrelated_branches": {
+      "branches": [
+        "main"
+      ],
+      "details": [
+        {
+          "name": "main",
+          "head": {
+            "graph_commit_id": "hb1.01M7GWCGPE7M7F5NTWE15ANMM1.155.01M7GWHTVTMGYT817A0JZA2D6P",
+            "graph_branch": null,
+            "graph_manifest_version": 386,
+            "parent_commit_id": "hb1.01M7GWCGPE7M7F5NTWE15ANMM1.154.01M7GWHTSDHD5JHP5A4HCHZXR8",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794789403514886,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "updated_at": 1794789403514886
+        }
+      ]
+    }
+  }
+}

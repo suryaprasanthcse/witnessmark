@@ -1,0 +1,46 @@
+{
+  "k": 1,
+  "digest": "sha256:7ba0b9a9bdc0c6f49f126b2231a47b896c44b331db1733ede9aa563cbf928c27",
+  "state": {
+    "task": {
+      "query_name": "q_task",
+      "target": {
+        "branch": "main",
+        "snapshot": null
+      },
+      "row_count": 1,
+      "columns": [
+        "task",
+        "state"
+      ],
+      "rows": [
+        {
+          "task": "task-0",
+          "state": "claimed"
+        }
+      ],
+      "graph_commit_id": "hb1.01M7GRE99B6DM0W1YGYD8T0G2E.3.01M7GRE9KFS0WDZ4RWJ6KHNEWZ"
+    },
+    "holders": {
+      "query_name": "q_task_holder",
+      "target": {
+        "branch": "main",
+        "snapshot": null
+      },
+      "row_count": 1,
+      "columns": [
+        "holder",
+        "from_seq",
+        "rw"
+      ],
+      "rows": [
+        {
+          "holder": "c00",
+          "from_seq": 1,
+          "rw": "o5-lease"
+        }
+      ],
+      "graph_commit_id": "hb1.01M7GRE99B6DM0W1YGYD8T0G2E.3.01M7GRE9KFS0WDZ4RWJ6KHNEWZ"
+    }
+  }
+}

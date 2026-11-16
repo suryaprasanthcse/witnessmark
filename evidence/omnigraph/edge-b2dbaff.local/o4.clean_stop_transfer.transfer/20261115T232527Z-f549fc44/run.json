@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "run_id": "20261115T232527Z-f549fc44",
+  "batch": "m5b-20261115T230235Z",
+  "started_at": "2026-11-15T23:25:27.416Z",
+  "finished_at": "2026-11-15T23:25:35.256Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "6a15b9c950505f412ddd17891f3b2f16be3bc8e5",
+    "dirty": false
+  },
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "target": {
+    "name": "omnigraph",
+    "repo": "ModernRelay/omnigraph",
+    "ref": "edge-b2dbaff",
+    "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "omnigraph-server",
+      "version": "edge-b2dbaff",
+      "image": "witnessmark/omnigraph:edge-b2dbaff",
+      "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792",
+      "config": {
+        "backend": "local"
+      }
+    },
+    {
+      "role": "object-store",
+      "name": "minio",
+      "version": "RELEASE.2025-09-07T16-13-09Z",
+      "image": "witnessmark/minio@sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "digest": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "image_id": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "config": {
+        "in_use": false
+      }
+    }
+  ],
+  "scenario": {
+    "id": "o4.clean_stop_transfer",
+    "mode": "transfer",
+    "invariants": [
+      "I2"
+    ]
+  },
+  "trials": [
+    {
+      "valid": true,
+      "phase": "transfer",
+      "variant": "clean-stop",
+      "a_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.2.01M7GRFGBWANR9995FVJSFMQ12",
+            "graph_branch": null,
+            "graph_manifest_version": 3,
+            "parent_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.1.01M7GRFGBA9H76YJD34QZ5GXHR",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794785132924112,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "shutdown": {
+        "exit_code": 0,
+        "oom_killed": false,
+        "killed": false
+      },
+      "admission_released": true,
+      "successor_ready": true,
+      "writer_fenced_observed": false,
+      "successor_start_exit": 0,
+      "status": "OBSERVED",
+      "reason": "admission released; B started",
+      "b_write": {
+        "outcome": "ok",
+        "status": 200,
+        "kind": null,
+        "message": null,
+        "data": {
+          "branch": "main",
+          "query_name": "m_fixture_agent",
+          "affected_nodes": 1,
+          "affected_edges": 1,
+          "actor_id": null,
+          "commit": {
+            "graph_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.3.01M7GRFJJGTBYFJ5DG29A0G8VG",
+            "graph_branch": null,
+            "graph_manifest_version": 4,
+            "parent_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.2.01M7GRFGBWANR9995FVJSFMQ12",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794785135184301,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          }
+        }
+      },
+      "integrity": {
+        "scan_ok": true,
+        "acknowledged_agents": [
+          "a-clean",
+          "b-clean"
+        ],
+        "present_agents": [
+          "a-clean",
+          "b-clean"
+        ],
+        "acknowledged_missing": [],
+        "branch_list": {
+          "outcome": "ok",
+          "status": 200,
+          "kind": null,
+          "message": null,
+          "data": {
+            "branches": [
+              "main"
+            ],
+            "details": [
+              {
+                "name": "main",
+                "head": {
+                  "graph_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.3.01M7GRFJJGTBYFJ5DG29A0G8VG",
+                  "graph_branch": null,
+                  "graph_manifest_version": 4,
+                  "parent_commit_id": "hb1.01M7GRFGBA9H76YJD34QZ5GXHR.2.01M7GRFGBWANR9995FVJSFMQ12",
+                  "merged_parent_commit_id": null,
+                  "actor_id": null,
+                  "created_at": 1794785135184301,
+                  "published": true,
+                  "kind": "published",
+                  "root_commit_id": null
+                },
+                "updated_at": 1794785135184301
+              }
+            ]
+          }
+        },
+        "scanned_via": "wm-omnigraph-b"
+      },
+      "k": 1,
+      "state_file": "state/1.json"
+    }
+  ],
+  "smoke": false,
+  "status": "complete"
+}

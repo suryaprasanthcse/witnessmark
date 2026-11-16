@@ -1,0 +1,132 @@
+{
+  "k": 2,
+  "digest": "sha256:8e8cc2230724289efb61c5bcfc1727fb77c82832c998ca7e104ac8f86047d077",
+  "state": {
+    "branches": {
+      "branches": [
+        "main",
+        "o1-sibling-00",
+        "o1-sibling-01",
+        "o1-sibling-02",
+        "o1-sibling-03"
+      ],
+      "details": [
+        {
+          "name": "main",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+            "graph_branch": null,
+            "graph_manifest_version": 18,
+            "parent_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.16.01M7GT8NY4EH3BJSKGSR3RKKRW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787006522352,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "updated_at": 1794787006522352
+        },
+        {
+          "name": "o1-sibling-00",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+            "graph_branch": null,
+            "graph_manifest_version": 18,
+            "parent_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.16.01M7GT8NY4EH3BJSKGSR3RKKRW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787006522352,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "from": "main",
+          "from_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+          "created_at": 1794787026000000,
+          "updated_at": 1794787026000000
+        },
+        {
+          "name": "o1-sibling-01",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+            "graph_branch": null,
+            "graph_manifest_version": 18,
+            "parent_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.16.01M7GT8NY4EH3BJSKGSR3RKKRW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787006522352,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "from": "main",
+          "from_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+          "created_at": 1794787026000000,
+          "updated_at": 1794787026000000
+        },
+        {
+          "name": "o1-sibling-02",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+            "graph_branch": null,
+            "graph_manifest_version": 18,
+            "parent_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.16.01M7GT8NY4EH3BJSKGSR3RKKRW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787006522352,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "from": "main",
+          "from_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+          "created_at": 1794787026000000,
+          "updated_at": 1794787026000000
+        },
+        {
+          "name": "o1-sibling-03",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+            "graph_branch": null,
+            "graph_manifest_version": 18,
+            "parent_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.16.01M7GT8NY4EH3BJSKGSR3RKKRW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787006522352,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "from": "main",
+          "from_commit_id": "hb1.01M7GT8MN5WSM51CSTQ6MNEYD1.17.01M7GT8P1TV6VGVKE0Y8H2EDNW",
+          "created_at": 1794787026000000,
+          "updated_at": 1794787026000000
+        }
+      ]
+    },
+    "unrelated_branches": {
+      "branches": [
+        "main"
+      ],
+      "details": [
+        {
+          "name": "main",
+          "head": {
+            "graph_commit_id": "hb1.01M7GT8MNZRAB84A3CRJT1C4E3.138.01M7GT9VFDVVM0WKPFGCG41QYW",
+            "graph_branch": null,
+            "graph_manifest_version": 139,
+            "parent_commit_id": "hb1.01M7GT8MNZRAB84A3CRJT1C4E3.137.01M7GT9VE45C9Y8JQ59V4H6R03",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794787044845417,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "updated_at": 1794787044845417
+        }
+      ]
+    }
+  }
+}

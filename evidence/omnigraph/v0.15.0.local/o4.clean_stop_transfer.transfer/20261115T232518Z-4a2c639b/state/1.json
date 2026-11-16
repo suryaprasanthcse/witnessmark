@@ -1,0 +1,62 @@
+{
+  "k": 1,
+  "digest": "sha256:c6ef3d7d6f52f0c9aee69042acce44b612d0ca29031e8cf830f0aeb26070b8da",
+  "state": {
+    "shutdown": {
+      "exit_code": 0,
+      "oom_killed": false,
+      "killed": false
+    },
+    "admission": {
+      "canonical_root": "file:///var/lib/omnigraph",
+      "ledger_id": "01M7GRF40GM1GH9EXYFYV9ZTGV",
+      "state_revision": 5,
+      "result_revision": 1,
+      "next_sequence": 2,
+      "lock_id": null,
+      "outstanding_id": null,
+      "lookup": null
+    },
+    "branches": {
+      "branches": [
+        "main"
+      ],
+      "details": [
+        {
+          "name": "main",
+          "head": {
+            "graph_commit_id": "hb1.01M7GRF78CJ11W2HCDHZEKVCS4.3.01M7GRF9HP7FN7WYCNS1TY9RTN",
+            "graph_branch": null,
+            "graph_manifest_version": 4,
+            "parent_commit_id": "hb1.01M7GRF78CJ11W2HCDHZEKVCS4.2.01M7GRF78ZTNRGXCYNYG2230SW",
+            "merged_parent_commit_id": null,
+            "actor_id": null,
+            "created_at": 1794785125942402,
+            "published": true,
+            "kind": "published",
+            "root_commit_id": null
+          },
+          "updated_at": 1794785125942402
+        }
+      ]
+    },
+    "task": [
+      {
+        "task": "task-0",
+        "state": "open"
+      }
+    ],
+    "holders": [],
+    "eligible_agents": [
+      {
+        "agent": "a-clean",
+        "task": "task-0"
+      },
+      {
+        "agent": "b-clean",
+        "task": "task-0"
+      }
+    ],
+    "graph_commit_id": "hb1.01M7GRF78CJ11W2HCDHZEKVCS4.3.01M7GRF9HP7FN7WYCNS1TY9RTN"
+  }
+}

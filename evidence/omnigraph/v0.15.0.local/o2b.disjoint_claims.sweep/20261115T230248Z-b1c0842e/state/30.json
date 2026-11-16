@@ -1,0 +1,356 @@
+{
+  "k": 30,
+  "digest": "sha256:bd6833e3e9f06b7d2947ee77d1868abccf4c2a3b3c339331354db0c795b86216",
+  "state": {
+    "tasks": [
+      {
+        "task": "task-0",
+        "state": "claimed",
+        "holders": [
+          "c00"
+        ]
+      },
+      {
+        "task": "task-1",
+        "state": "claimed",
+        "holders": [
+          "c01"
+        ]
+      },
+      {
+        "task": "task-2",
+        "state": "claimed",
+        "holders": [
+          "c02"
+        ]
+      },
+      {
+        "task": "task-3",
+        "state": "claimed",
+        "holders": [
+          "c03"
+        ]
+      },
+      {
+        "task": "task-4",
+        "state": "claimed",
+        "holders": [
+          "c04"
+        ]
+      },
+      {
+        "task": "task-5",
+        "state": "claimed",
+        "holders": [
+          "c05"
+        ]
+      },
+      {
+        "task": "task-6",
+        "state": "claimed",
+        "holders": [
+          "c06"
+        ]
+      },
+      {
+        "task": "task-7",
+        "state": "claimed",
+        "holders": [
+          "c07"
+        ]
+      },
+      {
+        "task": "task-8",
+        "state": "claimed",
+        "holders": [
+          "c08"
+        ]
+      },
+      {
+        "task": "task-9",
+        "state": "claimed",
+        "holders": [
+          "c09"
+        ]
+      },
+      {
+        "task": "task-10",
+        "state": "claimed",
+        "holders": [
+          "c10"
+        ]
+      },
+      {
+        "task": "task-11",
+        "state": "claimed",
+        "holders": [
+          "c11"
+        ]
+      },
+      {
+        "task": "task-12",
+        "state": "claimed",
+        "holders": [
+          "c12"
+        ]
+      },
+      {
+        "task": "task-13",
+        "state": "open",
+        "holders": []
+      },
+      {
+        "task": "task-14",
+        "state": "claimed",
+        "holders": [
+          "c14"
+        ]
+      },
+      {
+        "task": "task-15",
+        "state": "claimed",
+        "holders": [
+          "c15"
+        ]
+      },
+      {
+        "task": "task-16",
+        "state": "claimed",
+        "holders": [
+          "c16"
+        ]
+      },
+      {
+        "task": "task-17",
+        "state": "claimed",
+        "holders": [
+          "c17"
+        ]
+      },
+      {
+        "task": "task-18",
+        "state": "claimed",
+        "holders": [
+          "c18"
+        ]
+      },
+      {
+        "task": "task-19",
+        "state": "claimed",
+        "holders": [
+          "c19"
+        ]
+      },
+      {
+        "task": "task-20",
+        "state": "claimed",
+        "holders": [
+          "c20"
+        ]
+      },
+      {
+        "task": "task-21",
+        "state": "claimed",
+        "holders": [
+          "c21"
+        ]
+      },
+      {
+        "task": "task-22",
+        "state": "claimed",
+        "holders": [
+          "c22"
+        ]
+      },
+      {
+        "task": "task-23",
+        "state": "claimed",
+        "holders": [
+          "c23"
+        ]
+      },
+      {
+        "task": "task-24",
+        "state": "claimed",
+        "holders": [
+          "c24"
+        ]
+      },
+      {
+        "task": "task-25",
+        "state": "claimed",
+        "holders": [
+          "c25"
+        ]
+      },
+      {
+        "task": "task-26",
+        "state": "claimed",
+        "holders": [
+          "c26"
+        ]
+      },
+      {
+        "task": "task-27",
+        "state": "claimed",
+        "holders": [
+          "c27"
+        ]
+      },
+      {
+        "task": "task-28",
+        "state": "claimed",
+        "holders": [
+          "c28"
+        ]
+      },
+      {
+        "task": "task-29",
+        "state": "claimed",
+        "holders": [
+          "c29"
+        ]
+      },
+      {
+        "task": "task-30",
+        "state": "claimed",
+        "holders": [
+          "c30"
+        ]
+      },
+      {
+        "task": "task-31",
+        "state": "claimed",
+        "holders": [
+          "c31"
+        ]
+      },
+      {
+        "task": "task-32",
+        "state": "claimed",
+        "holders": [
+          "c32"
+        ]
+      },
+      {
+        "task": "task-33",
+        "state": "claimed",
+        "holders": [
+          "c33"
+        ]
+      },
+      {
+        "task": "task-34",
+        "state": "claimed",
+        "holders": [
+          "c34"
+        ]
+      },
+      {
+        "task": "task-35",
+        "state": "claimed",
+        "holders": [
+          "c35"
+        ]
+      },
+      {
+        "task": "task-36",
+        "state": "claimed",
+        "holders": [
+          "c36"
+        ]
+      },
+      {
+        "task": "task-37",
+        "state": "claimed",
+        "holders": [
+          "c37"
+        ]
+      },
+      {
+        "task": "task-38",
+        "state": "claimed",
+        "holders": [
+          "c38"
+        ]
+      },
+      {
+        "task": "task-39",
+        "state": "claimed",
+        "holders": [
+          "c39"
+        ]
+      },
+      {
+        "task": "task-40",
+        "state": "claimed",
+        "holders": [
+          "c40"
+        ]
+      },
+      {
+        "task": "task-41",
+        "state": "claimed",
+        "holders": [
+          "c41"
+        ]
+      },
+      {
+        "task": "task-42",
+        "state": "claimed",
+        "holders": [
+          "c42"
+        ]
+      },
+      {
+        "task": "task-43",
+        "state": "claimed",
+        "holders": [
+          "c43"
+        ]
+      },
+      {
+        "task": "task-44",
+        "state": "claimed",
+        "holders": [
+          "c44"
+        ]
+      },
+      {
+        "task": "task-45",
+        "state": "claimed",
+        "holders": [
+          "c45"
+        ]
+      },
+      {
+        "task": "task-46",
+        "state": "claimed",
+        "holders": [
+          "c46"
+        ]
+      },
+      {
+        "task": "task-47",
+        "state": "claimed",
+        "holders": [
+          "c47"
+        ]
+      },
+      {
+        "task": "task-48",
+        "state": "claimed",
+        "holders": [
+          "c48"
+        ]
+      },
+      {
+        "task": "task-49",
+        "state": "claimed",
+        "holders": [
+          "c49"
+        ]
+      }
+    ]
+  }
+}

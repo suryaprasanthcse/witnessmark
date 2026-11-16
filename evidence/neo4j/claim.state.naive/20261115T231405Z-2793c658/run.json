@@ -1,0 +1,802 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261115T231405Z-2793c658",
+  "batch": "m5b-20261115T230235Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "6a15b9c950505f412ddd17891f3b2f16be3bc8e5",
+    "dirty": false
+  },
+  "target": {
+    "name": "neo4j",
+    "repo": "neo4j/neo4j",
+    "ref": "5.26.2 community",
+    "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "neo4j",
+      "version": "5.26.2 community",
+      "config": {
+        "api": "HTTP tx/commit",
+        "isolation": "read committed (default)"
+      },
+      "image": "neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365",
+      "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "claim.state.naive",
+    "invariants": [
+      "I1A"
+    ],
+    "mode": "thread",
+    "clients": 50,
+    "trials": 20,
+    "params": {
+      "shape": "naive",
+      "query": "MATCH (t:WMTask {id: $task}) WHERE t.state = 'open' SET t.state = 'claimed', t.holder = $agent RETURN count(t) AS won",
+      "timeout_s": 60.0,
+      "spread_gate_ms": null
+    }
+  },
+  "seed": 20261118,
+  "started_at": "2026-11-15T23:14:05.126456Z",
+  "finished_at": "2026-11-15T23:14:14.344034Z",
+  "expectation": {
+    "role": "positive",
+    "basis": "documented",
+    "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+    "known_deviation": "KD-N1"
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "neo4j claim.state.naive: 50 clients, one at a time",
+      "expected": "only c00 wins and holds the task",
+      "observed": "winners ['c00']; holder 'c00'",
+      "met": true
+    },
+    {
+      "kind": "positive",
+      "configuration": "neo4j claim.state.naive: 50 clients x 20 trials",
+      "expected": "at least one violation in 20 valid trials",
+      "observed": "20 of 20 valid trials violated the invariant",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 16.002,
+      "outcomes": {
+        "ok": 2,
+        "fail": 48,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:8b84d45cce67e09669aada32bd4f7c40e1be18babd5c686250b4baa6dbe2ac61",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 2,
+          "unit": "winners",
+          "detail": "2 clients were told they won",
+          "witnesses": [
+            "1-c25-0",
+            "1-c32-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.595,
+      "outcomes": {
+        "ok": 9,
+        "fail": 41,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:873baf40cadd6abc40b55132080def5964ed006564e3fae40c2e084409f2c696",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 9,
+          "unit": "winners",
+          "detail": "9 clients were told they won",
+          "witnesses": [
+            "2-c03-0",
+            "2-c08-0",
+            "2-c09-0",
+            "2-c11-0",
+            "2-c27-0",
+            "2-c29-0",
+            "2-c32-0",
+            "2-c40-0",
+            "2-c43-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 18.001,
+      "outcomes": {
+        "ok": 11,
+        "fail": 39,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a46a81fe9fc031f12dba074c8080dc0d887188e5da5795de4470c9968501feb8",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 11,
+          "unit": "winners",
+          "detail": "11 clients were told they won",
+          "witnesses": [
+            "3-c02-0",
+            "3-c04-0",
+            "3-c07-0",
+            "3-c08-0",
+            "3-c09-0",
+            "3-c14-0",
+            "3-c15-0",
+            "3-c18-0",
+            "3-c33-0",
+            "3-c37-0",
+            "3-c40-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 10.44,
+      "outcomes": {
+        "ok": 13,
+        "fail": 37,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:14d31b8b8ef4ae9ddcb14ecba5a58cbfd8f36b4b885462d1b5ea2eeca2bcd6e4",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 13,
+          "unit": "winners",
+          "detail": "13 clients were told they won",
+          "witnesses": [
+            "4-c02-0",
+            "4-c03-0",
+            "4-c11-0",
+            "4-c12-0",
+            "4-c14-0",
+            "4-c18-0",
+            "4-c20-0",
+            "4-c29-0",
+            "4-c31-0",
+            "4-c34-0",
+            "4-c36-0",
+            "4-c38-0",
+            "4-c40-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 13.275,
+      "outcomes": {
+        "ok": 2,
+        "fail": 48,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:de563fd8be0cf4c0f36b0f78065c3eeecf7b4682841a667e8b0a6bc0b3b461cb",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 2,
+          "unit": "winners",
+          "detail": "2 clients were told they won",
+          "witnesses": [
+            "5-c06-0",
+            "5-c16-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 5.677,
+      "outcomes": {
+        "ok": 7,
+        "fail": 43,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3ff6a4be728b0d783dc2319d1263a3960e9bd1a6f275a4069b45f33f0ed596a6",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 7,
+          "unit": "winners",
+          "detail": "7 clients were told they won",
+          "witnesses": [
+            "6-c03-0",
+            "6-c11-0",
+            "6-c15-0",
+            "6-c30-0",
+            "6-c33-0",
+            "6-c40-0",
+            "6-c45-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.237,
+      "outcomes": {
+        "ok": 8,
+        "fail": 42,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:94202662cdc64b8ecb2ec52fb00d043f2a6daef5d513893b412a129641223f58",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 8,
+          "unit": "winners",
+          "detail": "8 clients were told they won",
+          "witnesses": [
+            "7-c02-0",
+            "7-c09-0",
+            "7-c20-0",
+            "7-c29-0",
+            "7-c33-0",
+            "7-c42-0",
+            "7-c45-0",
+            "7-c48-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 16.898,
+      "outcomes": {
+        "ok": 5,
+        "fail": 45,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:3ebc9bd41f880cc5544d3bce6c3131ebae64970c07007f86aafd55ca6b0d9072",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 5,
+          "unit": "winners",
+          "detail": "5 clients were told they won",
+          "witnesses": [
+            "8-c10-0",
+            "8-c23-0",
+            "8-c29-0",
+            "8-c36-0",
+            "8-c41-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 13.549,
+      "outcomes": {
+        "ok": 12,
+        "fail": 38,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:f42dc5b3c39e8b21a5a05861bf4fd8f3b8a07d2bf030ce1593f98296917f27d8",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 12,
+          "unit": "winners",
+          "detail": "12 clients were told they won",
+          "witnesses": [
+            "9-c03-0",
+            "9-c07-0",
+            "9-c11-0",
+            "9-c15-0",
+            "9-c17-0",
+            "9-c19-0",
+            "9-c22-0",
+            "9-c30-0",
+            "9-c40-0",
+            "9-c45-0",
+            "9-c46-0",
+            "9-c48-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 14.573,
+      "outcomes": {
+        "ok": 13,
+        "fail": 37,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:9cc8a62050c85678814d1f1af20550209bfe1415772d635315f9ae68e0f938d7",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 13,
+          "unit": "winners",
+          "detail": "13 clients were told they won",
+          "witnesses": [
+            "10-c02-0",
+            "10-c03-0",
+            "10-c07-0",
+            "10-c10-0",
+            "10-c11-0",
+            "10-c14-0",
+            "10-c18-0",
+            "10-c20-0",
+            "10-c30-0",
+            "10-c31-0",
+            "10-c36-0",
+            "10-c43-0",
+            "10-c49-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 9.73,
+      "outcomes": {
+        "ok": 7,
+        "fail": 43,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:ed487964d7cc8eb1f012ee77e85d212844d9f0c01e0d02ee976d028ce57251f9",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 7,
+          "unit": "winners",
+          "detail": "7 clients were told they won",
+          "witnesses": [
+            "11-c00-0",
+            "11-c04-0",
+            "11-c34-0",
+            "11-c36-0",
+            "11-c45-0",
+            "11-c46-0",
+            "11-c48-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.052,
+      "outcomes": {
+        "ok": 11,
+        "fail": 39,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:6d5bc1803d29c3a7f92f4d1fa4466211df84da82b71418c6dd47ec67387d23f6",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 11,
+          "unit": "winners",
+          "detail": "11 clients were told they won",
+          "witnesses": [
+            "12-c03-0",
+            "12-c05-0",
+            "12-c07-0",
+            "12-c08-0",
+            "12-c20-0",
+            "12-c23-0",
+            "12-c26-0",
+            "12-c28-0",
+            "12-c37-0",
+            "12-c41-0",
+            "12-c48-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 8.278,
+      "outcomes": {
+        "ok": 11,
+        "fail": 39,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:32c4cde0f7e038ea1cbd766a8ab114d685a6db8a7a79231fa5105bc4b866a7da",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 11,
+          "unit": "winners",
+          "detail": "11 clients were told they won",
+          "witnesses": [
+            "13-c00-0",
+            "13-c06-0",
+            "13-c14-0",
+            "13-c15-0",
+            "13-c19-0",
+            "13-c31-0",
+            "13-c32-0",
+            "13-c40-0",
+            "13-c45-0",
+            "13-c46-0",
+            "13-c47-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.607,
+      "outcomes": {
+        "ok": 12,
+        "fail": 38,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:f42dc5b3c39e8b21a5a05861bf4fd8f3b8a07d2bf030ce1593f98296917f27d8",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 12,
+          "unit": "winners",
+          "detail": "12 clients were told they won",
+          "witnesses": [
+            "14-c02-0",
+            "14-c06-0",
+            "14-c10-0",
+            "14-c12-0",
+            "14-c15-0",
+            "14-c17-0",
+            "14-c18-0",
+            "14-c25-0",
+            "14-c31-0",
+            "14-c37-0",
+            "14-c45-0",
+            "14-c48-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 17.494,
+      "outcomes": {
+        "ok": 9,
+        "fail": 41,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c41c62dc3b027ea9f78debb3850b1850cc17a7b225eafcf6e3d2de0088e9ad63",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 9,
+          "unit": "winners",
+          "detail": "9 clients were told they won",
+          "witnesses": [
+            "15-c00-0",
+            "15-c04-0",
+            "15-c10-0",
+            "15-c15-0",
+            "15-c19-0",
+            "15-c36-0",
+            "15-c37-0",
+            "15-c44-0",
+            "15-c47-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.519,
+      "outcomes": {
+        "ok": 4,
+        "fail": 46,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:c41c62dc3b027ea9f78debb3850b1850cc17a7b225eafcf6e3d2de0088e9ad63",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 4,
+          "unit": "winners",
+          "detail": "4 clients were told they won",
+          "witnesses": [
+            "16-c19-0",
+            "16-c33-0",
+            "16-c37-0",
+            "16-c42-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.28,
+      "outcomes": {
+        "ok": 9,
+        "fail": 41,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:d96cb710e99411af405e6c6aa19676a369147f48245f46bc8e57266195bd2c05",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 9,
+          "unit": "winners",
+          "detail": "9 clients were told they won",
+          "witnesses": [
+            "17-c02-0",
+            "17-c20-0",
+            "17-c35-0",
+            "17-c37-0",
+            "17-c41-0",
+            "17-c42-0",
+            "17-c44-0",
+            "17-c45-0",
+            "17-c47-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 6.295,
+      "outcomes": {
+        "ok": 13,
+        "fail": 37,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:00dcd2ca104983127f7264e8fab8cb63e05f63aafb5471e0ec8c1c85928f8e12",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 13,
+          "unit": "winners",
+          "detail": "13 clients were told they won",
+          "witnesses": [
+            "18-c02-0",
+            "18-c07-0",
+            "18-c09-0",
+            "18-c15-0",
+            "18-c17-0",
+            "18-c24-0",
+            "18-c27-0",
+            "18-c32-0",
+            "18-c37-0",
+            "18-c39-0",
+            "18-c46-0",
+            "18-c47-0",
+            "18-c49-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.366,
+      "outcomes": {
+        "ok": 13,
+        "fail": 37,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a4757ebad1d7951bc50680f931b2fd7ba392f661cf0a8a5d40998c462a5ab266",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 13,
+          "unit": "winners",
+          "detail": "13 clients were told they won",
+          "witnesses": [
+            "19-c03-0",
+            "19-c07-0",
+            "19-c09-0",
+            "19-c15-0",
+            "19-c19-0",
+            "19-c30-0",
+            "19-c33-0",
+            "19-c35-0",
+            "19-c36-0",
+            "19-c37-0",
+            "19-c38-0",
+            "19-c42-0",
+            "19-c43-0"
+          ]
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:75c6afc110553cfd1dbf5141cfd6c723673e4dcb1e3f7887aebf167f283955d0",
+      "release_spread_ms": 7.858,
+      "outcomes": {
+        "ok": 8,
+        "fail": 42,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:32c4cde0f7e038ea1cbd766a8ab114d685a6db8a7a79231fa5105bc4b866a7da",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I1A",
+          "held": false,
+          "magnitude": 8,
+          "unit": "winners",
+          "detail": "8 clients were told they won",
+          "witnesses": [
+            "20-c00-0",
+            "20-c05-0",
+            "20-c06-0",
+            "20-c14-0",
+            "20-c31-0",
+            "20-c33-0",
+            "20-c45-0",
+            "20-c46-0"
+          ]
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I1A",
+      "status": "KNOWN_DEVIATION",
+      "trials_violating": 20,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 2,
+        "median": 9.0,
+        "max": 13,
+        "unit": "winners"
+      },
+      "basis": "documented",
+      "basis_ref": "https://neo4j.com/docs/operations-manual/5/database-internals/concurrent-data-access/",
+      "witnesses": [
+        "1-c25-0",
+        "1-c32-0",
+        "2-c03-0",
+        "2-c08-0",
+        "2-c09-0",
+        "2-c11-0",
+        "2-c27-0",
+        "2-c29-0",
+        "2-c32-0",
+        "2-c40-0",
+        "2-c43-0",
+        "3-c02-0",
+        "3-c04-0",
+        "3-c07-0",
+        "3-c08-0",
+        "3-c09-0",
+        "3-c14-0",
+        "3-c15-0",
+        "3-c18-0",
+        "3-c33-0",
+        "3-c37-0",
+        "3-c40-0"
+      ],
+      "note": "known deviation KD-N1 (master blueprint section 7.5)"
+    }
+  ]
+}

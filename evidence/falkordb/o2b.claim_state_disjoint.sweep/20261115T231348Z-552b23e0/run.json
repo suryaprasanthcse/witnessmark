@@ -1,0 +1,2937 @@
+{
+  "schema_version": 1,
+  "run_id": "20261115T231348Z-552b23e0",
+  "batch": "m5b-20261115T230235Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "6a15b9c950505f412ddd17891f3b2f16be3bc8e5",
+    "dirty": false
+  },
+  "target": {
+    "name": "falkordb",
+    "repo": "FalkorDB/FalkorDB",
+    "ref": "6.0.4 (graph module 60004)",
+    "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+  },
+  "components": [
+    {
+      "role": "baseline",
+      "name": "falkordb",
+      "version": "6.0.4 (graph module 60004)",
+      "config": {
+        "appendonly": "no",
+        "appendfsync": "everysec",
+        "save": "3600 1 300 100 60 10000"
+      },
+      "image": "falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f",
+      "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "o2b.claim_state_disjoint.sweep",
+    "invariants": [
+      "I1A"
+    ],
+    "mode": "sweep",
+    "params": {
+      "claim": "MATCH (t:WMTask {id: $task}) WHERE t.state = 'open' SET t.state = 'claimed', t.holder = $agent RETURN count(t) AS won",
+      "agents": [
+        1,
+        2,
+        5,
+        10,
+        25,
+        50
+      ]
+    }
+  },
+  "seed": 0,
+  "started_at": "2026-11-15T23:13:48.477292Z",
+  "sweep": {
+    "agents": [
+      1,
+      2,
+      5,
+      10,
+      25,
+      50
+    ],
+    "warmups": 3,
+    "measured_repetitions": 5,
+    "max_attempts": 200,
+    "policy": "read the task and the graph commit id, submit m_claim_cond conditioned on that commit id; on precondition_failure read again and resubmit, until it succeeds or reaches the cap; any other refusal, a task no longer open, or an unknown outcome ends the agent",
+    "interleaving": "rounds over N"
+  },
+  "spread_gate": {
+    "state": "on",
+    "gate_ms": 40.0
+  },
+  "smoke": false,
+  "interpretation": "a cost of documented behaviour (any intervening commit invalidates a conditional claim, O-K3), not a defect",
+  "expected": {
+    "falkordb": "every claim succeeds on its first attempt, serialised [ours: GNOMON S3]"
+  },
+  "finished_at": "2026-11-15T23:13:53.314725Z",
+  "trials": [
+    {
+      "k": 1,
+      "n": 1,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 1.468,
+      "time_to_last_event_ms": 1.468,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 1.4675,
+        "p99": 1.4675
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/1.json"
+    },
+    {
+      "k": 2,
+      "n": 2,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.107,
+      "time_to_all_claimed_ms": 2.015,
+      "time_to_last_event_ms": 2.015,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.9106999999999998,
+        "p99": 1.913542
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/2.json"
+    },
+    {
+      "k": 3,
+      "n": 5,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.249,
+      "time_to_all_claimed_ms": 1.912,
+      "time_to_last_event_ms": 1.912,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.569,
+        "p99": 1.73098
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/3.json"
+    },
+    {
+      "k": 4,
+      "n": 10,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.483,
+      "time_to_all_claimed_ms": 2.445,
+      "time_to_last_event_ms": 2.445,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.7509000000000001,
+        "p99": 2.3496140000000003
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/4.json"
+    },
+    {
+      "k": 5,
+      "n": 25,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 1.676,
+      "time_to_all_claimed_ms": 4.917,
+      "time_to_last_event_ms": 4.917,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 2.9745,
+        "p99": 4.0338840000000005
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/5.json"
+    },
+    {
+      "k": 6,
+      "n": 50,
+      "round": 0,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 11.581,
+      "time_to_all_claimed_ms": 13.482,
+      "time_to_last_event_ms": 13.482,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 8.94205,
+        "p99": 12.323407999999999
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/6.json"
+    },
+    {
+      "k": 7,
+      "n": 1,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 0.896,
+      "time_to_last_event_ms": 0.896,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 0.8964,
+        "p99": 0.8964
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/7.json"
+    },
+    {
+      "k": 8,
+      "n": 2,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.141,
+      "time_to_all_claimed_ms": 3.143,
+      "time_to_last_event_ms": 3.143,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 3.0081,
+        "p99": 3.140498
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/8.json"
+    },
+    {
+      "k": 9,
+      "n": 5,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.253,
+      "time_to_all_claimed_ms": 3.034,
+      "time_to_last_event_ms": 3.034,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 2.6407,
+        "p99": 2.8362399999999997
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/9.json"
+    },
+    {
+      "k": 10,
+      "n": 10,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.751,
+      "time_to_all_claimed_ms": 2.901,
+      "time_to_last_event_ms": 2.901,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.92805,
+        "p99": 2.445195
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/10.json"
+    },
+    {
+      "k": 11,
+      "n": 25,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 1.719,
+      "time_to_all_claimed_ms": 4.989,
+      "time_to_last_event_ms": 4.989,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 2.7761,
+        "p99": 4.403428
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/11.json"
+    },
+    {
+      "k": 12,
+      "n": 50,
+      "round": 1,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 44,
+      "wasted_attempts": 6,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 44,
+        "refused": 6
+      },
+      "release_spread_ms": 4.625,
+      "time_to_all_claimed_ms": null,
+      "time_to_last_event_ms": 10.255,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 5.308400000000001,
+        "p99": 9.353034
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/12.json"
+    },
+    {
+      "k": 13,
+      "n": 1,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 1.435,
+      "time_to_last_event_ms": 1.435,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 1.4354,
+        "p99": 1.4354
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/13.json"
+    },
+    {
+      "k": 14,
+      "n": 2,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.107,
+      "time_to_all_claimed_ms": 1.317,
+      "time_to_last_event_ms": 1.317,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.18665,
+        "p99": 1.209827
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/14.json"
+    },
+    {
+      "k": 15,
+      "n": 5,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.298,
+      "time_to_all_claimed_ms": 1.845,
+      "time_to_last_event_ms": 1.845,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.4075,
+        "p99": 1.77446
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/15.json"
+    },
+    {
+      "k": 16,
+      "n": 10,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.567,
+      "time_to_all_claimed_ms": 2.733,
+      "time_to_last_event_ms": 2.733,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.81295,
+        "p99": 2.4825320000000004
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/16.json"
+    },
+    {
+      "k": 17,
+      "n": 25,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 1.511,
+      "time_to_all_claimed_ms": 5.138,
+      "time_to_last_event_ms": 5.138,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 3.1768,
+        "p99": 4.059764
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/17.json"
+    },
+    {
+      "k": 18,
+      "n": 50,
+      "round": 2,
+      "warmup": true,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 6.252,
+      "time_to_all_claimed_ms": 9.929,
+      "time_to_last_event_ms": 9.929,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 5.4913,
+        "p99": 9.046442999999998
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/18.json"
+    },
+    {
+      "k": 19,
+      "n": 1,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 0.916,
+      "time_to_last_event_ms": 0.916,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 0.9157,
+        "p99": 0.9157
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/19.json"
+    },
+    {
+      "k": 20,
+      "n": 2,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.067,
+      "time_to_all_claimed_ms": 1.052,
+      "time_to_last_event_ms": 1.052,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 0.97565,
+        "p99": 0.9848129999999999
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/20.json"
+    },
+    {
+      "k": 21,
+      "n": 5,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.27,
+      "time_to_all_claimed_ms": 1.954,
+      "time_to_last_event_ms": 1.954,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.6065,
+        "p99": 1.731068
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/21.json"
+    },
+    {
+      "k": 22,
+      "n": 10,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.551,
+      "time_to_all_claimed_ms": 2.979,
+      "time_to_last_event_ms": 2.979,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 2.0915999999999997,
+        "p99": 2.556685
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/22.json"
+    },
+    {
+      "k": 23,
+      "n": 25,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 2.487,
+      "time_to_all_claimed_ms": 5.105,
+      "time_to_last_event_ms": 5.105,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 2.9128,
+        "p99": 4.325824
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/23.json"
+    },
+    {
+      "k": 24,
+      "n": 50,
+      "round": 3,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 6.643,
+      "time_to_all_claimed_ms": 9.805,
+      "time_to_last_event_ms": 9.805,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 5.3337,
+        "p99": 8.813949999999998
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/24.json"
+    },
+    {
+      "k": 25,
+      "n": 1,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 1.12,
+      "time_to_last_event_ms": 1.12,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 1.1199,
+        "p99": 1.1199
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/25.json"
+    },
+    {
+      "k": 26,
+      "n": 2,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.085,
+      "time_to_all_claimed_ms": 1.661,
+      "time_to_last_event_ms": 1.661,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.552,
+        "p99": 1.659114
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/26.json"
+    },
+    {
+      "k": 27,
+      "n": 5,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.223,
+      "time_to_all_claimed_ms": 1.84,
+      "time_to_last_event_ms": 1.84,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.5298,
+        "p99": 1.777504
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/27.json"
+    },
+    {
+      "k": 28,
+      "n": 10,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.545,
+      "time_to_all_claimed_ms": 2.688,
+      "time_to_last_event_ms": 2.688,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.83645,
+        "p99": 2.309421
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/28.json"
+    },
+    {
+      "k": 29,
+      "n": 25,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 2.32,
+      "time_to_all_claimed_ms": 6.062,
+      "time_to_last_event_ms": 6.062,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 3.2574,
+        "p99": 5.021928
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/29.json"
+    },
+    {
+      "k": 30,
+      "n": 50,
+      "round": 4,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 7.922,
+      "time_to_all_claimed_ms": 12.95,
+      "time_to_last_event_ms": 12.95,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 7.22705,
+        "p99": 11.644481999999998
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/30.json"
+    },
+    {
+      "k": 31,
+      "n": 1,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 1.093,
+      "time_to_last_event_ms": 1.093,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 1.0932,
+        "p99": 1.0932
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/31.json"
+    },
+    {
+      "k": 32,
+      "n": 2,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.082,
+      "time_to_all_claimed_ms": 1.616,
+      "time_to_last_event_ms": 1.616,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.52045,
+        "p99": 1.614089
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/32.json"
+    },
+    {
+      "k": 33,
+      "n": 5,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.257,
+      "time_to_all_claimed_ms": 1.689,
+      "time_to_last_event_ms": 1.689,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.1769,
+        "p99": 1.6245
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/33.json"
+    },
+    {
+      "k": 34,
+      "n": 10,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.545,
+      "time_to_all_claimed_ms": 2.369,
+      "time_to_last_event_ms": 2.369,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.5318,
+        "p99": 2.1747419999999997
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/34.json"
+    },
+    {
+      "k": 35,
+      "n": 25,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 2.124,
+      "time_to_all_claimed_ms": 5.171,
+      "time_to_last_event_ms": 5.171,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 2.8451,
+        "p99": 4.001916000000001
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/35.json"
+    },
+    {
+      "k": 36,
+      "n": 50,
+      "round": 5,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 5.997,
+      "time_to_all_claimed_ms": 9.091,
+      "time_to_last_event_ms": 9.091,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 4.46735,
+        "p99": 7.940033999999999
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/36.json"
+    },
+    {
+      "k": 37,
+      "n": 1,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 0.918,
+      "time_to_last_event_ms": 0.918,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 0.9184,
+        "p99": 0.9184
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/37.json"
+    },
+    {
+      "k": 38,
+      "n": 2,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.086,
+      "time_to_all_claimed_ms": 1.229,
+      "time_to_last_event_ms": 1.229,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.1406999999999998,
+        "p99": 1.2270379999999999
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/38.json"
+    },
+    {
+      "k": 39,
+      "n": 5,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.208,
+      "time_to_all_claimed_ms": 1.499,
+      "time_to_last_event_ms": 1.499,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.1383,
+        "p99": 1.286548
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/39.json"
+    },
+    {
+      "k": 40,
+      "n": 10,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.76,
+      "time_to_all_claimed_ms": 2.406,
+      "time_to_last_event_ms": 2.406,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 1.6284,
+        "p99": 2.2887060000000004
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/40.json"
+    },
+    {
+      "k": 41,
+      "n": 25,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 1.847,
+      "time_to_all_claimed_ms": 5.046,
+      "time_to_last_event_ms": 5.046,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 3.0254,
+        "p99": 3.936104
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/41.json"
+    },
+    {
+      "k": 42,
+      "n": 50,
+      "round": 6,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 6.701,
+      "time_to_all_claimed_ms": 9.154,
+      "time_to_last_event_ms": 9.154,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 5.004099999999999,
+        "p99": 7.761505
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/42.json"
+    },
+    {
+      "k": 43,
+      "n": 1,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 1,
+      "claimed": 1,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 1
+      },
+      "release_spread_ms": 0.0,
+      "time_to_all_claimed_ms": 1.45,
+      "time_to_last_event_ms": 1.45,
+      "claim_latency_ms": {
+        "n": 1,
+        "p50": 1.4497,
+        "p99": 1.4497
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 1,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/43.json"
+    },
+    {
+      "k": 44,
+      "n": 2,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 2,
+      "claimed": 2,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 2
+      },
+      "release_spread_ms": 0.063,
+      "time_to_all_claimed_ms": 1.236,
+      "time_to_last_event_ms": 1.236,
+      "claim_latency_ms": {
+        "n": 2,
+        "p50": 1.1124,
+        "p99": 1.171788
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 2,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/44.json"
+    },
+    {
+      "k": 45,
+      "n": 5,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 5,
+      "claimed": 5,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 5
+      },
+      "release_spread_ms": 0.244,
+      "time_to_all_claimed_ms": 1.781,
+      "time_to_last_event_ms": 1.781,
+      "claim_latency_ms": {
+        "n": 5,
+        "p50": 1.465,
+        "p99": 1.6215840000000001
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 5,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/45.json"
+    },
+    {
+      "k": 46,
+      "n": 10,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 10,
+      "claimed": 10,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 10
+      },
+      "release_spread_ms": 0.642,
+      "time_to_all_claimed_ms": 3.006,
+      "time_to_last_event_ms": 3.006,
+      "claim_latency_ms": {
+        "n": 10,
+        "p50": 2.24715,
+        "p99": 2.862038
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 10,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/46.json"
+    },
+    {
+      "k": 47,
+      "n": 25,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 25,
+      "claimed": 25,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 25
+      },
+      "release_spread_ms": 1.837,
+      "time_to_all_claimed_ms": 6.574,
+      "time_to_last_event_ms": 6.574,
+      "claim_latency_ms": {
+        "n": 25,
+        "p50": 4.4354,
+        "p99": 6.1213
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 25,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/47.json"
+    },
+    {
+      "k": 48,
+      "n": 50,
+      "round": 7,
+      "warmup": false,
+      "valid": true,
+      "attempts_total": 50,
+      "claimed": 50,
+      "wasted_attempts": 0,
+      "agent_attempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "agent_attempts_median": 1.0,
+      "agent_attempts_max": 1,
+      "agent_status": {
+        "claimed": 50
+      },
+      "release_spread_ms": 5.578,
+      "time_to_all_claimed_ms": 9.907,
+      "time_to_last_event_ms": 9.907,
+      "claim_latency_ms": {
+        "n": 50,
+        "p50": 5.17835,
+        "p99": 9.283619
+      },
+      "read_latency_ms": {
+        "n": 0,
+        "p50": null,
+        "p99": null
+      },
+      "operations": 50,
+      "unknown_operations": 0,
+      "holders_ok": true,
+      "violations": [],
+      "state_file": "state/48.json"
+    }
+  ],
+  "summary": [
+    {
+      "n": 1,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 1.093,
+        "q1": 0.918,
+        "q3": 1.12,
+        "min": 0.916,
+        "max": 1.45
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 1.0932,
+        "q1": 0.9184,
+        "q3": 1.1199,
+        "min": 0.9157,
+        "max": 1.4497
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 1.0932,
+        "q1": 0.9184,
+        "q3": 1.1199,
+        "min": 0.9157,
+        "max": 1.4497
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "n": 2,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 2,
+        "q1": 2,
+        "q3": 2,
+        "min": 2,
+        "max": 2
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1.0,
+        "q1": 1.0,
+        "q3": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 1.236,
+        "q1": 1.229,
+        "q3": 1.616,
+        "min": 1.052,
+        "max": 1.661
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 1.1406999999999998,
+        "q1": 1.1124,
+        "q3": 1.52045,
+        "min": 0.97565,
+        "max": 1.552
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 1.2270379999999999,
+        "q1": 1.171788,
+        "q3": 1.614089,
+        "min": 0.9848129999999999,
+        "max": 1.659114
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 0.082,
+        "q1": 0.067,
+        "q3": 0.085,
+        "min": 0.063,
+        "max": 0.086
+      }
+    },
+    {
+      "n": 5,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 5,
+        "q1": 5,
+        "q3": 5,
+        "min": 5,
+        "max": 5
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 1.781,
+        "q1": 1.689,
+        "q3": 1.84,
+        "min": 1.499,
+        "max": 1.954
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 1.465,
+        "q1": 1.1769,
+        "q3": 1.5298,
+        "min": 1.1383,
+        "max": 1.6065
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 1.6245,
+        "q1": 1.6215840000000001,
+        "q3": 1.731068,
+        "min": 1.286548,
+        "max": 1.777504
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 0.244,
+        "q1": 0.223,
+        "q3": 0.257,
+        "min": 0.208,
+        "max": 0.27
+      }
+    },
+    {
+      "n": 10,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 10,
+        "q1": 10,
+        "q3": 10,
+        "min": 10,
+        "max": 10
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1.0,
+        "q1": 1.0,
+        "q3": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 2.688,
+        "q1": 2.406,
+        "q3": 2.979,
+        "min": 2.369,
+        "max": 3.006
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 1.83645,
+        "q1": 1.6284,
+        "q3": 2.0915999999999997,
+        "min": 1.5318,
+        "max": 2.24715
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 2.309421,
+        "q1": 2.2887060000000004,
+        "q3": 2.556685,
+        "min": 2.1747419999999997,
+        "max": 2.862038
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 0.551,
+        "q1": 0.545,
+        "q3": 0.642,
+        "min": 0.545,
+        "max": 0.76
+      }
+    },
+    {
+      "n": 25,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 25,
+        "q1": 25,
+        "q3": 25,
+        "min": 25,
+        "max": 25
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 5.171,
+        "q1": 5.105,
+        "q3": 6.062,
+        "min": 5.046,
+        "max": 6.574
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 3.0254,
+        "q1": 2.9128,
+        "q3": 3.2574,
+        "min": 2.8451,
+        "max": 4.4354
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 4.325824,
+        "q1": 4.001916000000001,
+        "q3": 5.021928,
+        "min": 3.936104,
+        "max": 6.1213
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 2.124,
+        "q1": 1.847,
+        "q3": 2.32,
+        "min": 1.837,
+        "max": 2.487
+      }
+    },
+    {
+      "n": 50,
+      "measured_repetitions": 5,
+      "valid_repetitions": 5,
+      "invalid_repetitions": 0,
+      "attempts_total": {
+        "n": 5,
+        "median": 50,
+        "q1": 50,
+        "q3": 50,
+        "min": 50,
+        "max": 50
+      },
+      "wasted_attempts": {
+        "n": 5,
+        "median": 0,
+        "q1": 0,
+        "q3": 0,
+        "min": 0,
+        "max": 0
+      },
+      "agent_attempts_median": {
+        "n": 5,
+        "median": 1.0,
+        "q1": 1.0,
+        "q3": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "agent_attempts_max": {
+        "n": 5,
+        "median": 1,
+        "q1": 1,
+        "q3": 1,
+        "min": 1,
+        "max": 1
+      },
+      "time_to_all_claimed_ms": {
+        "n": 5,
+        "median": 9.805,
+        "q1": 9.154,
+        "q3": 9.907,
+        "min": 9.091,
+        "max": 12.95
+      },
+      "claim_latency_p50_ms": {
+        "n": 5,
+        "median": 5.17835,
+        "q1": 5.004099999999999,
+        "q3": 5.3337,
+        "min": 4.46735,
+        "max": 7.22705
+      },
+      "claim_latency_p99_ms": {
+        "n": 5,
+        "median": 8.813949999999998,
+        "q1": 7.940033999999999,
+        "q3": 9.283619,
+        "min": 7.761505,
+        "max": 11.644481999999998
+      },
+      "release_spread_ms": {
+        "n": 5,
+        "median": 6.643,
+        "q1": 5.997,
+        "q3": 6.701,
+        "min": 5.578,
+        "max": 7.922
+      }
+    }
+  ],
+  "findings": [],
+  "status": "complete"
+}

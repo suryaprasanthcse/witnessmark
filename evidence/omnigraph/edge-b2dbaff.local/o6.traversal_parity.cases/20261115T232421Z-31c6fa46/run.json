@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "run_id": "20261115T232421Z-31c6fa46",
+  "batch": "m5b-20261115T230235Z",
+  "started_at": "2026-11-15T23:24:21.593Z",
+  "finished_at": "2026-11-15T23:24:27.502Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "6a15b9c950505f412ddd17891f3b2f16be3bc8e5",
+    "dirty": false
+  },
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.14.7",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "target": {
+    "name": "omnigraph",
+    "repo": "ModernRelay/omnigraph",
+    "ref": "edge-b2dbaff",
+    "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "omnigraph-server",
+      "version": "edge-b2dbaff",
+      "image": "witnessmark/omnigraph:edge-b2dbaff",
+      "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792",
+      "config": {
+        "backend": "local"
+      }
+    },
+    {
+      "role": "object-store",
+      "name": "minio",
+      "version": "RELEASE.2025-09-07T16-13-09Z",
+      "image": "witnessmark/minio@sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "digest": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "image_id": "sha256:5c9f6e9b19cdd3c333900e5102b196bfdb2e19f3e25674bfa0cef924e67dc899",
+      "config": {
+        "in_use": false
+      }
+    },
+    {
+      "role": "baseline",
+      "name": "neo4j",
+      "version": "5.26.2 community",
+      "config": {
+        "api": "HTTP tx/commit",
+        "isolation": "read committed (default)"
+      },
+      "image": "neo4j:5.26.2@sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365",
+      "digest": "sha256:099b9f74968c123209972835417985ed2a1cc19c0422c0753a313e26a736c365"
+    },
+    {
+      "role": "baseline",
+      "name": "falkordb",
+      "version": "6.0.4 (graph module 60004)",
+      "config": {
+        "appendonly": "no",
+        "appendfsync": "everysec",
+        "save": "3600 1 300 100 60 10000"
+      },
+      "image": "falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f",
+      "digest": "sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f"
+    }
+  ],
+  "scenario": {
+    "id": "o6.traversal_parity",
+    "mode": "cases",
+    "invariants": [
+      "I4"
+    ]
+  },
+  "trials": [
+    {
+      "met": true,
+      "checks": [
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "different engines",
+          "detail": "identical normalised results from neo4j, falkordb, omnigraph",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "different engines",
+          "detail": "identical normalised results from neo4j, falkordb, omnigraph",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "different engines",
+          "detail": "identical normalised results from neo4j, falkordb, omnigraph",
+          "witnesses": []
+        }
+      ],
+      "rows": {
+        "omnigraph": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ],
+          "q_live_open": [
+            {
+              "live": 0
+            }
+          ]
+        },
+        "neo4j": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ],
+          "q_live_open": [
+            {
+              "live": 0
+            }
+          ]
+        },
+        "falkordb": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ],
+          "q_live_open": [
+            {
+              "live": 0
+            }
+          ]
+        }
+      },
+      "errors": {
+        "omnigraph": {},
+        "neo4j": {},
+        "falkordb": {}
+      },
+      "classifications": {
+        "q_eligible": "identical",
+        "q_live": "identical",
+        "q_live_open": "identical"
+      },
+      "valid": true,
+      "k": 1,
+      "state_file": "state/1.json"
+    }
+  ],
+  "status": "complete",
+  "controls": {
+    "sequential": {
+      "met": true,
+      "checks": [
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "different engines",
+          "detail": "identical normalised results from neo4j, falkordb, omnigraph",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4",
+          "held": true,
+          "magnitude": 0,
+          "unit": "different engines",
+          "detail": "identical normalised results from neo4j, falkordb, omnigraph",
+          "witnesses": []
+        }
+      ],
+      "rows": {
+        "omnigraph": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ]
+        },
+        "neo4j": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ]
+        },
+        "falkordb": {
+          "q_eligible": [
+            {
+              "agent": "c00",
+              "task": "task-0"
+            },
+            {
+              "agent": "c00",
+              "task": "task-1"
+            },
+            {
+              "agent": "c01",
+              "task": "task-0"
+            },
+            {
+              "agent": "c01",
+              "task": "task-1"
+            },
+            {
+              "agent": "c02",
+              "task": "task-0"
+            },
+            {
+              "agent": "c02",
+              "task": "task-1"
+            }
+          ],
+          "q_live": [
+            {
+              "live": 1
+            }
+          ]
+        }
+      },
+      "errors": {
+        "omnigraph": {},
+        "neo4j": {},
+        "falkordb": {}
+      },
+      "classifications": {
+        "q_eligible": "identical",
+        "q_live": "identical"
+      },
+      "k": 0,
+      "state_file": "state/0.json"
+    }
+  }
+}

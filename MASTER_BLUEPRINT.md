@@ -1058,23 +1058,23 @@ Phase B depends on Phase A and ends when the calibrated gate is recorded and the
 Run these in order. Use `thread` mode for the O2 and O3 races, and run each
 scenario with its sequential control and the applicable controls in §6.2.
 
-1. Use `--no-spread-gate` for the first O2 batch to record Δ for every trial. Treat 40 ms as
+1. [x] Use `--no-spread-gate` for the first O2 batch to record Δ for every trial. Treat 40 ms as
    provisional for Omnigraph, and set its δ using the 1.5 × p99 rule in §6.3
    before reporting O2 or O3 results.
-2. Run the O2b cost curve (declared sweep, both engines).
-3. Run the O2 claim races with the calibrated gate.
-4. Run the O3 merge races with the calibrated gate.
-5. Run O6 traversal parity beyond the Part 1 sequential control.
-6. Run O5 on MinIO.
-7. Exercise O4 local ownership transfer with `failover --variant clean-stop`.
+2. [x] Run the O2b cost curve (declared sweep, both engines).
+3. [x] Run the O2 claim races with the calibrated gate.
+4. [x] Run the O3 merge races with the calibrated gate.
+5. [x] Run O6 traversal parity beyond the Part 1 sequential control.
+6. [x] Run O5 on MinIO.
+7. [x] Exercise O4 local ownership transfer with `failover --variant clean-stop`.
    Stop A gracefully and read `cluster status --json`. Start B only after
    a clean exit and confirmed release. Mark retained or unclean cells
    NOT_EXERCISED and capture their logs.
-8. Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
+8. [x] Run O1 with an unrelated-graph reader and a writer on the Omnigraph side
    before any public FalkorDB comparison. Follow §6.5 for the cost curve
    and §11.5 for publication.
 
-**Status, Phase B (stopped, 2026-11-16).** Step 1 is done. Steps 2 to 8 have not run.
+**Status, Phase B (2026-11-16).** Steps 1 to 8 ran; Phase B awaits the maintainer's review.
 
 - [x] Run plan declared in the Omnigraph blueprint, §12 (`772ef96`).
 - [x] Step 1: batch `m5-20261115T222957Z` (`772ef96`). Its Neo4j control
@@ -1086,7 +1086,11 @@ scenario with its sequential control and the applicable controls in §6.2.
   accepts every typed definite refusal (`a6b690d`). The per-actor cap of 16 is
   a documented boundary, and two refusal-type differences are OBSERVED
   (Omnigraph blueprint, §12 amendment and §13).
-- [ ] Steps 2 to 8 (batch 2).
+- [x] Steps 2 to 8: batch `m5b-20261115T230235Z` (`6a15b9c`), 37 commands,
+  36 exit 0. The O1 cell that failed on a harness bug (host port exhaustion,
+  fixed in `f7ae8f2`) was re-run in `m5d-20261116T003205Z`, where the FalkorDB
+  curve met the S28 band. Reports: `evidence/M5_OMNIGRAPH.md` and
+  `evidence/M5_OMNIGRAPH_B2.md`. Results: Omnigraph blueprint §14.
 
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write

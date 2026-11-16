@@ -4,7 +4,7 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | v0.4, 2026-11-16. M5 Phase D: `improve` read and scripted (§1.3, C29–C33), and the C2 run plan declared (§5, C2); the #5253 build is blocked (C32) and no Phase D batch has run. v0.3, 2026-11-15: M3 ran; results are in §12 and in `evidence/M3_COGNEE*.md`. Implemented in M3: `witnessmark_cognee/` (adapter, helper process, stub handlers, fixtures, scenarios C0–C6, the C4 ladder), `wm_cognee.py` (entry point), `requirements/` (frozen builds). §1.2 records what was read at the pin. A finding counts only when a run in `evidence/` backs it. |
+| Status | v0.4, 2026-11-16. M5 Phase D: `improve` read and scripted (§1.3, C29–C33), the C2 run plan declared (§5, C2) and run in batch `m5k-20261116T123513Z`; results in §13 and [evidence/M5_COGNEE.md](../../evidence/M5_COGNEE.md). #5253 is NOT_EXERCISED (C32). v0.3, 2026-11-15: M3 ran; results are in §12 and in `evidence/M3_COGNEE*.md`. Implemented in M3: `witnessmark_cognee/` (adapter, helper process, stub handlers, fixtures, scenarios C0–C6, the C4 ladder), `wm_cognee.py` (entry point), `requirements/` (frozen builds). §1.2 records what was read at the pin. A finding counts only when a run in `evidence/` backs it. |
 | Code | Run with the build's venv Python: `.state/venvs/cognee-v1.6.8/Scripts/python targets/02-cognee/wm_cognee.py {race,cases,visibility,ladder} --row R1 …`. Row R3 runs in `.state/venvs/cognee-v1.6.1-falkor` with `--build v1.6.1`. |
 | Project | [topoteretes/cognee](https://github.com/topoteretes/cognee), Apache-2.0. A memory engine that ingests data, builds a knowledge graph with an LLM (`cognify`), and serves graph and vector retrieval. |
 | Line under test | v1.6.x. The primary pin is **v1.6.8**, tag commit `069f3cc119bdf5628be054bb915992b2fc78cfc5` (2026-11-12), which is also the current PyPI release. Before anything is filed, the scenario is re-run on the `dev` branch, where development happens. |
@@ -330,9 +330,9 @@ The batch id is `m5j-<UTC yyyymmddThhmmssZ>`, or the next unused letter.
 | R4 (PostgreSQL) | **Deferred (maintainer, 2026-11-15).** It needs a pinned Postgres service in `baselines/` and #4167's head. |
 | Should C3 on R3 cognify A in its setup, so that `delete_data` takes the ledger path and R3 yields a cross-process measurement of #6559? Today the delete of a never-cognified document raises on cognee 1.6.1 + the FalkorDB adapter (C27), so the control is not met | Open, for the maintainer: it changes C3's fixture on one row only **Deferred (maintainer, 2026-11-15): no further M3 runs.** |
 | Should C2's fixture give the deleted documents an entity of their own, so that R3's control is not tripped by the edge that 1.6.1's delete leaves between two shared entities (C27)? That would hide the behaviour from C2; C6 does not exercise it | Open, for the maintainer **Deferred (maintainer, 2026-11-15): C27 stands as documented.** |
-| Should the pull-request builds (#5253, #4167, #6571) run? | **Declined (maintainer, 2026-11-15):** M3 stays on released builds only (§11). **M5 Phase D (maintainer, 2026-11-16):** #5253 approved for C2 only, under the #2119 conditions; #4167 and #6571 stay declined. **Blocked:** #5253's diff does not apply to v1.6.8 (C32), so no #5253 environment was built; awaiting the maintainer's decision. |
+| Should the pull-request builds (#5253, #4167, #6571) run? | **Declined (maintainer, 2026-11-15):** M3 stays on released builds only (§11). **M5 Phase D (maintainer, 2026-11-16):** #5253 approved for C2 only, under the #2119 conditions; #4167 and #6571 stay declined. #5253's diff does not apply to v1.6.8 (C32), so no #5253 environment was built. **Ruled (maintainer, 2026-11-16):** every #5253 cell is NOT_EXERCISED; no hand port and no older-Cognee build (§13). |
 | Should the docs use neutral test vocabulary? | **Approved and applied (maintainer, 2026-11-15)** in prose: loopback-only network patch, fault injector, pause/resume, fail over, stale writer. Code identifiers and evidence schema values are unchanged (master §11.4). |
-| Are the R2 `AfterRunHookError`s (LanceDB compaction commit conflicts across processes) a finding for `topoteretes/cognee`, and does #5253 change them? | Open: needs a #5253 build, blocked in Phase D (C32, §11) |
+| Are the R2 `AfterRunHookError`s (LanceDB compaction commit conflicts across processes) a finding for `topoteretes/cognee`, and does #5253 change them? | Open. #5253 cannot be built on v1.6.8 (C32, ruled NOT_EXERCISED). Phase D's `c2.improve` on R2 saw no `AfterRunHookError` in 20 trials (§13), but it has one cognifying process, not M3's two. |
 
 ## 11. Pull-request builds
 
@@ -340,7 +340,7 @@ Installing or running third-party pull-request code needs the maintainer's expli
 
 | PR | Head | Would run | Status |
 |---|---|---|---|
-| [#5253](https://github.com/topoteretes/cognee/pull/5253) | `599ae0110bf5ddf4d6865f586e1887ea5f99a1fa` | C2 on R1 and R2, C1 | declined for M3 (maintainer, 2026-11-15); approved for Phase D C2 only (maintainer, 2026-11-16); **blocked**: the diff does not apply to v1.6.8 and the head is 1,783 commits behind it (C32), no environment built |
+| [#5253](https://github.com/topoteretes/cognee/pull/5253) | `599ae0110bf5ddf4d6865f586e1887ea5f99a1fa` | C2 on R1 and R2, C1 | declined for M3 (maintainer, 2026-11-15); approved for Phase D C2 only (maintainer, 2026-11-16); the diff does not apply to v1.6.8 and the head is 1,783 commits behind it (C32); **NOT_EXERCISED** by ruling, no environment built |
 | [#4167](https://github.com/topoteretes/cognee/pull/4167) | `87301c704d1a8b660b481e3b12e5796d91ae44f4` | C1 on R1 (SQLite file lock) and R4 (advisory lock) | declined (maintainer, 2026-11-15) |
 | [#6571](https://github.com/topoteretes/cognee/pull/6571) | `9455c4c7043d8b59a28921fcdd3947ccb4867a7e` | its own regression test, next to C3 | declined (maintainer, 2026-11-15) |
 
@@ -434,3 +434,61 @@ The table in §3 is filled from these reports; each cell names its run.
   - `repro_r3_falkor_adapter.py` (cognee 1.6.1, adapter 0.4.1 at `ff1324ec`, FalkorDB 6.0.4). C24: the graph client on `GRAPH_DATABASE_PORT=16380` answers, while the vector client raises `ConnectionError … 127.0.0.1:6379` with `VECTOR_DB_PORT=16380` and no shim. C27a: delete after cognify returns without error; delete of an added-but-uncognified document raises `DocumentSubgraphNotFoundError`. C27b: the graph before the delete is the fixture's (2 `Entity` nodes, 1 edge between them); after deleting the document that owns the edge, with a second document still naming both entities, it holds 2 nodes and 1 edge where 2 and 0 are expected. C28: `GRAPH.CONFIG GET RESULTSET_SIZE` is 10000; a 9,000-node graph comes back whole, a 10,500-node graph comes back as 10,000 nodes.
   - Two repro bugs surfaced and were fixed in the repro, not in a finding: the C24 case first raised outside its `try`, and its control compared an int port with the string the client reports.
 - **Invalid trials.** The reports' "Invalid trials" tables list, per run, the trials a validity gate removed (release spread over 1 ms for processes, an operation with an unknown outcome) and why. Verdict cells count valid trials only.
+
+
+## 13. Results (M5)
+
+**Provenance.** One batch on the same host as M3 (Windows 11, 11th Gen i5-11320H, 8 logical cores, 23.8 GB; Docker VM 8 CPUs, 11.6 GB). The batch is `m5k-20261116T123513Z`, harness commit `951ccf9` with a clean tree, and its report is [evidence/M5_COGNEE.md](../../evidence/M5_COGNEE.md), regenerated from `evidence/` and cmp-verified. It ran 5 commands (compose up, the baseline readiness wait, then rows 1 to 3 of the C2 run plan), all exit 0. Every number below is [measured] with its run id unless tagged otherwise.
+
+**Batch history.** `m5j-20261116T123344Z` was a false start that ran nothing. The driver passed a relative interpreter path, Windows could not start it, and the driver stopped before the first cell. It left no evidence, only its driver log under `.state/scratch/`. The driver now passes absolute paths. The batch took the next unused letter, `m5k`. Nothing was re-run to change a result.
+
+**Maintainer rulings, 2026-11-16.** Every #5253 cell is NOT_EXERCISED: "pull-request head is based on main c4cd8ceb, 1,783 commits behind v1.6.8; 11 of 16 LanceDBAdapter.py hunks do not apply; no hand port and no older-Cognee build" (C32). The fixed-string `GlobalContextSummaryContent` answers on 1.6.1 are approved, under the same policy as M3's `SummarizedContent` (C33). R3 runs as declared and is INVALID by rule if its control fails (C27).
+
+### Controls
+
+| Cell | Sequential control | Overlap control | Run |
+|---|---|---|---|
+| R1, v1.6.8 | met | 1 of 1 valid trials had two or more in flight | `20261116T123522Z-49f0100f` |
+| R2, v1.6.8 | met | 20 of 20 | `20261116T125700Z-b7ebcfbc` |
+| R3, cognee 1.6.1 | **NOT met**: `relations 14 (want 13, one each)` | 20 of 20 | `20261116T131854Z-43702faa` |
+
+Each met control showed A's and B's fixture graph exactly and nothing of C, with `review_conflicts` and `global_context_index` completed and the seven session-fed stages skipped. R3's miss is the M3 behaviour (C27, M3 run `20261114T210439Z-c2c55f16`): at 1.6.1 the delete removes graph nodes but not an edge whose two endpoints survive, so all four R3 verdicts are INVALID by rule (master §9). The release spread over the 41 valid trials had p50 0.09 ms and max 0.13 ms, under the 1 ms process gate.
+
+### Results by row and build
+
+| Row | Build | Valid trials | Duplicate vector ids (I1B) | Writer conflicts (C2W) | Partially indexed (C2P) | Lost items (I2) | One-store artefacts (I4) | Deleted data left (I5) | `improve` stages | Verdict | Run |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R1 (Ladybug + LanceDB) | v1.6.8 | 1 of 20 | 0 of 1 | 0 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | `global_context_index` completed 20 of 20; `review_conflicts` completed 19 of 20, errored once on the Ladybug lock | BOUNDARY reached (Ladybug, one process per store); the report shows PASS on the single valid trial | `20261116T123522Z-49f0100f` |
+| R2 (Neo4j + LanceDB) | v1.6.8 | 20 of 20 | 0 of 20 | 0 | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 | both completed 20 of 20 | PASS (I1B, I2, I4, I5), support boundary | `20261116T125700Z-b7ebcfbc` |
+| R3 (FalkorDB holds the vectors) | 1.6.1 + adapter `ff1324ec` | 20 of 20 | no separate vector store (C8) | 0 | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 | `global_context_index` completed 20 of 20; `triplet_enrichment` skipped | INVALID (control not met, C27) | `20261116T131854Z-43702faa` |
+| R1, R2 | #5253 head `599ae011` | – | – | – | – | – | – | – | – | NOT_EXERCISED (ruling above, C32) | – |
+
+**R1 in detail.** In 19 of 20 trials A's `cognify` raised `IO exception: Could not set lock on file …` and its outcome was unknown, so the gate removed the trial. In the one valid trial, trial 18, A's `cognify` returned and `improve`'s `review_conflicts` stage errored on the same lock (op `18-c01-0`). `improve` fails open (C29), so that operation returned. This is M3 finding 2's boundary, reached through `improve` as well: Cognee scopes open source to one process per store (C21). The single valid trial is not a measurement of LanceDB writers across processes.
+
+**Scripted prompts in the batch.** At v1.6.8 every `improve(B)` sent one `ReviewResponse` call: 20 in R2's race trials and 19 in R1's, plus one per sequential control. Each reviewed six subjects (four companies, two people) and reported no conflict, which is what the fixture scripts (C30). At 1.6.1, R3's race trials sent 60 `GlobalContextSummaryContent` calls, three per `improve` (C33). No call in the batch was refused with HTTP 400, and no trial was invalid for a stub error.
+
+### Comparison with M3's C2
+
+The same corpus, rows, mode, `data_per_batch=1` and trial count as M3's `c2.writers`. The only change is client B: it ran `add` and `cognify` of B in M3, and runs `improve` on an already cognified B here.
+
+| Row | M3 `c2.writers` | M5 `c2.improve` |
+|---|---|---|
+| R1 | 0 of 20 valid, Ladybug lock (`20261114T143808Z-c442cc14`) | 1 of 20 valid; the lock in the other 19, and in that trial's `improve` stage |
+| R2 | 14 of 20 valid; duplicate vector ids in 13 (up to 2 rows per id); I2, I4, I5 hold; no `Too many concurrent writers`; 6 of 20 `AfterRunHookError` (`20261114T214705Z-8a40b975`) | 20 of 20 valid; no duplicate vector id, no `Too many concurrent writers`, no `AfterRunHookError`, nothing lost or left behind |
+| R3 | control not met, the same C27 edge (`20261114T210439Z-c2c55f16`) | control not met, the same C27 edge |
+
+[inference] On R2 the M3 duplicates came with two processes cognifying documents that share entities, so both upserted the same entity, type and edge-type ids. In `c2.improve` only A cognifies. `improve(B)` writes `GlobalContextSummary` rows whose ids derive from B's dataset and documents (C30), so no two processes merge the same ids. The clean R2 result is therefore not evidence that cross-process LanceDB writes are now safe. It shows that `improve`'s own writes, next to a `cognify` and a delete on the same store, left no duplicate, conflict or partial index in 20 of 20 trials.
+
+### Findings
+
+1. **R2, `improve` next to `cognify` and a delete on one LanceDB store: clean in 20 of 20 trials** [measured: `20261116T125700Z-b7ebcfbc`]. No duplicate id in any of the 7 collections, `GlobalContextSummary_text` included. No writer conflict, no partially indexed document, no lost entity, relation, chunk or row of A or B, nothing of C left, and both graph-fed stages completed every time. **Credit:** on this path `improve`'s stages kept their own writes and B's data intact while two other processes wrote to and deleted from the same store. The support level is still boundary (C21).
+2. **R1: the Ladybug one-process boundary also stops `improve`** [measured: `20261116T123522Z-49f0100f`]: `review_conflicts` errored on the file lock in the one trial where `cognify` got through. This is a support boundary, not a defect (C21; M3 finding 2).
+3. **R3: the C27 edge recurs with `improve`** [measured: `20261116T131854Z-43702faa`]: the sequential control shows 14 relations where 13 are expected, as in M3. The race checks held in 20 of 20 trials, but no verdict counts without the control.
+4. **`improve` makes no conflict claim on C2's corpus.** Its prompt reaches six subjects per run, and the ideal answer is "no conflict" (C30). I7 stays NOT_APPLICABLE (§10).
+
+### Not run
+
+- **#5253:** every cell NOT_EXERCISED (ruling above, C32). The fact is kept for a Phase E draft: the reporter's fix does not apply to the current release.
+- **R4** (Ladybug, LanceDB, PostgreSQL): deferred; no PostgreSQL baseline and no #4167 build.
+- **The GLiNER check:** skipped permanently. **The C3 fixture variant on R3:** an open question, not run.
+- **The session-fed `improve` stages:** NOT_EXERCISED, "no session ids in C2's design" (C31).

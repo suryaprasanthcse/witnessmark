@@ -1143,14 +1143,16 @@ Phase D follows Phase C and ends when C2 and any approved R4 runs have recorded 
   approves pinning the PostgreSQL baseline and separately approves any
   #4167 pull-request build needed for the C1 advisory-lock case.
 
-**Status, Phase D (2026-11-16).** Stopped before the batch on the #5253 build; awaiting the maintainer's decision. Nothing was measured.
+**Status, Phase D (2026-11-16).** C2 ran through `improve`; Phase D awaits the maintainer's review.
 
 - [x] Phase C sign-off recorded (`b8b35d8`).
-- [x] `improve` read at the pin and its prompts listed and scripted (Cognee blueprint §1.3, C29–C33). With no session ids only the graph-fed stages run: `review_conflicts` sends one scripted `ReviewResponse` prompt per call, and `global_context_index` makes no model call at v1.6.8. At cognee 1.6.1 (R3) `global_context_index` is opt-in and sends a scripted `GlobalContextSummaryContent` prompt. The seven session-fed stages are NOT_EXERCISED, "no session ids in C2's design" (C31).
-- [x] C2 run plan declared in the Cognee blueprint (C2 run plan), with the `c2.improve` scenario, its stub fixtures and unit tests (`f339e3e`). One scratch smoke trial per row: the sequential control was met on R1 and R2. On R3 it was not met, with the `relations 14 (want 13, one each)` that M3's R3 `c2.writers` showed (Cognee blueprint C27).
-- [x] I7 answered: it stays NOT_APPLICABLE. The conflict-review stage runs scripted, but it stores no fact versions with valid and transaction intervals (Cognee blueprint §10).
-- [ ] #5253 (approved for C2 only): **blocked.** Its diff does not apply to v1.6.8 (11 of 16 hunks rejected), and its head is 1,783 commits behind the tag (Cognee blueprint C32). No environment was built.
-- [ ] Main batch: not run. R4 stays deferred (no PostgreSQL baseline, no #4167 build).
+- [x] `improve` read at the pin, and its prompts listed and scripted (Cognee blueprint §1.3, C29–C33, `f339e3e`). With no session ids only the graph-fed stages run: `review_conflicts` sends one scripted `ReviewResponse` prompt per call, and `global_context_index` makes no model call at v1.6.8. At cognee 1.6.1 (R3) it is opt-in, and its `GlobalContextSummaryContent` prompts get fixed strings (maintainer-approved). The seven session-fed stages are NOT_EXERCISED, "no session ids in C2's design" (C31).
+- [x] C2 run plan declared before the batch (`951ccf9`). I7 stays NOT_APPLICABLE (Cognee blueprint §10).
+- [x] Batch `m5k-20261116T123513Z` (`951ccf9`): 5 commands, 5 exit 0. The false start `m5j-20261116T123344Z` ran nothing (a driver path bug). Report: `evidence/M5_COGNEE.md`. Results: Cognee blueprint §13.
+  - R2 was clean in 20 of 20 valid trials: no duplicate vector id, no writer conflict, no partial index, nothing lost or left behind (`20261116T125700Z-b7ebcfbc`).
+  - R1 reached the Ladybug boundary in 19 of 20 trials, and in the valid trial's `improve` stage (`20261116T123522Z-49f0100f`).
+  - R3 is INVALID by rule: its control was not met, the C27 edge (`20261116T131854Z-43702faa`).
+- [x] #5253: every cell NOT_EXERCISED by the maintainer's ruling. Its head is based on main `c4cd8ceb`, 1,783 commits behind v1.6.8, and 11 of 16 `LanceDBAdapter.py` hunks do not apply (Cognee blueprint C32). R4 stays deferred.
 
 The GLiNER check stays permanently skipped. The M3 C27 findings for C2 and C3 on
 R3 stand as documented. The C3 fixture variant on R3 remains an open question.
@@ -1176,6 +1178,9 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
   tooling): O2a losers refused with `CardinalityViolation` instead of
   `precondition_failure` (447 of 980 and 496 of 980 in `m5b`), and the O2b
   attempt curve.
+- (c) Recorded 2026-11-16 at the Phase D ruling, for a Phase E draft under §11.1: #5253's head is based on main
+  `c4cd8ceb`, 1,783 commits behind cognee v1.6.8, and 11 of its 16 `LanceDBAdapter.py` hunks do not apply
+  to v1.6.8 (Cognee blueprint C32).
 
 ## 13. Open questions
 

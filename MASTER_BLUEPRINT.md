@@ -1074,7 +1074,7 @@ scenario with its sequential control and the applicable controls in §6.2.
    before any public FalkorDB comparison. Follow §6.5 for the cost curve
    and §11.5 for publication.
 
-**Status, Phase B (2026-11-16).** Steps 1 to 8 ran; Phase B awaits the maintainer's review.
+**Status, Phase B (2026-11-16).** Steps 1 to 8 ran. Reviewed and signed off by the maintainer on 2026-11-16, after verifying the ten Phase B commits, the six batches, the 58 M5 runs' evidence and the superseded O1 and O2b runs.
 
 - [x] Run plan declared in the Omnigraph blueprint, §12 (`772ef96`).
 - [x] Step 1: batch `m5-20261115T222957Z` (`772ef96`). Its Neo4j control
@@ -1143,6 +1143,16 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 3. Prepare contribution drafts in `drafts/` under §11.1 for the
    maintainer to review and send. Tooling never sends them.
 4. Record the maintainer's M5 review.
+
+**Notes for Phase E (recorded 2026-11-16 at the Phase B sign-off; not fixed now).**
+
+- (a) The Part 2 run manifests (O1, O2b, O4, O5, O6) carry null `controls`
+  and `verdicts`, which §9.2 lists as required. Decide in Phase E whether to
+  amend §9.2 or fill them.
+- (b) Candidate upstream questions for drafts under §11.1 (never sent by
+  tooling): O2a losers refused with `CardinalityViolation` instead of
+  `precondition_failure` (447 of 980 and 496 of 980 in `m5b`), and the O2b
+  attempt curve.
 
 ## 13. Open questions
 

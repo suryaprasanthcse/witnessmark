@@ -4,7 +4,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all six batches are §14. Phase B awaits review. |
+| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all six batches are §14. Phase B was reviewed and signed off by the maintainer on 2026-11-16; Phase C (Graphiti) is next. |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
 | Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |

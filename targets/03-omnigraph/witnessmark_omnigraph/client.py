@@ -14,6 +14,7 @@ import errno
 import json
 import re
 import socket
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -104,6 +105,13 @@ def _error_kind(payload: Any, status: int) -> str:
     return str(payload.get("code") or f"http_{status}")
 
 
+KEPT_CONNECTION_DROPPED = "kept_connection_dropped"
+
+
+class _KeptConnectionDropped(Exception):
+    """A read on a reused kept connection that the server closed before replying (keep_alive only)."""
+
+
 def _message(payload: Any, fallback: str) -> str:
     if isinstance(payload, dict):
         value = payload.get("error") or payload.get("message")
@@ -144,6 +152,7 @@ class OmnigraphClient:
         # thread: the connection is not shared.
         self.keep_alive = keep_alive
         self._kept: http.client.HTTPConnection | None = None
+        self.dropped_reads: list[int] = []  # perf_counter_ns of each read retried after a dropped kept connection
 
     def _connection(self) -> http.client.HTTPConnection:
         cls = http.client.HTTPSConnection if self._scheme == "https" else http.client.HTTPConnection
@@ -156,8 +165,21 @@ class OmnigraphClient:
                  extra_headers: dict[str, str] | None = None,
                  content_type: str = "application/json") -> OperationResult:
         inv = stamp() if self._observed is not None else None
-        result = self._send(method, path, body, protected=protected, extra_headers=extra_headers,
-                            content_type=content_type)
+        options = {"protected": protected, "extra_headers": extra_headers, "content_type": content_type}
+        try:
+            result = self._send(method, path, body, **options)
+        except _KeptConnectionDropped as exc:
+            # A read whose kept connection the server closed before any reply. The dropped attempt is its own
+            # record (outcome unknown: no reply arrived), its time is kept for the O1 stall metrics, and the
+            # read is sent once more on a fresh connection as a separate record. Nothing is hidden.
+            self.dropped_reads.append(time.perf_counter_ns())
+            if self._observed is not None:
+                self._observed(method, path, body, inv, stamp(), OperationResult(
+                    Outcome.UNKNOWN, kind=KEPT_CONNECTION_DROPPED,
+                    message=f"the server closed the kept connection before replying ({exc}); "
+                            "the read is sent again on a fresh connection"))
+                inv = stamp()
+            result = self._send(method, path, body, **options)
         if self._observed is not None:
             self._observed(method, path, body, inv, stamp(), result)
         return result
@@ -180,16 +202,13 @@ class OmnigraphClient:
             try:
                 connection.request(method, path, body=encoded, headers=headers)
                 response = connection.getresponse()
-            except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError):
-                # The server closed an idle kept connection before answering. Only a read is sent again, on a
-                # fresh connection; a write's outcome stays unknown, as without keep-alive.
-                if not (reused and ((method == "POST" and path.endswith("/query")) or method == "GET")):
-                    raise
-                connection.close()
-                self._kept = None
-                connection = self._connection()
-                connection.request(method, path, body=encoded, headers=headers)
-                response = connection.getresponse()
+            except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError) as exc:
+                # The server closed a kept connection before answering. A read is sent again by _request, on a
+                # fresh connection and as a separate record; a write's outcome stays unknown, as without
+                # keep-alive.
+                if reused and ((method == "POST" and path.endswith("/query")) or method == "GET"):
+                    raise _KeptConnectionDropped(str(exc) or type(exc).__name__) from exc
+                raise
             raw = response.read()
             status = response.status
             if self.keep_alive and not response.will_close:

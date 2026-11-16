@@ -24,6 +24,12 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802 - http.server naming
         size = int(self.headers.get("Content-Length", "0"))
         self.rfile.read(size)
+        if self.server.drop_next:
+            # Close the kept connection without a reply, as a server closing an idle connection would.
+            self.server.drop_next = False
+            self.server.dropped.append(self.path)
+            self.close_connection = True
+            return
         self.server.ports.append(self.client_address[1])
         self.server.paths.append(self.path)
         body = json.dumps({"columns": [], "rows": []}).encode()
@@ -41,6 +47,7 @@ class KeepAliveTest(unittest.TestCase):
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
         self.server.daemon_threads = True
         self.server.ports, self.server.paths, self.server.close_after_each = [], [], False
+        self.server.drop_next, self.server.dropped = False, []
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.endpoint = f"http://127.0.0.1:{self.server.server_address[1]}"
 
@@ -68,6 +75,28 @@ class KeepAliveTest(unittest.TestCase):
             self.assertIs(client.query("q", {}).outcome, Outcome.OK)
         self.assertIsNone(client._kept)
         self.assertEqual(len(set(self.server.ports)), 3)
+
+    def test_a_dropped_read_is_its_own_record_retried_once_and_counted(self):
+        records = []
+        client = OmnigraphClient(self.endpoint, keep_alive=True,
+                                 observed=lambda method, path, body, inv, ret, reply: records.append(reply))
+        self.assertIs(client.query("q", {}).outcome, Outcome.OK)
+        self.server.drop_next = True
+        result = client.query("q", {})
+        self.assertIs(result.outcome, Outcome.OK)
+        self.assertEqual(len(client.dropped_reads), 1)
+        self.assertEqual([(r.outcome, r.kind) for r in records],
+                         [(Outcome.OK, None), (Outcome.UNKNOWN, "kept_connection_dropped"), (Outcome.OK, None)])
+        self.assertEqual(len(self.server.dropped), 1)
+
+    def test_a_dropped_write_is_unknown_and_never_sent_again(self):
+        client = OmnigraphClient(self.endpoint, keep_alive=True)
+        self.assertIs(client.query("q", {}).outcome, Outcome.OK)
+        self.server.drop_next = True
+        result = client.mutate("m", {})
+        self.assertIs(result.outcome, Outcome.UNKNOWN)
+        self.assertEqual(client.dropped_reads, [])
+        self.assertEqual(len(self.server.paths), 1)  # only the first read was answered; the write was not resent
 
 
 if __name__ == "__main__":

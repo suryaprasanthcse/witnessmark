@@ -154,11 +154,16 @@ class PhaseBRunsTest(unittest.TestCase):
         main, reader, writer = mock.Mock(), mock.Mock(), mock.Mock()
         capture.client.side_effect = [main, reader, writer]
         main.query.side_effect = reader.query.side_effect = writer.mutate.side_effect = completed
+        main.dropped_reads, reader.dropped_reads, writer.dropped_reads = [], [time.perf_counter_ns() + 10**12], []
         client.branch_create.side_effect = completed
         with mock.patch.object(part2, "_rss_mb", return_value=1.0):
             result = part2._timed_branch_create(client, part2.load_queries(), "unit", capture)
         self.assertEqual([call.kwargs.get("graph") for call in capture.client.call_args_list],
                          [None, "unrelated", "unrelated"])
+        # Every load keeps one connection; a retried read after the create window is counted in the sample only.
+        self.assertEqual([call.kwargs.get("keep_alive") for call in capture.client.call_args_list], [True] * 3)
+        self.assertEqual(result["read_retries"], {"main_reader_during_create": 0, "unrelated_reader_during_create": 0,
+                                                  "main_reader_total": 0, "unrelated_reader_total": 1})
         self.assertTrue(reader.query.called and writer.mutate.called)
         for field in ("stall_ms", "unrelated_reader_stall_ms", "unrelated_writer_stall_ms"):
             self.assertGreaterEqual(result[field], 0)

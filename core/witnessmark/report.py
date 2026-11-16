@@ -612,9 +612,14 @@ def transfer_table(runs: list[dict]) -> str:
 
 
 def unrelated_stall_table(runs: list[dict]) -> str | None:
-    """O1's unrelated-graph reader and writer, recorded from M5 on."""
-    lines = ["| Build | Storage | Nodes / edges | Siblings | Unrelated reader stall median (ms) | "
-             "Unrelated writer stall median (ms) | Run |", "|---|---|---|---|---|---|---|"]
+    """O1's unrelated-graph reader and writer, recorded from M5 on, with read retries once runs record them."""
+    retries = any("read_retries" in s for run in runs for t in run.get("trials", []) for s in t.get("samples", []))
+    head = "| Build | Storage | Nodes / edges | Siblings | Unrelated reader stall median (ms) | Unrelated writer stall median (ms) |"
+    rule = "|---|---|---|---|---|---|"
+    if retries:
+        head += " Read retries during create, main / unrelated reader (sum) | Read retries in the whole sample (sum) |"
+        rule += "---|---|"
+    lines = [head + " Run |", rule + "---|"]
     for run in runs:
         build, storage = _where(run)
         for trial in run.get("trials", []):
@@ -623,8 +628,15 @@ def unrelated_stall_table(runs: list[dict]) -> str | None:
             writer = [s["unrelated_writer_stall_ms"] for s in samples if s.get("unrelated_writer_stall_ms") is not None]
             if not reader and not writer:
                 continue
-            lines.append(f"| {build} | {storage} | {trial.get('size')} / {trial.get('size')} | {trial.get('siblings')} | "
-                         f"{_fmt(percentile(reader, 50))} | {_fmt(percentile(writer, 50))} | `{run['run_id']}` |")
+            line = (f"| {build} | {storage} | {trial.get('size')} / {trial.get('size')} | {trial.get('siblings')} | "
+                    f"{_fmt(percentile(reader, 50))} | {_fmt(percentile(writer, 50))} |")
+            if retries:
+                counts = [s.get("read_retries") or {} for s in samples]
+                during = (sum(c.get("main_reader_during_create", 0) for c in counts),
+                          sum(c.get("unrelated_reader_during_create", 0) for c in counts))
+                total = sum(c.get("main_reader_total", 0) + c.get("unrelated_reader_total", 0) for c in counts)
+                line += f" {during[0]} / {during[1]} | {total} |"
+            lines.append(line + f" `{run['run_id']}` |")
     return "\n".join(lines) if len(lines) > 2 else None
 
 

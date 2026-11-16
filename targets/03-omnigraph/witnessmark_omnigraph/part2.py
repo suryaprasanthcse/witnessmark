@@ -45,6 +45,11 @@ REPETITIONS = 5
 # a 2 s lease closed admission under load in O1 (batch m4c, proxy run).
 LEASE_SECONDS = 2
 DEFAULT_LEASE_SECONDS = 30
+# O1's method since f7ae8f2: each closed-loop load (main reader, unrelated reader, unrelated writer) keeps one
+# HTTP/1.1 connection. M4's O1 and batch m5b-20261115T230235Z opened a new connection per request.
+O1_LOAD_CONNECTIONS = {"model": "kept", "per": "load client",
+                       "note": "one HTTP/1.1 connection per closed-loop load; a read dropped by the server is "
+                               "retried once as a separate history record and counted in read_retries"}
 CLEAN_STOP_TIMEOUT = 40  # Both pinned servers default to a 25 s shutdown grace.
 RETAINED_ADMISSION = "admission retained after stop; terminal I/O cannot be established by the harness"
 I6_BRANCH_AFTER = 5  # the I6a branch is cut once this many ledger appends have landed
@@ -472,6 +477,14 @@ def _timed_branch_create(client: OmnigraphClient, queries: dict[str, str], name:
         "stall_ms": max(0.0, during_gap - (statistics.median(baseline_gaps) if baseline_gaps else 0)),
         "unrelated_reader_stall_ms": _completion_gap((end for _, end in other_reader.samples), started, finished),
         "unrelated_writer_stall_ms": _completion_gap((end for _, end in other_writer.samples), started, finished),
+        # Reads retried after the server closed a kept connection (client.py). Each retry is its own history
+        # record; a retried read completes only after its second attempt, so the stall gaps above include it.
+        "read_retries": {
+            "main_reader_during_create": sum(started <= t <= finished for t in main.dropped_reads),
+            "unrelated_reader_during_create": sum(started <= t <= finished for t in other.dropped_reads),
+            "main_reader_total": len(main.dropped_reads),
+            "unrelated_reader_total": len(other.dropped_reads),
+        },
         "rss_before_mb": rss_before,
         "rss_after_mb": _rss_mb("wm-omnigraph-a"),
     }
@@ -637,7 +650,8 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
              "storage": storage, "warmups": warmups, "measured_repetitions": repetitions}
     planned = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started, [],
                         run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
-                        cluster_lease_seconds=stack.lease_seconds, status="planned-before-execution", smoke=smoke)
+                        cluster_lease_seconds=stack.lease_seconds, status="planned-before-execution", smoke=smoke,
+                        load_connections=O1_LOAD_CONNECTIONS)
     capture = RunCapture(repo, evidence, planned, command)
     stack.capture = capture
     try:
@@ -717,7 +731,8 @@ def run_o1(repo: Path, evidence: Path, batch: str, build_name: str, build: dict,
         manifest = _manifest(repo, batch, build, build_name, storage, "o1.branch_cost", "curve", started,
                              trials, run_id=run_id, invariants=["I6a", "I6b", "I6c"], sweep=sweep,
                              cluster_lease_seconds=stack.lease_seconds, status="complete",
-                             copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor}, smoke=smoke)
+                             copy_weight=copy_weight, controls={"i6": i6, "falkordb": falkor}, smoke=smoke,
+                             load_connections=O1_LOAD_CONNECTIONS)
         capture.write_manifest(manifest)
         return manifest, capture.path
     except Exception as exc:

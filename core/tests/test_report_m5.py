@@ -97,6 +97,22 @@ class ReportM5Test(unittest.TestCase):
                       "released | `t` |", text)
         self.assertIn("| v0.15.0 | local | 8 / 8 | 0 | 4 | 6 | `c` |", text)
 
+    def test_o1_read_retries_are_shown_once_runs_record_them(self):
+        curve = {"run_id": "c", "batch": "b", "started_at": "1", "harness": HARNESS, "host": HOST,
+                 "target": {"name": "omnigraph", "ref": "v0.15.0"},
+                 "components": [{"role": "sut", "config": {"backend": "local"}}],
+                 "scenario": {"id": "o1.branch_cost", "mode": "curve"},
+                 "trials": [{"size": 8, "siblings": 0, "samples": [
+                     {"create_ms": 1.0, "unrelated_reader_stall_ms": 4.0, "unrelated_writer_stall_ms": 6.0,
+                      "read_retries": {"main_reader_during_create": 1, "unrelated_reader_during_create": 0,
+                                       "main_reader_total": 2, "unrelated_reader_total": 1}},
+                     {"create_ms": 1.0, "unrelated_reader_stall_ms": 4.0, "unrelated_writer_stall_ms": 6.0,
+                      "read_retries": {"main_reader_during_create": 0, "unrelated_reader_during_create": 1,
+                                       "main_reader_total": 0, "unrelated_reader_total": 1}}]}]}
+        text = report.memory_markdown([curve], "b", "T")
+        self.assertIn("Read retries during create", text)
+        self.assertIn("| v0.15.0 | local | 8 / 8 | 0 | 4 | 6 | 1 / 1 | 4 | `c` |", text)
+
     def test_an_m4_batch_gets_none_of_the_m5_sections(self):
         curve = {"run_id": "c", "batch": "b", "started_at": "1", "harness": HARNESS, "host": HOST,
                  "target": {"name": "omnigraph", "ref": "v0.15.0"},

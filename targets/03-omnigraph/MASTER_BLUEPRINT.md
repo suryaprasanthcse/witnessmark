@@ -141,6 +141,23 @@ maps that documented constraint message to the definite typed refusal
   precede five measured repetitions. One closed-loop `q_task` reader owns its
   own connection; object-store request counts are taken in a separate matched
   proxy repetition [code: `targets/03-omnigraph/witnessmark_omnigraph/part2.py`].
+  **Connection model (method change in M5).** M4's O1, and the O1 runs of
+  batch `m5b-20261115T230235Z`, opened a new TCP connection for every request
+  of every closed-loop load and closed it after the reply [code:
+  `targets/03-omnigraph/witnessmark_omnigraph/client.py` @ `2a02bd8` and
+  `6a15b9c`]. From `f7ae8f2` on, each load (the main reader, and since M5 the
+  unrelated reader and writer) keeps one HTTP/1.1 connection. The change
+  followed host port exhaustion in batch 2 (§14). A read whose kept connection
+  the server closes before replying is sent once more on a fresh connection.
+  The dropped attempt is its own `history.jsonl` record (outcome unknown,
+  error `kept_connection_dropped`), and the retry is a second record. Each
+  sample's `read_retries` counts them during the create window and over the
+  whole sample. A retried read completes only after its second attempt, so
+  the stall gaps include the drop. A dropped write is an unknown outcome and
+  is never sent again. The manifest records the model as `load_connections`.
+  Reader latencies and stalls from the two models are not directly
+  comparable: a kept connection skips the TCP handshake on every read
+  [inference].
   **I6a and I6b controls** run at the end of each curve and, from batch `m4e`, alone
   (`wm_omnigraph.py i6`). The I6a branch is cut once five ledger appends have
   landed and the others continue. The first version cut it after a fixed 40 ms, which on
@@ -912,6 +929,16 @@ before batch 2 started, after batch 1 (§13).
 - **Commit.** Batch 2 runs on the commit that records this amendment, after
   `a6b690d`, not on `fffe48b`. Its race and `costcurve` commands are those in
   the table above, with the default `--actors per-client`.
+
+**Amendment 2, the O1 re-run (maintainer decision, 2026-11-16).** Declared
+before the batch ran. The kept-connection change is a change to O1's method
+(§3 O1, "Connection model"). So that every M5 O1 number uses one connection
+model, batch `m5e-<UTC>` re-runs every O1 cell of batch 2 on the commit that
+records the change, in batch 2's order: `curve --build v0.15.0 --storage
+local --include-falkor` first (it carries the FalkorDB S28 curve and stops
+the batch if the band is missed), then v0.15.0 MinIO and proxy, then edge
+local, MinIO and proxy. Batch 2's O1 runs and the `m5d` re-run stay in
+`evidence/` and are reported as superseded by `m5e`.
 
 **Re-runs.** Only a harness bug, fixed with a unit test and committed first,
 re-runs a cell, under a new batch id (`m5c-`, `m5d-`, ...). The affected

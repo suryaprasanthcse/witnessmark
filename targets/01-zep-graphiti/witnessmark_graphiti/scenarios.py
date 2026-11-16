@@ -1,4 +1,4 @@
-"""Graphiti scenarios G1 to G5 (target blueprint section 5).
+"""Graphiti scenarios G1 to G5 and G8 (target blueprint section 5; G6 and G7 have runners of their own).
 
 What each scenario may expect comes from Graphiti's own words:
 
@@ -18,7 +18,7 @@ from witnessmark.fixtures import Fixture, normalize
 from witnessmark.history import OK
 from witnessmark.memory import Case, CaseSuite, RaceScenario, VisibilityScenario
 
-from .fixtures import SHARED_FACT, build
+from .fixtures import G8_ADDED_FACT, G8_REMOVED_FACT, G8_SHARED_FACT, SHARED_FACT, build
 
 AT = "https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py"
 SEQUENTIAL_DOC = f"{AT}#L1410-L1413"
@@ -310,3 +310,92 @@ class G5SharedSearchLimit(CaseSuite):
         check = check_no_overlapping_current(_employer_versions(state), "Alice's employer")
         check.detail += f" (shared edge-search limit after the read: {limit_after})"
         return [check]
+
+
+# --- G8: deletion permanence under a concurrent ingest -------------------------------------------------------------
+
+DELETION_PERMANENCE = "MASTER_BLUEPRINT.md#55-i5-deletion-permanence"
+
+
+def _g8_state_facts(state: dict) -> tuple[Counter, dict]:
+    counts = Counter(fact["fact"] for fact in state["facts"])
+    episodes_of = {fact["fact"]: fact["episodes"] for fact in state["facts"]}
+    return counts, episodes_of
+
+
+def g8_checks(ops, state: dict, group: str) -> list[Check]:
+    """I5 for the removed episode, I2 (cause = delete) for what live items still reference, I1B for entities."""
+    remove = next(op for op in ops if op.input.get("entry") == "remove_episode")
+    add = next(op for op in ops if op.input.get("entry") != "remove_episode")
+    facts, episodes_of = _g8_state_facts(state)
+    episodes = set(state["episodes"])
+    keys = Counter(entity["key"] for entity in state["entities"])
+    witnesses = [remove.op_id, add.op_id]
+    checks = []
+    if remove.outcome == OK:
+        back = []
+        if "G8E" in episodes:
+            back.append("episode G8E")
+        if facts.get(G8_REMOVED_FACT):
+            back.append(f"'{G8_REMOVED_FACT}'")
+        if episodes_of.get(G8_SHARED_FACT, 0) > 1:
+            back.append(f"'{G8_SHARED_FACT}' still carries {episodes_of[G8_SHARED_FACT]} episodes")
+        checks.append(Check("I5", not back, len(back), "items the delete should have removed",
+                            f"still present after the acknowledged remove: {back}" if back
+                            else "G8E and its own fact are gone; the shared fact is carried by one episode",
+                            witnesses if back else []))
+    else:
+        checks.append(Check("I5", True, 0, "items the delete should have removed",
+                            "the remove was not acknowledged, so nothing had to be gone"))
+    need = [("episode", "G8S", "G8S" in episodes), ("fact", G8_SHARED_FACT, bool(facts.get(G8_SHARED_FACT))),
+            ("entity", "alice", bool(keys.get("alice"))), ("entity", "acme", bool(keys.get("acme")))]
+    if add.outcome == OK:
+        need += [("episode", "G8N", "G8N" in episodes), ("fact", G8_ADDED_FACT, bool(facts.get(G8_ADDED_FACT))),
+                 ("entity", "payments", bool(keys.get("payments")))]
+    missing = [f"{kind} {name}" for kind, name, present in need if not present]
+    checks.append(Check("I2", not missing, len(missing), "items lost to the delete",
+                        f"cause = delete: missing {missing}" if missing
+                        else f"all {len(need)} items that live episodes reference are present",
+                        witnesses if missing else []))
+    mentions = {}
+    for entity in state["entities"]:
+        mentions.setdefault(entity["key"], []).extend(entity["mentioned_by"])
+    checks.append(check_unique_keys(dict(keys), f"entities in {group}", {k: sorted(v) for k, v in mentions.items()}))
+    return checks
+
+
+class G8RemoveVsAdd(RaceScenario):
+    """remove_episode(G8E) and add_episode(G8N), which names G8E's entities, released together."""
+
+    id = "g8.remove_vs_add"
+    invariants = ("I5", "I2", "I1B")
+    support = "none"
+    basis = "inferred"
+    basis_ref = DELETION_PERMANENCE
+    GROUP = "wm_g8"
+
+    def __init__(self, anchor: str):
+        self.fixture = build("g8", anchor)
+
+    def clients(self):
+        return [(self.GROUP, {"tag": "G8E", "entry": "remove_episode", "kind": "delete"}),
+                (self.GROUP, {"tag": "G8N"})]
+
+    async def setup(self, target, group):
+        for tag in ("G8S", "G8E"):
+            await target.ingest({"tag": tag}, group)
+
+    def check(self, ops, states):
+        return g8_checks(ops, states[self.GROUP], self.GROUP)
+
+    def sequential_expected(self, ops, states):
+        state = states[self.GROUP]
+        facts, episodes_of = _g8_state_facts(state)
+        keys = Counter(entity["key"] for entity in state["entities"])
+        met = (all(op.outcome == OK for op in ops) and set(state["episodes"]) == {"G8S", "G8N"}
+               and dict(keys) == {"alice": 1, "acme": 1, "payments": 1}
+               and dict(facts) == {G8_SHARED_FACT: 1, G8_ADDED_FACT: 1} and episodes_of.get(G8_SHARED_FACT) == 1)
+        observed = (f"episodes {sorted(state['episodes'])}; entities {dict(keys)}; facts {dict(facts)}; "
+                    f"'{G8_SHARED_FACT}' carried by {episodes_of.get(G8_SHARED_FACT)} episode(s)")
+        return (met, "episodes G8S and G8N; Alice, Acme, Payments once each; 'Alice works at Acme' (1 episode) and "
+                     "'Alice audited Payments'; no 'Alice approved the Payments budget'", observed)

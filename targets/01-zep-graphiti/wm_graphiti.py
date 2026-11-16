@@ -23,9 +23,11 @@ import shlex  # noqa: E402
 from witnessmark.memory import MODES, MemoryRunConfig, TargetSpec, run_cases, run_race, run_visibility  # noqa: E402
 from witnessmark.timing import utc_now  # noqa: E402
 
-RACES = ("g1.same_group", "g1.cross_group", "g2.contradictions")
+RACES = ("g1.same_group", "g1.cross_group", "g2.contradictions", "g6c.many_groups", "g8.remove_vs_add")
+STARTUPS = ("g6a.fresh", "g6b.populated")
 FIXTURE_OF = {"g1.same_group": "g1", "g1.cross_group": "g1", "g2.contradictions": "g2", "g3": "g3", "g4": "g4",
-              "g5": "g5"}
+              "g5": "g5", "g6a.fresh": "g6", "g6b.populated": "g6", "g6c.many_groups": "g6c",
+              "g8.remove_vs_add": "g8", "g7": "g7"}
 ENTRIES = ("add_episode", "add_episode_bulk", "add_triplet")
 
 
@@ -44,10 +46,15 @@ def main(argv: list[str] | None = None) -> int:
             pass
     parser = argparse.ArgumentParser(prog="wm_graphiti", description="Witnessmark target 01: Graphiti")
     commands = parser.add_subparsers(dest="command", required=True)
-    for name, help_text in (("race", "G1/G2: concurrent ingest"), ("cases", "G3/G5: known-answer cases"),
-                            ("visibility", "G4: read your writes")):
+    for name, help_text in (("race", "G1/G2/G6c/G8: concurrent ingest and delete"),
+                            ("cases", "G3/G5: known-answer cases"), ("visibility", "G4: read your writes"),
+                            ("startup", "G6a/G6b: index readiness at startup"),
+                            ("persistence", "G7: persistence across container actions (FalkorDB, compose-g7.yml)")):
         sub = commands.add_parser(name, help=help_text)
-        sub.add_argument("--backend", choices=["falkordb", "neo4j"], required=True)
+        if name == "persistence":
+            sub.set_defaults(backend="falkordb")
+        else:
+            sub.add_argument("--backend", choices=["falkordb", "neo4j"], required=True)
         sub.add_argument("--build", default="v0.31.2", help="the Graphiti build label recorded with the run")
         sub.add_argument("--commit", default="", help="the Graphiti commit, for builds installed from git")
         sub.add_argument("--evidence", default=str(REPO / "evidence"))
@@ -67,14 +74,35 @@ def main(argv: list[str] | None = None) -> int:
         elif name == "cases":
             sub.add_argument("--suite", choices=["g3", "g5"], required=True)
             sub.add_argument("--entry", choices=ENTRIES, default="add_episode")
+        elif name == "startup":
+            sub.add_argument("--scenario", choices=STARTUPS, required=True)
+            sub.add_argument("--trials", type=int, required=True)
+            sub.add_argument("--episodes", type=int, default=None,
+                             help="smoke runs only: load fewer episodes than the declared 400")
+        elif name == "persistence":
+            sub.add_argument("--variant", choices=["root", "mcp"], required=True)
+            sub.add_argument("--action", choices=["compose_restart", "down_up", "kill_start"], required=True)
+            sub.add_argument("--trials", type=int, required=True)
     args = parser.parse_args(argv)
+    if args.command == "race" and args.scenario == "g6c.many_groups" and args.backend != "falkordb":
+        parser.error("g6c.many_groups runs on FalkorDB only (Neo4j's clone returns the same driver)")
 
     anchor = args.anchor or utc_now().replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    key = args.scenario if args.command == "race" else args.suite if args.command == "cases" else "g4"
-    spec = TargetSpec("witnessmark_graphiti.target", "make_target", {
-        "backend": args.backend, "fixture": FIXTURE_OF[key], "anchor": anchor, "build_ref": args.build,
-        "commit": args.commit, "falkordb_port": args.falkordb_port, "neo4j_bolt_port": args.neo4j_bolt_port,
-        "falkordb_pool": args.falkordb_pool})
+    key = {"race": getattr(args, "scenario", None), "startup": getattr(args, "scenario", None),
+           "cases": getattr(args, "suite", None), "visibility": "g4", "persistence": "g7"}[args.command]
+    fixture = FIXTURE_OF[key]
+    if getattr(args, "episodes", None):
+        fixture = f"{fixture}@{args.episodes}"
+    options = {"backend": args.backend, "fixture": fixture, "anchor": anchor, "build_ref": args.build,
+               "commit": args.commit, "falkordb_port": args.falkordb_port, "neo4j_bolt_port": args.neo4j_bolt_port,
+               "falkordb_pool": args.falkordb_pool}
+    if key == "g8.remove_vs_add" and args.backend == "falkordb":
+        options["bind_group"] = "wm_g8"  # remove_episode reads through Graphiti.driver (K25)
+    if args.command == "persistence":
+        from witnessmark_graphiti.nemesis import G7_VARIANTS
+
+        options["falkordb_port"] = G7_VARIANTS[args.variant]["port"]
+    spec = TargetSpec("witnessmark_graphiti.target", "make_target", options)
     python = os.path.relpath(sys.executable, REPO) if sys.executable.startswith(str(REPO)) else "python"
     command = shlex.join([python.replace("\\", "/"), "targets/01-zep-graphiti/wm_graphiti.py",
                           *(argv if argv is not None else sys.argv[1:]), "--anchor", anchor])
@@ -86,10 +114,23 @@ def main(argv: list[str] | None = None) -> int:
 
     from witnessmark_graphiti import scenarios
 
-    if args.command == "race":
+    if args.command == "race" and args.scenario == "g6c.many_groups":
+        from witnessmark_graphiti.g6 import run_many_groups
+
+        manifest = asyncio.run(run_many_groups(config))
+    elif args.command == "race":
         scenario = {"g1.same_group": scenarios.G1SameGroup, "g1.cross_group": scenarios.G1CrossGroup,
-                    "g2.contradictions": scenarios.G2Contradictions}[args.scenario](anchor)
+                    "g2.contradictions": scenarios.G2Contradictions,
+                    "g8.remove_vs_add": scenarios.G8RemoveVsAdd}[args.scenario](anchor)
         manifest = asyncio.run(run_race(config, scenario))
+    elif args.command == "startup":
+        from witnessmark_graphiti.g6 import run_startup
+
+        manifest = asyncio.run(run_startup(config, "fresh" if args.scenario == "g6a.fresh" else "populated"))
+    elif args.command == "persistence":
+        from witnessmark_graphiti.g7 import run_persistence
+
+        manifest = asyncio.run(run_persistence(config, args.variant, args.action))
     elif args.command == "cases":
         suite = scenarios.G3Temporal(anchor, args.entry) if args.suite == "g3" else scenarios.G5SharedSearchLimit(anchor)
         manifest = asyncio.run(run_cases(config, suite))

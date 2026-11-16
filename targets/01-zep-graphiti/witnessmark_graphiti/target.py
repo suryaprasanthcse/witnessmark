@@ -53,22 +53,32 @@ class GraphitiTarget(MemoryTarget):
 
     def __init__(self, backend: str, fixture: str, anchor: str, build_ref: str = "v0.31.2", commit: str = "",
                  host: str = "127.0.0.1", falkordb_port: int = 16380, neo4j_bolt_port: int = 17687,
-                 falkordb_pool: str = "blocking"):
+                 falkordb_pool: str = "blocking", bind_group: str | None = None):
         if backend not in ("falkordb", "neo4j"):
             raise ValueError("backend must be falkordb or neo4j")
         if falkordb_pool not in ("blocking", "default"):
             raise ValueError("falkordb_pool must be blocking or default")
         self.backend, self.build_ref, self.commit, self.falkordb_pool = backend, build_ref, commit, falkordb_pool
         self.host, self.falkordb_port, self.neo4j_bolt_port = host, falkordb_port, neo4j_bolt_port
+        # bind_group: on FalkorDB, the driver's own database is this group's graph, so calls that read through
+        # Graphiti.driver (remove_episode, graphiti.py L2174-2215 @ v0.31.2) reach the group (G8).
+        self.bind_group = bind_group
         self.fixture = build(fixture, anchor)
         self.ledger = StubLedger()
         self.graphiti: Graphiti | None = None
+        self.episode_uuids: dict[tuple[str, str], str] = {}
 
     # --- lifecycle ---------------------------------------------------------------------------------------------
 
     async def open(self) -> None:
+        self.graphiti = self.make_graphiti()
+
+    def make_graphiti(self) -> Graphiti:
+        """A new Graphiti instance with a new driver. Inside a running event loop the driver's constructor
+        schedules its own index build (falkordb_driver.py L178-184, neo4j_driver.py L92-97 @ v0.31.2)."""
         if is_telemetry_enabled():
             raise RuntimeError("Graphiti telemetry is enabled; refusing to run (set GRAPHITI_TELEMETRY_ENABLED=false)")
+        database = {"database": self.bind_group} if self.backend == "falkordb" and self.bind_group else {}
         if self.backend == "falkordb" and self.falkordb_pool == "blocking":
             # Same 100 connections as the client's default pool, but a caller waits for a free
             # connection instead of failing with "Too many connections" (redis-py's ConnectionPool).
@@ -77,18 +87,24 @@ class GraphitiTarget(MemoryTarget):
 
             pool = BlockingConnectionPool(host=self.host, port=self.falkordb_port, max_connections=100, timeout=120,
                                           decode_responses=True)
-            driver = FalkorDriver(falkor_db=FalkorDB(connection_pool=pool))
+            driver = FalkorDriver(falkor_db=FalkorDB(connection_pool=pool), **database)
         elif self.backend == "falkordb":
-            driver = FalkorDriver(host=self.host, port=self.falkordb_port)
+            driver = FalkorDriver(host=self.host, port=self.falkordb_port, **database)
         else:
             driver = Neo4jDriver(uri=f"bolt://{self.host}:{self.neo4j_bolt_port}", user="neo4j", password="witnessmark")
-        self.graphiti = Graphiti(graph_driver=driver, llm_client=StubLLM(self.fixture, self.ledger),
-                                 embedder=StubEmbedder(), cross_encoder=StubReranker())
+        return Graphiti(graph_driver=driver, llm_client=StubLLM(self.fixture, self.ledger),
+                        embedder=StubEmbedder(), cross_encoder=StubReranker())
+
+    async def renew(self) -> None:
+        """Close the current instance (after its background work) and build a new one (G6a, G6b)."""
+        await self.close()
+        self.graphiti = self.make_graphiti()
 
     async def close(self) -> None:
         if self.graphiti is not None:
             await self.quiesce()
             await self.graphiti.close()
+            self.graphiti = None
 
     def identity(self) -> dict:
         record = {"name": "graphiti", "repo": self.repo, "ref": self.build_ref,
@@ -103,6 +119,7 @@ class GraphitiTarget(MemoryTarget):
             {"role": "sut", "name": "graphiti-core", "version": importlib.metadata.version("graphiti-core"),
              "config": {"build": self.build_ref, "backend": self.backend, "telemetry": "off",
                         "falkordb_pool": self.falkordb_pool if self.backend == "falkordb" else None,
+                        **({"bound_graph": self.bind_group} if self.bind_group and self.backend == "falkordb" else {}),
                         "driver": importlib.metadata.version("falkordb" if self.backend == "falkordb" else "neo4j")}},
             {"role": "store", "name": self.backend, "version": backend},
             {"role": "stub", "name": "witnessmark-graphiti-stubs", "version": harness_version,
@@ -123,6 +140,18 @@ class GraphitiTarget(MemoryTarget):
             await clear_data(self.graphiti.driver, [group])  # strays written to the default graph
         await driver.build_indices_and_constraints()
         await self._await_indexes(driver)
+
+    async def drop_group(self, group: str) -> None:
+        """FalkorDB: delete the group's graph with its indexes (a fresh group, G6c). Neo4j: empty the group;
+        its indexes are database-wide."""
+        if self.backend == "neo4j":
+            await clear_data(self.graphiti.driver, [group])
+            return
+        try:
+            await self.graphiti.driver.client.select_graph(group).delete()
+        except Exception as exc:  # noqa: BLE001 - a graph that does not exist is already fresh
+            if "empty key" not in str(exc).lower() and "no such" not in str(exc).lower():
+                raise
 
     async def _await_indexes(self, driver) -> None:
         if self.backend == "neo4j":
@@ -155,7 +184,11 @@ class GraphitiTarget(MemoryTarget):
             result = await self.graphiti.add_episode(
                 name=episode.name, episode_body=episode.body, source_description="witnessmark fixture",
                 reference_time=_when(episode.reference_time), source=EpisodeType.message, group_id=group)
+            self.episode_uuids[(group, episode.tag)] = result.episode.uuid
             return {"episode": episode.tag, "nodes": len(result.nodes), "edges": len(result.edges)}
+        if entry == "remove_episode":
+            await self.graphiti.remove_episode(self.episode_uuids[(group, item["tag"])])
+            return {"removed": item["tag"]}
         if entry == "add_episode_bulk":
             raw = RawEpisode(name=episode.name, content=episode.body, source_description="witnessmark fixture",
                              source=EpisodeType.message, reference_time=_when(episode.reference_time))
@@ -213,7 +246,7 @@ class GraphitiTarget(MemoryTarget):
                 key=lambda fact: (fact["fact"], fact["valid_at"] or "", fact["invalid_at"] or "", fact["expired"])),
             "episodes": sorted(episode.name for episode in episodes),
         }
-        if self.backend == "falkordb":
+        if self.backend == "falkordb" and self.bind_group is None:
             # Writes that bypass the group's graph land in the default graph; report them, do not hide them.
             strays = await self._all(EntityEdge, self.graphiti.driver, group)
             state["facts_in_default_graph"] = sorted(

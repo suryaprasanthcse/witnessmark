@@ -1,0 +1,53 @@
+# Witnessmark G7: FalkorDB persistence across restarts (target blueprint section 5, G7).
+#
+#   docker compose -p witnessmark-g7 -f targets/01-zep-graphiti/docker/compose-g7.yml up -d falkordb-root
+#   docker compose -p witnessmark-g7 -f targets/01-zep-graphiti/docker/compose-g7.yml down -v
+#
+# Two volume layouts from Graphiti v0.31.2, both on the digest-pinned FalkorDB 6.0.4 image that
+# baselines/docker-compose.yml uses. Upstream pins falkordb/falkordb:latest; this file does not.
+# Ports bind to 127.0.0.1 only. The G7 runner starts one service at a time.
+name: witnessmark-g7
+
+services:
+  # Variant "root": https://github.com/getzep/graphiti/blob/v0.31.2/docker-compose.yml#L50-L64
+  # (volume at /data, L55-56; FALKORDB_ARGS, L57-58; health check, L59-64).
+  falkordb-root:
+    image: falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f
+    container_name: wm-g7-root
+    ports:
+      - "127.0.0.1:16391:6379"
+    volumes:
+      - g7_root_data:/data
+    environment:
+      - FALKORDB_ARGS=--port 6379 --cluster-enabled no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 1s
+      timeout: 10s
+      retries: 10
+      start_period: 3s
+
+  # Variant "mcp": https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/docker/docker-compose-falkordb.yml#L2-L17
+  # (environment, L7-9; volume at /var/lib/falkordb/data, L10-11; health check, L12-17).
+  # The web UI port 3000 (L6) is not published.
+  falkordb-mcp:
+    image: falkordb/falkordb@sha256:bef8acb1d8ed9ff8d2ea251767e75c6c05cfa759f7c6bc7e1c122f27d0ea4d7f
+    container_name: wm-g7-mcp
+    ports:
+      - "127.0.0.1:16392:6379"
+    environment:
+      - FALKORDB_PASSWORD=
+      - BROWSER=1
+    volumes:
+      - g7_mcp_data:/var/lib/falkordb/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  g7_root_data:
+  g7_mcp_data:
+    driver: local

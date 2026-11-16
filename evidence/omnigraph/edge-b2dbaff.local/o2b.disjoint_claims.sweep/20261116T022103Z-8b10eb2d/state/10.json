@@ -1,0 +1,78 @@
+{
+  "k": 10,
+  "digest": "sha256:d8115a761b99ada6401d420e3ee46ad6391734deeb71456c23c58c72736bed28",
+  "state": {
+    "tasks": [
+      {
+        "task": "task-0",
+        "state": "claimed",
+        "holders": [
+          "c00"
+        ]
+      },
+      {
+        "task": "task-1",
+        "state": "claimed",
+        "holders": [
+          "c01"
+        ]
+      },
+      {
+        "task": "task-2",
+        "state": "claimed",
+        "holders": [
+          "c02"
+        ]
+      },
+      {
+        "task": "task-3",
+        "state": "claimed",
+        "holders": [
+          "c03"
+        ]
+      },
+      {
+        "task": "task-4",
+        "state": "claimed",
+        "holders": [
+          "c04"
+        ]
+      },
+      {
+        "task": "task-5",
+        "state": "claimed",
+        "holders": [
+          "c05"
+        ]
+      },
+      {
+        "task": "task-6",
+        "state": "claimed",
+        "holders": [
+          "c06"
+        ]
+      },
+      {
+        "task": "task-7",
+        "state": "claimed",
+        "holders": [
+          "c07"
+        ]
+      },
+      {
+        "task": "task-8",
+        "state": "claimed",
+        "holders": [
+          "c08"
+        ]
+      },
+      {
+        "task": "task-9",
+        "state": "claimed",
+        "holders": [
+          "c09"
+        ]
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all five batches are §14. Phase B awaits review. |
+| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all six batches are §14. Phase B awaits review. |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
 | Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |
@@ -1083,9 +1083,9 @@ them. Batch 2 runs as declared in §12, with the amendment.
 
 ## 14. Results (M5)
 
-**Provenance.** Five batches on the host of §10 (Windows 11, 11th Gen
+**Provenance.** Six batches on the host of §10 (Windows 11, 11th Gen
 i5-11320H, 8 logical cores, 23.8 GB, Docker VM 8 CPUs and 11.6 GB). Every run
-records a clean tree. The five reports regenerate from `evidence/` byte for
+records a clean tree. The six reports regenerate from `evidence/` byte for
 byte. The switchyard containers stayed up and idle on the host during every
 batch (under 0.2% CPU each when checked before batch 1).
 
@@ -1093,9 +1093,10 @@ batch (under 0.2% CPU each when checked before batch 1).
 |---|---|---|---|
 | `m5-20261115T222957Z` | [evidence/M5_OMNIGRAPH_CALIBRATION.md](../../evidence/M5_OMNIGRAPH_CALIBRATION.md) | `772ef96` | batch 1, calibration: the FalkorDB controls, and O2a and O2c without a spread gate (§13) |
 | `m5c-20261115T223540Z` | [evidence/M5_OMNIGRAPH_B1.md](../../evidence/M5_OMNIGRAPH_B1.md) | `772ef96` | re-run of batch 1's seven Neo4j control cells, which the driver had started before Neo4j answered (§13) |
-| `m5b-20261115T230235Z` | [evidence/M5_OMNIGRAPH.md](../../evidence/M5_OMNIGRAPH.md) | `6a15b9c` | batch 2, the main batch: 37 commands, 36 exit 0. Its O1 runs are superseded by `m5e` |
+| `m5b-20261115T230235Z` | [evidence/M5_OMNIGRAPH.md](../../evidence/M5_OMNIGRAPH.md) | `6a15b9c` | batch 2, the main batch: 37 commands, 36 exit 0. Its O1 runs are superseded by `m5e`, its O2b runs by `m5f` |
 | `m5d-20261116T003205Z` | [evidence/M5_OMNIGRAPH_B2.md](../../evidence/M5_OMNIGRAPH_B2.md) | `f7ae8f2` | re-run of the one batch-2 cell that failed on a harness bug, O1 on v0.15.0 local with the FalkorDB curve. **Superseded by `m5e`** |
 | `m5e-20261116T004953Z` | [evidence/M5_OMNIGRAPH_B3.md](../../evidence/M5_OMNIGRAPH_B3.md) | `fb97518` | every O1 cell, both builds, local, MinIO and proxy, with the FalkorDB curve, on the kept-connection method (§12, amendment 2); 8 of 8 commands exit 0. **The M5 O1 results** |
+| `m5f-20261116T021553Z` | [evidence/M5_OMNIGRAPH_B4.md](../../evidence/M5_OMNIGRAPH_B4.md) | `4212c99` | both engines' full O2b sweep with one kept connection per agent (§12, amendment 3); 5 of 5 commands exit 0. **The M5 O2b results** |
 
 **Why the re-runs exist.** Nothing was re-run to change a result. Each earlier
 run stays in `evidence/` and in its report.
@@ -1104,6 +1105,7 @@ run stays in `evidence/` and in its report.
 |---|---|---|
 | Neo4j control cells | Batch 1's driver started them before Neo4j answered HTTP. They exited 1 in under 1 s and wrote no run directory; their notes are in `evidence/omnigraph/errors/m5-20261115T222957Z/`. The driver is untracked. | `m5c` |
 | O1, v0.15.0, local, `--include-falkor` | Harness bug. The three closed-loop loads opened one TCP connection per request, and the sockets left in TIME_WAIT exhausted the host's ephemeral ports: `WinError 10048` in the unrelated reader. The run stopped before its manifest was complete, and before the FalkorDB curve [measured: `20261115T232536Z-6d1be538`, its `ERROR.md` and `evidence/omnigraph/errors/m5b-20261115T230235Z/31-o1-v0.15.0-local/ERROR.md`]. Fixed in `f7ae8f2`: each load keeps one connection. A scratch check against both pinned servers added 0 and 1 TIME_WAIT sockets over 300 kept reads, against 295 without keep-alive. | `m5d` |
+| O2b, both engines | Method change, not a result. In batch 2 two agents' reads failed on host port exhaustion (`WinError 10048`), one per Omnigraph build [measured: `20261115T230248Z-b1c0842e` trial 30, `20261115T230816Z-91a819a6` trial 29]. Each O2b agent now keeps one connection, and a read dropped on it is its own history record (`4212c99`, §3 O2b, "Connection model"). The maintainer ruled that both engines' full sweep be re-run. | `m5f` |
 | Every O1 cell | Method change, not a result. The kept connection changes O1's method (§3 O1, "Connection model"). After `m5d`, v0.15.0 local was the only O1 cell on kept connections, so the maintainer ruled that every O1 cell be re-run on one model. `fb97518` also records each read retried after a dropped kept connection as its own history record and counts it per sample. | `m5e` |
 
 **Superseded O1 runs.** Batch 2's five completed O1 runs opened a connection
@@ -1114,9 +1116,18 @@ per request [measured: `20261115T233008Z-ba6c2bba`, `20261115T233710Z-d6e9001c`,
 [measured: `20261116T003206Z-579fed57`]. All seven stay in `evidence/` and in
 `evidence/M5_OMNIGRAPH.md` and `evidence/M5_OMNIGRAPH_B2.md`. All seven are
 superseded by `m5e`, which ran every O1 cell on one connection model. No
-number below comes from them. The same port bug touched O2b, whose agents
-still open a connection per request: one read per build ended with
-`WinError 10048` (Results, O2b).
+number below comes from them.
+
+**Superseded O2b runs.** Batch 2's three O2b runs opened a new connection per
+Omnigraph request [measured: `20261115T230248Z-b1c0842e`,
+`20261115T230816Z-91a819a6`, `20261115T231348Z-552b23e0`]. In two of them an
+agent's read failed with `WinError 10048`, the host port exhaustion, and the
+agent stopped by the declared policy. That left 49 of 50 claimed (v0.15.0,
+N = 50, trial 30) and 24 of 25 (edge, N = 25, trial 29). Both trials stayed
+valid under the 5% unknown gate. All three runs stay in `evidence/` and in
+`evidence/M5_OMNIGRAPH.md`, and all three are superseded by `m5f`. The
+FalkorDB run is superseded with them, because amendment 3 re-ran both
+engines' sweep. No O2b number below comes from them.
 
 ### Controls
 
@@ -1150,37 +1161,44 @@ amendment), and the race gate at δ = 55 ms.
 p99 18.90 ms and max 19.66 ms, inside δ = 55 ms; the gate invalidated none
 [measured: `evidence/M5_OMNIGRAPH.md`, "Release spread"].
 
-**O2b, the cost of documented behaviour.** Local root, both builds, the
-declared sweep, 3 warm-ups and 5 measured repetitions per N, the gate at
-55 ms (Omnigraph) and 40 ms (FalkorDB). All measured repetitions were valid,
-and no holder check failed. Medians:
+**O2b, the cost of documented behaviour (`m5f`, kept agent connections).**
+Local root, both builds, the declared sweep, 3 warm-ups and 5 measured
+repetitions per N, the gate at 55 ms (Omnigraph) and 40 ms (FalkorDB). Each
+Omnigraph agent had its own actor and kept one connection (§3 O2b). All
+48 trials of each run were valid. Medians over the measured repetitions:
 
-| N | Omnigraph attempts, v0.15.0 / edge | Omnigraph wasted attempts | Omnigraph time to all claimed (ms), v0.15.0 / edge | FalkorDB attempts | FalkorDB time to all claimed (ms) |
+| N | Omnigraph attempts [IQR], v0.15.0 / edge | Omnigraph wasted attempts | Omnigraph time to all claimed (ms), v0.15.0 / edge | FalkorDB attempts | FalkorDB time to all claimed (ms) |
 |---|---|---|---|---|---|
-| 1 | 1 / 1 | 0 / 0 | 51.7 / 40.2 | 1 | 1.1 |
-| 2 | 3 / 3 | 1 / 1 | 94.3 / 85.8 | 2 | 1.2 |
-| 5 | 15 / 15 | 10 / 10 | 277.7 / 266.0 | 5 | 1.8 |
-| 10 | 55 / 55 | 45 / 45 | 815.3 / 777.8 | 10 | 2.7 |
-| 25 | 325 / 325 | 300 / 300 | 4,494.1 / 4,465.0 | 25 | 5.2 |
-| 50 | 1,267 / 1,259 | 1,217 / 1,209 | 23,376.1 / 22,517.0 | 50 | 9.8 |
+| 1 | 1 / 1 | 0 / 0 | 40.4 / 40.0 | 1 | 0.96 |
+| 2 | 3 / 3 | 1 / 1 | 84.6 / 71.8 | 2 | 1.40 |
+| 5 | 15 / 15 | 10 / 10 | 232.9 / 248.7 | 5 | 1.62 |
+| 10 | 55 / 55 | 45 / 45 | 698.8 / 724.8 | 10 | 2.50 |
+| 25 | 325 / 325 | 300 / 300 | 4,213.2 / 3,888.4 | 25 | 5.07 |
+| 50 | 1,269 [1,267–1,271] / 1,264 [1,263–1,272] | 1,219 / 1,214 | 18,788.2 / 19,181.4 | 50 | 9.89 (2 of 5 repetitions, below) |
 
-[measured: `20261115T230248Z-b1c0842e`, `20261115T230816Z-91a819a6`,
-`20261115T231348Z-552b23e0`]
+[measured: `20261116T021606Z-a0862379` (v0.15.0), `20261116T022103Z-8b10eb2d`
+(edge), `20261116T022558Z-e0fff930` (FalkorDB)]
 
-- Omnigraph's median attempts equal N(N + 1)/2 up to N = 25, and are just
-  below it at N = 50 (1,275). That is what one success per round of re-reads
-  gives when every publish invalidates every other agent's condition
+- **Omnigraph.** Every agent claimed in every trial of both builds, and no
+  holder check failed. No read was retried after a dropped kept connection,
+  and there was no unknown outcome: every refusal was `precondition_failure`,
+  12,564 on v0.15.0 and 12,528 on edge [measured: the two runs; `read_retries`
+  0 in every trial]. Median attempts equal N(N + 1)/2 up to N = 25, and are
+  just below it at N = 50 (1,275). That is what one success per round of
+  re-reads gives when every publish invalidates every other agent's condition
   [inference from O-K3 and the counts]. The hypothesis of §3 O2b holds on
   both builds.
-- FalkorDB's naive guarded claims on disjoint tasks succeeded on the first
-  attempt every time, with no wasted attempts.
-- Two measured repetitions had an agent that never claimed. One agent's read
-  ended with `WinError 10048`, the host port exhaustion above, so that agent
-  stopped by the declared policy, and the trial stayed valid (1 unknown
-  outcome, under 5%): v0.15.0 at N = 50 (49 of 50 claimed) and edge at
-  N = 25 (24 of 25) [measured: `20261115T230248Z-b1c0842e` trial 30,
-  `20261115T230816Z-91a819a6` trial 29]. O2b's agents still open a connection
-  per request. These two repetitions were not re-run.
+- **FalkorDB.** Every claim that FalkorDB admitted succeeded on its first
+  attempt; no claim was refused by its guard. At N = 50 FalkorDB's own
+  admission limit refused claims with `Max pending queries exceeded` in 3 of
+  the 5 measured repetitions: 1, 1 and 9 agents, 11 in all. By the declared
+  policy a refused agent stops, so those agents did not claim. Time to all
+  claimed is therefore the median of the other 2 repetitions, and the median
+  wasted attempts at N = 50 is 1 (max 9). Two warm-ups had 3 refusals each
+  [measured: `20261116T022558Z-e0fff930`, trials 12, 18, 30, 36 and 42]. In
+  the superseded batch-2 run, only one warm-up had such refusals (6). This is
+  OBSERVED FalkorDB behaviour, not a finding about either engine's claims.
+  It was not chased.
 - The comparison with FalkorDB stays internal (master §11.5).
 
 **O1, branch creation with an unrelated-graph reader and writer (`m5e`, kept
@@ -1260,10 +1278,12 @@ create/delete warm-ups and five measured repetitions per cell:
   where edge answered `CardinalityViolation` [measured: the four O2c runs].
   Not chased.
 - **OBSERVED: FalkorDB's own admission limit.** `Max pending queries
-  exceeded` refused 60 to 118 claims per FalkorDB claim-control run, and
-  6 claims in one O2b warm-up at N = 50, with no violation and every measured
-  O2b repetition complete [measured: `20261115T231353Z-aacd795d`,
-  `20261115T222959Z-dd58c949`, `20261115T231348Z-552b23e0` trial 12].
+  exceeded` refused 60 to 118 claims per FalkorDB claim-control run, with no
+  violation [measured: `20261115T231353Z-aacd795d`,
+  `20261115T222959Z-dd58c949`]. In the O2b sweep it refused 11 agents across
+  3 of 5 measured N = 50 repetitions in `m5f`
+  [measured: `20261116T022558Z-e0fff930`], against one warm-up in the
+  superseded batch-2 run [measured: `20261115T231348Z-552b23e0` trial 12].
 - **INVALID:** no trial in batch 2, `m5c` or `m5d`. Batch 1's O2 FAIL verdicts
   come from the superseded single-type checker (§13); they are calibration
   runs, not O2 results.
@@ -1287,5 +1307,3 @@ create/delete warm-ups and five measured repetitions per cell:
 - The O1 catalog-width axis and MinIO's conditional-write qualification,
   which stay deferred (§11).
 - O5 with a concurrent second reader; O5 measures process turnover only.
-- An O2b repeat with kept connections for the agents. O2b's agents still
-  open a connection per request.

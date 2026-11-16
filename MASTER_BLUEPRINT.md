@@ -1097,6 +1097,11 @@ scenario with its sequential control and the applicable controls in §6.2.
   re-run on that method in `m5e-20261116T004953Z` (`fb97518`), 8 of 8 commands
   exit 0, with no read retry. The S28 band was met. Report:
   `evidence/M5_OMNIGRAPH_B3.md`. Batch 2's and `m5d`'s O1 runs are superseded.
+- [x] O2b method change: from `4212c99` each O2b agent keeps one connection,
+  and a read dropped on it is its own history record. Both engines' full sweep
+  was re-run in `m5f-20261116T021553Z` (`4212c99`), 5 of 5 commands exit 0,
+  with no read retry and no unknown outcome. Report:
+  `evidence/M5_OMNIGRAPH_B4.md`. Batch 2's O2b runs are superseded.
 
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write

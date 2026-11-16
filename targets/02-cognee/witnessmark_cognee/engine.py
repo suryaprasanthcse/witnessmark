@@ -11,7 +11,10 @@ Entry points an item can name (``item["entry"]``):
 - ``c3_paused``: #6559's method, credited to its reporter: ``add`` into B is paused after
   its stored file is written and before its row is committed, while A's copy is deleted;
 - ``c3_gather``: the same add and delete started together in one process, no pause;
-- ``delete_during_cognify``: a delete in one dataset while another dataset is cognified.
+- ``delete_during_cognify``: a delete in one dataset while another dataset is cognified;
+- ``improve``: the public ``cognee.improve`` on the dataset, with no session ids, so only the
+  graph-fed stages run (``review_conflicts`` and ``global_context_index``; target blueprint C29).
+  It fails open: an errored stage is reported in the result, not raised.
 
 ``offset_ms`` (or ``offsets``, indexed by the trial) delays the item before it starts.
 """
@@ -51,7 +54,8 @@ from .fixtures import all_docs, key, tags_in
 from .graph_pages import _graph_data
 
 INDEXED_TYPES = {"Entity": "Entity_name", "EntityType": "EntityType_name", "DocumentChunk": "DocumentChunk_text",
-                 "TextDocument": "TextDocument_name", "TextSummary": "TextSummary_text"}
+                 "TextDocument": "TextDocument_name", "TextSummary": "TextSummary_text",
+                 "GlobalContextSummary": "GlobalContextSummary_text"}  # improve's index nodes (C30)
 
 
 def _path(location: str) -> str:
@@ -219,6 +223,8 @@ class CogneeEngine:
             result.update(await self._delete_tags(group, tags))
         elif entry == "search":
             result["found"] = len(await self.search(item["query"], group))
+        elif entry == "improve":
+            result.update(await self._improve(group, item))
         elif entry in ("c3_paused", "c3_gather"):
             result.update(await self._c3(item, entry == "c3_paused"))
         elif entry == "delete_during_cognify":
@@ -234,6 +240,26 @@ class CogneeEngine:
             raise ValueError(f"unknown entry {entry!r}")
         result["seconds"] = round(time.perf_counter() - started, 3)
         return result
+
+    async def _improve(self, group: str, item: dict) -> dict:
+        """cognee.improve on one dataset; every stage's status, reason, error and counts go in the result.
+
+        v1.6.8 takes ``review_conflicts`` and builds the global context index by default (target blueprint C29);
+        cognee 1.6.1 (row R3) has no ``review_conflicts`` argument and builds the index only when asked (C33).
+        Both get every graph-fed stage the version has, and no session ids.
+        """
+        import inspect
+
+        accepted = inspect.signature(cognee.improve).parameters
+        kwargs = {"dataset": group, "session_ids": None,
+                  "build_global_context_index": item.get("global_context_index", True)}
+        if "review_conflicts" in accepted:
+            kwargs["review_conflicts"] = item.get("review_conflicts", True)
+        outcome = await cognee.improve(**kwargs)
+        stages = [{"stage": s.stage, "status": s.status, "reason": s.reason,
+                   "error": (s.error or "")[:2000] or None, "counts": dict(s.counts or {})} for s in outcome.stages]
+        return {"improve_status": outcome.status, "improve_error": outcome.error, "stages": stages,
+                "improve_kwargs": sorted(k for k in kwargs if k != "dataset")}
 
     async def _c3(self, item: dict, paused: bool) -> dict:
         """#6559: A's copy of a document is deleted while the same bytes are added to B."""

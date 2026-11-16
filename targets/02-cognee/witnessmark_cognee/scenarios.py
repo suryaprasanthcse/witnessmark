@@ -361,6 +361,121 @@ class C2Writers(RaceScenario):
                 "; ".join(problems) or "as expected")
 
 
+
+IMPROVE_STAGES_RUN = ("review_conflicts", "global_context_index")  # the graph-fed stages (target blueprint C29)
+
+
+def improve_stages(op) -> list[dict]:
+    return list(((op.result or {}).get("stages") or [])) if op is not None and op.outcome == OK else []
+
+
+def improve_errors(ops) -> list[tuple[str, str, str]]:
+    """(op_id, stage, error) of every improve stage that errored; improve reports them instead of raising."""
+    return [(op.op_id, stage["stage"], stage.get("error") or "") for op in ops if op.input.get("entry") == "improve"
+            for stage in improve_stages(op) if stage.get("status") == "errored"]
+
+
+def _improve_op(ops):
+    return next((op for op in ops if op.input.get("entry") == "improve"), None)
+
+
+class C2Improve(C2Writers):
+    """#5254's shape at v1.6.8: one process cognifies A while another runs ``improve`` on B (cognified in setup),
+    and a third deletes C (cognified in setup). Every dataset shares one store (access control off).
+
+    ``improve`` replaces the deprecated ``memify`` (target blueprint C18, C29). With no session ids only its
+    graph-fed stages run: ``review_conflicts`` (one scripted model prompt per call, C30) and
+    ``global_context_index`` (no model call; writes summary nodes and their vectors, and deletes stale ones).
+    """
+
+    id = "c2.improve"
+
+    def params(self):
+        return {"corpus": "c2", "datasets": self.tags, "store": "one store shared by every dataset "
+                "(ENABLE_BACKEND_ACCESS_CONTROL=false)",
+                "clients": {"A": "add + cognify", "B": "improve (B added and cognified in setup)",
+                            "C": "delete (C added and cognified in setup)"},
+                "improve": {"session_ids": None, "review_conflicts": True, "global_context_index": True,
+                            "stages_expected_to_run": list(IMPROVE_STAGES_RUN)}}
+
+    async def setup(self, target, group):
+        if group in (self.B, self.C):
+            await target.ingest({"entry": "add_cognify", "tags": self.tags[group], **ONE_ITEM}, group)
+
+    def clients(self):
+        return [(self.A, {"entry": "add_cognify", "tags": self.tags[self.A], **ONE_ITEM}),
+                (self.B, {"entry": "improve"}),
+                (self.C, {"entry": "delete", "tags": self.tags[self.C]})]
+
+    def _store(self, states):
+        store = dict(states[self.A])
+        store["relational"] = [row for g in (self.A, self.B) for row in states[g]["relational"]]
+        return store
+
+    def check(self, ops, states):
+        store = self._store(states)
+        acknowledged_a = sorted({t for op in ops if op.outcome == OK and op.input.get("entry") == "add_cognify"
+                                 for t in op.input["tags"]})
+        # B was added and cognified in setup: improve must leave every one of its documents and facts in place.
+        checks = store_checks(self.corpus, acknowledged_a + self.tags[self.B], store, "the shared store")
+        stage_errors = improve_errors(ops)
+        conflicts = [op.op_id for op in ops if WRITERS in ((op.error or {}).get("message") or "")]
+        conflicts += [f"{op_id}:{stage}" for op_id, stage, error in stage_errors if WRITERS in error]
+        checks.append(Check("C2W", not conflicts, len(conflicts),
+                            "operations or improve stages failed with writer conflicts",
+                            f"{len(conflicts)} failed with '{WRITERS}'" if conflicts else "no writer conflicts",
+                            conflicts))
+        chunks, rows = _tag_counts(store, "DocumentChunk"), _rows(states[self.A]) | _rows(states[self.B])
+        attempted = self.tags[self.A] + self.tags[self.B]
+        partial = [t for t in attempted if (t in rows) != (t in chunks)]
+        checks.append(Check("C2P", not partial, len(partial), "partially indexed documents",
+                            f"documents with a row but no chunk, or a chunk but no row: {partial[:6]}" if partial
+                            else "every document is either fully indexed or absent", partial))
+        improve = _improve_op(ops)
+        ran = {s["stage"]: s["status"] for s in improve_stages(improve)}
+        if ran:
+            detail = "; ".join(f"{name} {status}" for name, status in ran.items())
+        else:
+            message = ((improve.error or {}) if improve is not None else {}).get("message", "no operation")
+            detail = f"improve did not return: {message[:200]}"
+        checks.append(Check("IMP", improve is not None and improve.outcome == OK and not stage_errors,
+                            len(stage_errors), "improve stages errored", detail,
+                            [f"{op_id}:{stage}" for op_id, stage, _error in stage_errors]))
+        checks.append(error_check(ops))
+        delete_ok = any(op.outcome == OK and op.input.get("entry") == "delete" for op in ops)
+        left = [t for t in self.tags[self.C] if t in chunks or t in _rows(states[self.C])] if delete_ok else []
+        checks.append(Check("I5", not left, len(left), "deleted documents still present",
+                            f"after an acknowledged delete, still present: {left[:6]}" if left
+                            else "nothing of the deleted documents remains" if delete_ok else "the delete failed",
+                            left))
+        return checks
+
+    def sequential_expected(self, ops, states):
+        kept = self.tags[self.A] + self.tags[self.B]
+        state = dict(states[self.A])
+        state["relational"] = states[self.A]["relational"] + states[self.B]["relational"] + states[self.C]["relational"]
+        problems = exact_graph(self.corpus, kept, state, absent=self.tags[self.C]) + _errors(ops)
+        ran = {s["stage"]: s for s in improve_stages(_improve_op(ops))}
+        # Every graph-fed stage the version has completes (cognee 1.6.1 has no review_conflicts, C33).
+        if "global_context_index" not in ran:
+            problems.append(f"improve reported no global_context_index stage: {sorted(ran)}")
+        for name in IMPROVE_STAGES_RUN:
+            stage = ran.get(name)
+            if stage is not None and stage.get("status") != "completed":
+                problems.append(f"improve stage {name}: {stage.get('status')} {stage.get('reason') or ''} "
+                                f"{stage.get('error') or ''}".strip())
+        others = [f"{n}: {s['status']} ({s.get('reason')})" for n, s in ran.items() if n not in IMPROVE_STAGES_RUN
+                  and s["status"] != "skipped"]
+        if others:
+            problems.append(f"stages outside the declared set ran: {others}")
+        summaries = _nodes(state, "GlobalContextSummary")
+        if sum(summaries.values()) < 1:
+            problems.append("improve(B) left no GlobalContextSummary node")
+        return (not problems, "the shared store holds exactly A's and B's fixture graph and nothing of C; improve(B) "
+                "completed every graph-fed stage its version has (review_conflicts, global_context_index) and left "
+                "its index nodes; every other stage skipped (session-fed: no_session_ids)",
+                "; ".join(problems) or "as expected")
+
 # --- C3: add and delete on one stored file (#6559) -------------------------------------------------------------
 
 OFFSETS_MS = list(range(-50, 130, 5))  # declared before any run: 36 start offsets of the add against the delete

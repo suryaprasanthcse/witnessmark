@@ -24,7 +24,7 @@ import shlex  # noqa: E402
 from witnessmark.memory import MODES, MemoryRunConfig, TargetSpec, run_cases, run_race, run_visibility  # noqa: E402
 from witnessmark.timing import utc_now  # noqa: E402
 
-RACES = ("c1.k2", "c1.k4", "c1.k8", "c1.disjoint.k4", "c2.writers", "c3.cross_process")
+RACES = ("c1.k2", "c1.k4", "c1.k8", "c1.disjoint.k4", "c2.writers", "c2.improve", "c3.cross_process")
 SUITES = ("c0.single_call", "c3.in_process", "c6.deletion")
 ROWS = ("R1", "R1i", "R2", "R3")
 
@@ -43,7 +43,8 @@ def _scenario(name: str):
         return scenarios.C1Disjoint(int(name.rsplit("k", 1)[1]))
     if name.startswith("c1.k"):
         return scenarios.C1OneDataset(int(name[4:]))
-    return {"c2.writers": scenarios.C2Writers, "c3.cross_process": scenarios.C3CrossProcess}[name]()
+    return {"c2.writers": scenarios.C2Writers, "c2.improve": scenarios.C2Improve,
+            "c3.cross_process": scenarios.C3CrossProcess}[name]()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -80,8 +81,8 @@ def main(argv: list[str] | None = None) -> int:
 
     from witnessmark_cognee import stub
 
-    if args.command == "race" and args.scenario == "c2.writers" and args.access_control != "off":
-        parser.error("c2.writers needs --access-control off: only then do datasets share one store (#5254's shape)")
+    if args.command == "race" and args.scenario.startswith("c2.") and args.access_control != "off":
+        parser.error(f"{args.scenario} needs --access-control off: only then do datasets share one store (#5254's shape)")
     if args.row in ("R2", "R3") and args.access_control != "off":
         parser.error(f"{args.row} needs --access-control off: Cognee's per-dataset handler for it needs a "
                      "multi-database server (CREATE DATABASE) or is not registered")

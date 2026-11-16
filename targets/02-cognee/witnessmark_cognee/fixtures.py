@@ -156,6 +156,17 @@ def build(name: str) -> Corpus:
 
 CORPORA = ("c1", "c2", "c3", "c4", "c5", "c6")
 
+# Conflict review (improve's review_conflicts stage, target blueprint C30): the contradictions each corpus
+# scripts, keyed by the canonical key of the subject. No corpus scripts one. A person named at two companies in two
+# undated records holds both jobs, and a company's employees are a set, so an ideal model that follows the fixture
+# reports no conflict for any subject it is shown.
+SCRIPTED_CONFLICTS: dict[str, list] = {}
+
+
+def entity_keys() -> set[str]:
+    """The canonical key of every entity any corpus names."""
+    return {key(e.name) for doc in all_docs().values() for e in doc.entities}
+
 
 def all_docs() -> dict[str, Doc]:
     docs: dict[str, Doc] = {}

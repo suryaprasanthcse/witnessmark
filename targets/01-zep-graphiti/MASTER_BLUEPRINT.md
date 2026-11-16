@@ -582,6 +582,16 @@ Command counts follow master §12.1's counting rule: every command the driver lo
   - A plausible reading [inference from K25 and graphiti.py L2174–2213]: `remove_episode` counts Payments' mentions before G8N's mention is written, so Payments looks orphaned, and it deletes the node with the edge G8N had just attached.
   - On FalkorDB the same race kept everything in 20 of 20 trials.
   - The support level is none, so the result is OBSERVED, not FAIL. No ad hoc runs followed it. The single-file repro (P5) waits for Phase E.
+  - **P5 repro, declared run (M5 Phase E, 2026-11-16, declared before it ran).** `repros/repro_g8_remove_vs_add.py` uses the standard library and graphiti-core only, with telemetry off. The model, embedder and reranker are inline fakes that subclass graphiti-core's client bases and answer from the G8 fixture; nothing calls a model provider and nothing imports witnessmark. It seeds G8S and G8E, runs the sequential control once (the remove, then the add), then the concurrent case once per iteration through an `asyncio.Barrier`. For each, it prints the expected and observed episodes, entities and facts. On FalkorDB the driver is bound to the group's graph (K25). The declared run is four commands, each run once, from the repository root, with the baselines brought up only through `baselines/docker-compose.yml` and outputs saved under `.state/scratch/m5e-repro/` (not committed):
+
+    | # | Build (existing venv) | Command |
+    |---|---|---|
+    | 1 | v0.31.2 (`.state/venvs/graphiti-v0.31.2`) | `python targets/01-zep-graphiti/repros/repro_g8_remove_vs_add.py neo4j 20` |
+    | 2 | v0.31.2 | `… repro_g8_remove_vs_add.py falkordb 20` |
+    | 3 | main `ebef986a` (`.state/venvs/graphiti-main-ebef986a`) | `… repro_g8_remove_vs_add.py neo4j 20` |
+    | 4 | main `ebef986a` | `… repro_g8_remove_vs_add.py falkordb 20` |
+
+    Counts are recorded per build and backend as [measured: repro_g8_remove_vs_add.py at <commit>, <build>, <backend>, k of 20], with the sequential control beside each. If the repro does not reproduce in 20 of 20 on Neo4j, as G8 did, the counts are recorded and it is not chased.
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
 
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j

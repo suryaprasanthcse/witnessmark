@@ -99,6 +99,16 @@ class MonitorTest(unittest.TestCase):
         self.assertIsNone(measure.state_before(samples, 1, "g"))
 
 
+class RecoveryTest(unittest.TestCase):
+    def test_leftover_transactions_skip_the_harness_lookup(self):
+        rows = [{"transactionId": "neo4j-transaction-9", "currentQuery": "SHOW TRANSACTIONS YIELD *"},
+                {"transactionId": "neo4j-transaction-3", "currentQuery": ""},
+                {"transactionId": "neo4j-transaction-4", "currentQuery": "MATCH (n:Entity)-[e:RELATES_TO]->(m)"},
+                {"transactionId": "neo4j-transaction-5", "currentQuery": "  terminate transactions $ids"}]
+        self.assertEqual(measure.leftover_transactions(rows), ["neo4j-transaction-3", "neo4j-transaction-4"])
+        self.assertEqual(measure.leftover_transactions([]), [])
+
+
 class AnswersTest(unittest.TestCase):
     def test_classify_compares_multisets(self):
         self.assertEqual(measure.classify({"facts": ["b", "a"], "error": None}, ["a", "b"]), "identical")

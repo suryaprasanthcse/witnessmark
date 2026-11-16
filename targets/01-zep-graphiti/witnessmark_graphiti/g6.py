@@ -22,7 +22,7 @@ from witnessmark.memory import (SPREAD_GATE_MS, MemoryRunConfig, _finish, _heade
 from witnessmark.timing import stamp, utc_now
 
 from .fixtures import G6_EPISODES, G6_FACTS, G6_PROBE_TERM, G6C_FACTS, G6C_GROUPS, G6C_PROBE_TERM, g6_queries, g6c_query
-from .measure import classify, index_keys, state_before, suite_summary, uc_report
+from .measure import classify, index_keys, leftover_transactions, state_before, suite_summary, uc_report
 from .nemesis import Nemesis
 from .observe import (BuildTracker, IndexMonitor, LoopWatch, build_measures, build_ops, items_digest, make_probe,
                       wait_answers, watch_ops, watch_summary)
@@ -93,8 +93,11 @@ async def wait_no_indexes(probe, graph, timeout_s: float) -> bool:
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout_s
     while loop.time() < deadline:
-        if not await probe.index_rows(graph):
-            return True
+        try:
+            if not await asyncio.wait_for(probe.index_rows(graph), 30):
+                return True
+        except asyncio.TimeoutError:
+            return False
         await asyncio.sleep(0.05)
     return False
 
@@ -139,16 +142,63 @@ def _watch_checks(watch: dict) -> list[Check]:
     ]
 
 
+class ProbeStalled(Exception):
+    """A read on the harness's own connection gave no answer in time; the trial cannot be measured."""
+
+
+async def _bounded(awaitable, what: str, timeout_s: float = SEARCH_TIMEOUT_S):
+    try:
+        return await asyncio.wait_for(awaitable, timeout_s)
+    except asyncio.TimeoutError:
+        raise ProbeStalled(f"the harness's {what} gave no answer within {timeout_s:.0f} s") from None
+
+
+async def recover_server(probe, nemesis, container: str, target, run_id: str, k: int,
+                         ready_timeout_s: float) -> tuple[list[Op], object]:
+    """End what a stalled instance left on the server, so the next trial starts clean.
+
+    Closing the stalled instance in this process did not end its server transactions (batch m5g-20261116T051149Z,
+    row 11), so the harness ends them: Neo4j TERMINATE TRANSACTIONS for every open transaction but its own lookup,
+    then checks that none is left. If that fails, it restarts the test container. Returns (records, the probe to use).
+    """
+    ops: list[Op] = []
+    inv = stamp()
+    try:
+        ids = leftover_transactions(await _bounded(probe.open_transactions(), "transaction list", 30))
+        ended = await _bounded(probe.terminate(ids), "TERMINATE TRANSACTIONS", 30) if ids else []
+        left = leftover_transactions(await _bounded(probe.open_transactions(), "transaction list", 30))
+        for _ in range(100):  # Neo4j ends a terminated transaction asynchronously: allow it up to 10 s
+            if not left:
+                break
+            await asyncio.sleep(0.1)
+            left = leftover_transactions(await _bounded(probe.open_transactions(), "transaction list", 30))
+        ops.append(_harness_op(run_id, k, "setup", f"{k}-harness-terminate", "terminate_transactions", inv, not left,
+                               {"terminated": [r["transactionId"] for r in ended], "left": left}, ids=ids))
+    except Exception as exc:  # noqa: BLE001 - fall through to the restart
+        left = ["unknown"]
+        ops.append(_harness_op(run_id, k, "setup", f"{k}-harness-terminate", "terminate_transactions", inv, False,
+                               None, {"type": f"harness.{type(exc).__name__}", "message": redact(str(exc))[:300]}))
+    if left:
+        await probe.close()
+        nemesis.act(k, "restart", ["docker", "restart", container], container=container, reason="recovery after a stall")
+        ops += nemesis.drain()
+        probe = make_probe(target)
+        ops.append(await wait_answers(probe, run_id, k, ready_timeout_s, f"{k}-harness-ping-recovery"))
+    return ops, probe
+
+
 async def _stalled_trial(target, monitor, monitor_task, tracker, watch, run_id: str, k: int, ops: list[Op],
-                         trials: list[dict], stalled: SearchStalled, construct: Op, reasons: list[str]) -> list[Op]:
-    """Record a trial that a stalled search stopped, then close the instance (closing its connections ends the
-    server's transactions) so the next trial starts clean. Returns the trial's history records."""
+                         trials: list[dict], stalled: SearchStalled, construct: Op, reasons: list[str],
+                         probe, nemesis, container: str, ready_timeout_s: float) -> tuple[list[Op], object]:
+    """Record a trial that a stalled search stopped, close the instance, and end what it left on the server so the
+    next trial starts clean. Returns (the trial's history records, the probe to use)."""
     monitor.stop()
     await monitor_task
     try:
         await asyncio.wait_for(target.close(), SEARCH_TIMEOUT_S)
     except Exception:  # noqa: BLE001 - the stall is the observation; closing is best effort
         target.graphiti = None
+    recovery, probe = await recover_server(probe, nemesis, container, target, run_id, k, ready_timeout_s)
     await watch.settle()
     builds = tracker.drain()
     loop_events, logs = watch.drain()
@@ -159,9 +209,10 @@ async def _stalled_trial(target, monitor, monitor_task, tracker, watch, run_id: 
                       "answered_before": len(stalled.answers) - 1},
           "builds": {"count": len(builds), "unfinished": sum(1 for b in builds if b["outcome"] == "running")},
           "watch": watch_summary(loop_events, logs), "monitor_samples": len(monitor.samples)}
+    g6["recovery"] = [{"kind": op.kind, "outcome": op.outcome, "input": op.input} for op in recovery]
     trials.append(_trial_record(k, reasons + [why], "", [construct] + stalled.ops, "", "", [], {"g6": g6}))
     return (ops + monitor.ops(run_id, k) + build_ops(builds, run_id, k) + watch_ops(loop_events, logs, run_id, k)
-            + stub_ops)
+            + stub_ops + recovery), probe
 
 
 # --- G6a and G6b ----------------------------------------------------------------------------------------------
@@ -248,7 +299,16 @@ async def run_startup(config: MemoryRunConfig, variant: str, ready_timeout_s: fl
         for k in range(1, config.trials + 1):
             reasons: list[str] = []
             ops: list[Op] = []
-            pre_items = await probe.items(graph, GROUP)
+            try:
+                pre_items = await _bounded(probe.items(graph, GROUP), "data read before the trial")
+            except ProbeStalled as stalled:
+                recovery, probe = await recover_server(probe, nemesis, container, target, run_id, k, ready_timeout_s)
+                history += recovery
+                trials.append(_trial_record(k, [str(stalled)], "", [], "", "", [],
+                                            {"g6": {"probe_stalled": str(stalled),
+                                                    "recovery": [{"kind": op.kind, "outcome": op.outcome}
+                                                                 for op in recovery]}}))
+                continue
             pre_digest = items_digest(pre_items)
             if pre_digest != control_digest:
                 reasons.append("the group's data before the trial differs from the control's")
@@ -257,8 +317,11 @@ async def run_startup(config: MemoryRunConfig, variant: str, ready_timeout_s: fl
                 pass
             if variant == "fresh":
                 inv = stamp()
-                dropped = await probe.drop_indexes(graph)
-                gone = await wait_no_indexes(probe, graph, ready_timeout_s)
+                try:
+                    dropped = await _bounded(probe.drop_indexes(graph), "index drop")
+                    gone = await wait_no_indexes(probe, graph, ready_timeout_s)
+                except ProbeStalled:
+                    dropped, gone = None, False
                 ops.append(_harness_op(run_id, k, "setup", f"{k}-harness-drop", "drop_indexes", inv, gone,
                                        {"dropped": dropped}, graph=graph))
                 if not gone:
@@ -294,8 +357,10 @@ async def run_startup(config: MemoryRunConfig, variant: str, ready_timeout_s: fl
                 ready_answers, ready_ops = (await run_suite(target, queries, GROUP, run_id, k, "race", "ready")
                                             if ready_seen else ([], []))
             except SearchStalled as stalled:
-                history += await _stalled_trial(target, monitor, monitor_task, tracker, watch, run_id, k,
-                                                ops + [construct] + stalled.ops, trials, stalled, construct, reasons)
+                records, probe = await _stalled_trial(target, monitor, monitor_task, tracker, watch, run_id, k,
+                                                      ops + [construct] + stalled.ops, trials, stalled, construct,
+                                                      reasons, probe, nemesis, container, ready_timeout_s)
+                history += records
                 continue
             monitor.stop()
             await monitor_task
@@ -303,7 +368,11 @@ async def run_startup(config: MemoryRunConfig, variant: str, ready_timeout_s: fl
             await watch.settle()
             builds = tracker.drain()
             loop_events, logs = watch.drain()
-            post_items = await probe.items(graph, GROUP)
+            try:
+                post_items = await _bounded(probe.items(graph, GROUP), "data read after the trial")
+            except ProbeStalled as stalled:
+                post_items = {"graph": None, "facts": [], "entities": [], "episodes": []}
+                reasons.append(str(stalled))
             state = await target.dump(GROUP)
             state_file = run_dir.write_state(k, {GROUP: state})
             dump_builds = tracker.drain()

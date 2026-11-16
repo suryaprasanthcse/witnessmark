@@ -161,6 +161,18 @@ def uc_report(samples: list[dict], builds: list[dict], graph=None, database: str
     }
 
 
+# --- recovery after a stalled search ----------------------------------------------------------------------------
+
+#: Queries the harness itself runs while it looks for and ends leftover transactions.
+OWN_QUERIES = ("SHOW TRANSACTIONS", "TERMINATE TRANSACTIONS")
+
+
+def leftover_transactions(rows: list[dict]) -> list[str]:
+    """The ids of server transactions to end after a stall: every open one except the harness's own lookup."""
+    return sorted(str(row["transactionId"]) for row in rows
+                  if not str(row.get("currentQuery") or "").lstrip().upper().startswith(OWN_QUERIES))
+
+
 # --- answers --------------------------------------------------------------------------------------------------
 
 

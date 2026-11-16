@@ -246,6 +246,12 @@ class FalkorProbe:
     async def save(self) -> bool:
         return bool(await self.db.connection.save())
 
+    async def open_transactions(self) -> list[dict]:
+        return []  # no stall was seen on FalkorDB; nothing to end
+
+    async def terminate(self, ids: list[str]) -> list[dict]:
+        return []
+
     async def close(self) -> None:
         await self.pool.disconnect()
 
@@ -297,6 +303,14 @@ class Neo4jProbe:
 
     async def save(self) -> bool:
         return True
+
+    async def open_transactions(self) -> list[dict]:
+        return await self._run("SHOW TRANSACTIONS YIELD transactionId, currentQuery, elapsedTime "
+                               "RETURN transactionId, currentQuery, toString(elapsedTime) AS elapsed")
+
+    async def terminate(self, ids: list[str]) -> list[dict]:
+        return await self._run("TERMINATE TRANSACTIONS $ids YIELD transactionId, message "
+                               "RETURN transactionId, message", ids=ids)
 
     async def close(self) -> None:
         await self.driver.close()

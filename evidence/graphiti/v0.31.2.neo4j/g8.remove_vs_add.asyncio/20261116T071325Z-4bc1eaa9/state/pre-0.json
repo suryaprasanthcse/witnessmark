@@ -1,0 +1,59 @@
+{
+  "k": "pre-0",
+  "digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+  "state": {
+    "wm_g8": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G8E",
+            "G8S"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G8E",
+            "G8S"
+          ]
+        },
+        {
+          "name": "Payments",
+          "key": "payments",
+          "mentioned_by": [
+            "G8E"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice approved the Payments budget",
+          "source": "Alice",
+          "target": "Payments",
+          "relation": "APPROVED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 2
+        }
+      ],
+      "episodes": [
+        "G8E",
+        "G8S"
+      ]
+    }
+  }
+}

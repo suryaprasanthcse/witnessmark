@@ -1,0 +1,41 @@
+{
+  "k": 3,
+  "digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+  "state": {
+    "wm_g8": {
+      "entities": [
+        {
+          "name": "Acme",
+          "key": "acme",
+          "mentioned_by": [
+            "G8S"
+          ]
+        },
+        {
+          "name": "Alice",
+          "key": "alice",
+          "mentioned_by": [
+            "G8N",
+            "G8S"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Alice works at Acme",
+          "source": "Alice",
+          "target": "Acme",
+          "relation": "WORKS_AT",
+          "valid_at": "2025-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G8N",
+        "G8S"
+      ]
+    }
+  }
+}

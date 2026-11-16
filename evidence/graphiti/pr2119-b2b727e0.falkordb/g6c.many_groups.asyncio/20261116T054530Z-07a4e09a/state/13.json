@@ -1,0 +1,598 @@
+{
+  "k": 13,
+  "digest": "sha256:bd7249e195e0006c5af3812cef27de9eba77ba9c94c18f88f4e400889f09f5c9",
+  "state": {
+    "wm_g6c_0": {
+      "entities": [
+        {
+          "name": "Auditor0",
+          "key": "auditor0",
+          "mentioned_by": [
+            "G6C0"
+          ]
+        },
+        {
+          "name": "Fund0",
+          "key": "fund0",
+          "mentioned_by": [
+            "G6C0"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor0 cleared voucher VCH0x00 for Fund0",
+          "source": "Auditor0",
+          "target": "Fund0",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor0 cleared voucher VCH0x01 for Fund0",
+          "source": "Auditor0",
+          "target": "Fund0",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor0 cleared voucher VCH0x02 for Fund0",
+          "source": "Auditor0",
+          "target": "Fund0",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor0 cleared voucher VCH0x03 for Fund0",
+          "source": "Auditor0",
+          "target": "Fund0",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor0 cleared voucher VCH0x04 for Fund0",
+          "source": "Auditor0",
+          "target": "Fund0",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C0"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_1": {
+      "entities": [
+        {
+          "name": "Auditor1",
+          "key": "auditor1",
+          "mentioned_by": [
+            "G6C1"
+          ]
+        },
+        {
+          "name": "Fund1",
+          "key": "fund1",
+          "mentioned_by": [
+            "G6C1"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor1 cleared voucher VCH1x00 for Fund1",
+          "source": "Auditor1",
+          "target": "Fund1",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor1 cleared voucher VCH1x01 for Fund1",
+          "source": "Auditor1",
+          "target": "Fund1",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor1 cleared voucher VCH1x02 for Fund1",
+          "source": "Auditor1",
+          "target": "Fund1",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor1 cleared voucher VCH1x03 for Fund1",
+          "source": "Auditor1",
+          "target": "Fund1",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor1 cleared voucher VCH1x04 for Fund1",
+          "source": "Auditor1",
+          "target": "Fund1",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C1"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_2": {
+      "entities": [
+        {
+          "name": "Auditor2",
+          "key": "auditor2",
+          "mentioned_by": [
+            "G6C2"
+          ]
+        },
+        {
+          "name": "Fund2",
+          "key": "fund2",
+          "mentioned_by": [
+            "G6C2"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor2 cleared voucher VCH2x00 for Fund2",
+          "source": "Auditor2",
+          "target": "Fund2",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor2 cleared voucher VCH2x01 for Fund2",
+          "source": "Auditor2",
+          "target": "Fund2",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor2 cleared voucher VCH2x02 for Fund2",
+          "source": "Auditor2",
+          "target": "Fund2",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor2 cleared voucher VCH2x03 for Fund2",
+          "source": "Auditor2",
+          "target": "Fund2",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor2 cleared voucher VCH2x04 for Fund2",
+          "source": "Auditor2",
+          "target": "Fund2",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C2"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_3": {
+      "entities": [
+        {
+          "name": "Auditor3",
+          "key": "auditor3",
+          "mentioned_by": [
+            "G6C3"
+          ]
+        },
+        {
+          "name": "Fund3",
+          "key": "fund3",
+          "mentioned_by": [
+            "G6C3"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor3 cleared voucher VCH3x00 for Fund3",
+          "source": "Auditor3",
+          "target": "Fund3",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor3 cleared voucher VCH3x01 for Fund3",
+          "source": "Auditor3",
+          "target": "Fund3",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor3 cleared voucher VCH3x02 for Fund3",
+          "source": "Auditor3",
+          "target": "Fund3",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor3 cleared voucher VCH3x03 for Fund3",
+          "source": "Auditor3",
+          "target": "Fund3",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor3 cleared voucher VCH3x04 for Fund3",
+          "source": "Auditor3",
+          "target": "Fund3",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C3"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_4": {
+      "entities": [
+        {
+          "name": "Auditor4",
+          "key": "auditor4",
+          "mentioned_by": [
+            "G6C4"
+          ]
+        },
+        {
+          "name": "Fund4",
+          "key": "fund4",
+          "mentioned_by": [
+            "G6C4"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor4 cleared voucher VCH4x00 for Fund4",
+          "source": "Auditor4",
+          "target": "Fund4",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor4 cleared voucher VCH4x01 for Fund4",
+          "source": "Auditor4",
+          "target": "Fund4",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor4 cleared voucher VCH4x02 for Fund4",
+          "source": "Auditor4",
+          "target": "Fund4",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor4 cleared voucher VCH4x03 for Fund4",
+          "source": "Auditor4",
+          "target": "Fund4",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor4 cleared voucher VCH4x04 for Fund4",
+          "source": "Auditor4",
+          "target": "Fund4",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C4"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_5": {
+      "entities": [
+        {
+          "name": "Auditor5",
+          "key": "auditor5",
+          "mentioned_by": [
+            "G6C5"
+          ]
+        },
+        {
+          "name": "Fund5",
+          "key": "fund5",
+          "mentioned_by": [
+            "G6C5"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor5 cleared voucher VCH5x00 for Fund5",
+          "source": "Auditor5",
+          "target": "Fund5",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor5 cleared voucher VCH5x01 for Fund5",
+          "source": "Auditor5",
+          "target": "Fund5",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor5 cleared voucher VCH5x02 for Fund5",
+          "source": "Auditor5",
+          "target": "Fund5",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor5 cleared voucher VCH5x03 for Fund5",
+          "source": "Auditor5",
+          "target": "Fund5",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor5 cleared voucher VCH5x04 for Fund5",
+          "source": "Auditor5",
+          "target": "Fund5",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C5"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_6": {
+      "entities": [
+        {
+          "name": "Auditor6",
+          "key": "auditor6",
+          "mentioned_by": [
+            "G6C6"
+          ]
+        },
+        {
+          "name": "Fund6",
+          "key": "fund6",
+          "mentioned_by": [
+            "G6C6"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor6 cleared voucher VCH6x00 for Fund6",
+          "source": "Auditor6",
+          "target": "Fund6",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor6 cleared voucher VCH6x01 for Fund6",
+          "source": "Auditor6",
+          "target": "Fund6",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor6 cleared voucher VCH6x02 for Fund6",
+          "source": "Auditor6",
+          "target": "Fund6",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor6 cleared voucher VCH6x03 for Fund6",
+          "source": "Auditor6",
+          "target": "Fund6",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor6 cleared voucher VCH6x04 for Fund6",
+          "source": "Auditor6",
+          "target": "Fund6",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C6"
+      ],
+      "facts_in_default_graph": []
+    },
+    "wm_g6c_7": {
+      "entities": [
+        {
+          "name": "Auditor7",
+          "key": "auditor7",
+          "mentioned_by": [
+            "G6C7"
+          ]
+        },
+        {
+          "name": "Fund7",
+          "key": "fund7",
+          "mentioned_by": [
+            "G6C7"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Auditor7 cleared voucher VCH7x00 for Fund7",
+          "source": "Auditor7",
+          "target": "Fund7",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor7 cleared voucher VCH7x01 for Fund7",
+          "source": "Auditor7",
+          "target": "Fund7",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor7 cleared voucher VCH7x02 for Fund7",
+          "source": "Auditor7",
+          "target": "Fund7",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor7 cleared voucher VCH7x03 for Fund7",
+          "source": "Auditor7",
+          "target": "Fund7",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Auditor7 cleared voucher VCH7x04 for Fund7",
+          "source": "Auditor7",
+          "target": "Fund7",
+          "relation": "CLEARED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G6C7"
+      ],
+      "facts_in_default_graph": []
+    }
+  }
+}

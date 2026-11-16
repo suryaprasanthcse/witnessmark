@@ -1,0 +1,1217 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261116T071238Z-cfee79ff",
+  "batch": "m5g-20261116T051149Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "8b9785af52e2b5f3466700831dde9518c2d99c33",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "falkordb",
+        "telemetry": "off",
+        "falkordb_pool": "blocking",
+        "driver": "1.8.2"
+      }
+    },
+    {
+      "role": "store",
+      "name": "falkordb",
+      "version": "FalkorDB 6.0.4 (graph module 60004)"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g7",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g7.mcp.kill_start.persistence",
+    "invariants": [
+      "I2"
+    ],
+    "mode": "persistence",
+    "clients": 1,
+    "trials": 10,
+    "params": {
+      "support": "none",
+      "variant": "mcp",
+      "action": "kill_start",
+      "episodes": 10,
+      "group": "wm_g7",
+      "compose_file": "targets/01-zep-graphiti/docker/compose-g7.yml",
+      "project": "witnessmark-g7",
+      "service": "falkordb-mcp",
+      "container": "wm-g7-mcp",
+      "port": 16392,
+      "volume": "witnessmark-g7_g7_mcp_data",
+      "volume_mount": "/var/lib/falkordb/data",
+      "steps": [
+        {
+          "kind": "kill",
+          "command": "docker kill wm-g7-mcp"
+        },
+        {
+          "kind": "start",
+          "command": "docker start wm-g7-mcp"
+        }
+      ],
+      "op_timeout_s": 300.0
+    }
+  },
+  "seed": 20261137,
+  "started_at": "2026-11-16T07:12:38.655579Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "https://github.com/getzep/graphiti/issues/2117",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "g7.mcp.kill_start.persistence: fresh volume, 10 ingests, no action",
+      "expected": "10 episodes, 2 entities, 10 facts; nothing lost on close and reopen",
+      "observed": "10 episodes, 2 entities, 10 facts before; 0 lost on close and reopen",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "1-nemesis-006",
+            "1-nemesis-007"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "2-nemesis-011",
+            "2-nemesis-012"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "3-nemesis-016",
+            "3-nemesis-017"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "4-nemesis-021",
+            "4-nemesis-022"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "5-nemesis-026",
+            "5-nemesis-027"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "6-nemesis-031",
+            "6-nemesis-032"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "7-nemesis-036",
+            "7-nemesis-037"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "8-nemesis-041",
+            "8-nemesis-042"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "9-nemesis-046",
+            "9-nemesis-047"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:220377428bae9c0b97b201af9c2f1236b9a535f1853c8a205d9fb859d1fb45a2",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 10,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:1fedd36790c6b3d4ce3970cb7b26972f1293adfd34430a91b9e12f8e22c8d76f",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 22,
+          "unit": "items lost",
+          "detail": "lost {'episodes': 10, 'entities': 2, 'facts': 10} of {'episodes': 10, 'entities': 2, 'facts': 10}; examples {'episodes': ['G7E00', 'G7E01', 'G7E02'], 'entities': ['Grace', 'Repository'], 'facts': ['Grace merged change 00', 'Grace merged change 01', 'Grace merged change 02']}",
+          "witnesses": [
+            "10-nemesis-051",
+            "10-nemesis-052"
+          ]
+        }
+      ],
+      "g7": {
+        "variant": "mcp",
+        "action": "kill_start",
+        "lost": {
+          "lost": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "lost_total": 22,
+          "examples": {
+            "episodes": [
+              "G7E00",
+              "G7E01",
+              "G7E02"
+            ],
+            "entities": [
+              "Grace",
+              "Repository"
+            ],
+            "facts": [
+              "Grace merged change 00",
+              "Grace merged change 01",
+              "Grace merged change 02"
+            ]
+          },
+          "before": {
+            "episodes": 10,
+            "entities": 2,
+            "facts": 10
+          },
+          "after": {
+            "episodes": 0,
+            "entities": 0,
+            "facts": 0
+          }
+        },
+        "graph_after": false,
+        "settings_before": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "settings_after": {
+          "appendonly": "no",
+          "appendfsync": "everysec",
+          "save": "3600 1 300 100 60 10000",
+          "dir": "/var/lib/falkordb/data",
+          "graph_module": {
+            "ver": 60004,
+            "args": [
+              "MAX_QUEUED_QUERIES",
+              "25",
+              "TIMEOUT",
+              "1000",
+              "RESULTSET_SIZE",
+              "10000"
+            ]
+          }
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "witnessmark-g7_g7_mcp_data",
+            "destination": "/var/lib/falkordb/data"
+          }
+        ]
+      }
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I2",
+      "status": "OBSERVED",
+      "trials_violating": 10,
+      "trials_valid": 10,
+      "magnitude": {
+        "min": 22,
+        "median": 22.0,
+        "max": 22,
+        "unit": "items lost"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/getzep/graphiti/issues/2117",
+      "witnesses": [
+        "1-nemesis-006",
+        "1-nemesis-007",
+        "2-nemesis-011",
+        "2-nemesis-012",
+        "3-nemesis-016",
+        "3-nemesis-017"
+      ],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-16T07:13:17.475924Z"
+}

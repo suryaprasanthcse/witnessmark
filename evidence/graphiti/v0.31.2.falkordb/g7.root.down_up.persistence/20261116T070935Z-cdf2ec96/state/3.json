@@ -1,0 +1,308 @@
+{
+  "k": 3,
+  "digest": "sha256:b5a96ccac775d6bcbc8a28613756907e87f3df9198b4f4434ac611c623b0d98e",
+  "state": {
+    "before": {
+      "entities": [
+        {
+          "name": "Grace",
+          "key": "grace",
+          "mentioned_by": [
+            "G7E00",
+            "G7E01",
+            "G7E02",
+            "G7E03",
+            "G7E04",
+            "G7E05",
+            "G7E06",
+            "G7E07",
+            "G7E08",
+            "G7E09"
+          ]
+        },
+        {
+          "name": "Repository",
+          "key": "repository",
+          "mentioned_by": [
+            "G7E00",
+            "G7E01",
+            "G7E02",
+            "G7E03",
+            "G7E04",
+            "G7E05",
+            "G7E06",
+            "G7E07",
+            "G7E08",
+            "G7E09"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Grace merged change 00",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 01",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 02",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 03",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 04",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 05",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 06",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 07",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 08",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T08:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 09",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T09:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G7E00",
+        "G7E01",
+        "G7E02",
+        "G7E03",
+        "G7E04",
+        "G7E05",
+        "G7E06",
+        "G7E07",
+        "G7E08",
+        "G7E09"
+      ],
+      "facts_in_default_graph": []
+    },
+    "after": {
+      "entities": [
+        {
+          "name": "Grace",
+          "key": "grace",
+          "mentioned_by": [
+            "G7E00",
+            "G7E01",
+            "G7E02",
+            "G7E03",
+            "G7E04",
+            "G7E05",
+            "G7E06",
+            "G7E07",
+            "G7E08",
+            "G7E09"
+          ]
+        },
+        {
+          "name": "Repository",
+          "key": "repository",
+          "mentioned_by": [
+            "G7E00",
+            "G7E01",
+            "G7E02",
+            "G7E03",
+            "G7E04",
+            "G7E05",
+            "G7E06",
+            "G7E07",
+            "G7E08",
+            "G7E09"
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact": "Grace merged change 00",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T00:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 01",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T01:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 02",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T02:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 03",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T03:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 04",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T04:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 05",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T05:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 06",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T06:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 07",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T07:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 08",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T08:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        },
+        {
+          "fact": "Grace merged change 09",
+          "source": "Grace",
+          "target": "Repository",
+          "relation": "MERGED",
+          "valid_at": "2026-01-01T09:00:00Z",
+          "invalid_at": null,
+          "expired": false,
+          "episodes": 1
+        }
+      ],
+      "episodes": [
+        "G7E00",
+        "G7E01",
+        "G7E02",
+        "G7E03",
+        "G7E04",
+        "G7E05",
+        "G7E06",
+        "G7E07",
+        "G7E08",
+        "G7E09"
+      ],
+      "facts_in_default_graph": []
+    }
+  }
+}

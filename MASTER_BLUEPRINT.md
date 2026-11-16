@@ -1119,6 +1119,20 @@ Phase C follows Phase B and ends when G6, G7 and G8 have recorded outcomes and e
 
 [Graphiti scenarios (§5)](targets/01-zep-graphiti/MASTER_BLUEPRINT.md#5-scenarios)
 
+**Status, Phase C (2026-11-16).** G6, G7 and G8 ran; Phase C awaits the maintainer's review.
+
+- [x] Phase B sign-off recorded (`9761daa`). The run plan was declared before any batch (`886f4c6`), with pre-batch amendments (`8b9785a`) and the #2119 review (K21).
+- [x] Main batch `m5g-20261116T051149Z` (`8b9785a`): 24 commands, 23 exit 0. Row 11 (G6a on Neo4j, main) hung and was ended. The false start `m5g-20261116T044019Z` ran nothing (a driver path bug). Report: `evidence/M5_GRAPHITI.md`.
+- [x] Re-run `m5h-20261116T071955Z` (`425e22e`): row 11 hung again and was ended under the maintainer's ruling. The cell is INVALID, "harness could not bound a stalled search on this build", with no third run. `0395799` changes how the harness bounds a search.
+- [x] Explanatory control `m5i-20261116T092138Z` (`0395799`, maintainer ruling 4): G7 kill-then-start with `appendonly yes`, 2 of 2 exit 0. Report: `evidence/M5_GRAPHITI_B1.md`.
+- Results, findings and the choices taken without the maintainer are in the Graphiti blueprint, §12. In brief:
+  - FalkorDB fulltext under construction returns fewer rows without an error (§13).
+  - On #2119 the indexes were still under construction after the awaited build returned (KD-F4).
+  - Neo4j at-once searches raised typed errors in 11 of 20 and 8 of 20 trials.
+  - G6b and G6c were clean.
+  - G7 lost everything on kill with `appendonly no` and nothing with `appendonly yes`.
+  - G8 on Neo4j lost an acknowledged ingest's fact and entity to a concurrent delete in 20 of 20 trials. This is OBSERVED and a possible Graphiti defect for review; the P5 repro comes in Phase E.
+
 #### 4. Phase D — Cognee
 
 Phase D follows Phase C and ends when C2 and any approved R4 runs have recorded outcomes and evidence.
@@ -1160,7 +1174,7 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 |---|---|
 | Can the release-spread bounds be met on Windows with Docker Desktop? | Answered for `thread` mode in M1: 50 threads cannot meet 5 ms (p50 7.88 ms), so δ is 40 ms (section 6.3). The other modes are measured when they land. |
 | Should clients run inside the Docker network rather than on the Windows host? | Still open. M1 ran its clients on the Windows host, and M5 keeps them on the host (§3.4). |
-| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Deferred to G6 in M5 (§12.1) [unmeasured: G6]. |
+| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Answered in M5 Phase C by Graphiti G6a on FalkorDB 6.0.4. While the RELATES_TO fulltext index was under construction, the query returned fewer rows than the 2,000 of the control, or all of them, and never an error. Counted in monitor samples: 3 fewer and 5 all on v0.31.2, 1 and 4 on main, 58 and 2 on #2119. Before the index existed it returned 0 rows, again with no error [measured: `20261116T051153Z-2e987ec0`, `20261116T051801Z-c9fd6666`, `20261116T052409Z-5885a291`]. Neo4j 5.26.2 differs: a missing index is a typed error, and a populating one returned every row [measured: `20261116T054555Z-85bc1662`, `20261116T064351Z-20ab7a28`]. Graphiti blueprint §12.3, G6-F1. |
 | When do Neo4j fulltext and vector indexes reflect a committed write? | Answered in M2 by Graphiti G4 on Neo4j 5.26.2. Both the writing instance and a second instance saw 10 of 10 writes on the first search [measured: `20261113T175059Z-738c7f37`]. |
 | Which Neo4j release breaks ties (section 7.4)? | Pinned when first needed |
 

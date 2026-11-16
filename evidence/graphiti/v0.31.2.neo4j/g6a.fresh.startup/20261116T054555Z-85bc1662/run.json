@@ -1,0 +1,2648 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261116T054555Z-85bc1662",
+  "batch": "m5g-20261116T051149Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "8b9785af52e2b5f3466700831dde9518c2d99c33",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g6",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g6a.fresh.startup",
+    "invariants": [
+      "I4.at_once",
+      "I4.ready",
+      "I2"
+    ],
+    "mode": "startup",
+    "clients": 1,
+    "trials": 20,
+    "params": {
+      "support": "none",
+      "group": "wm_g6",
+      "episodes": 400,
+      "facts_per_episode": 5,
+      "facts": 2000,
+      "declared_size": true,
+      "queries": [
+        "INV0000x01",
+        "INV0040x02",
+        "INV0080x04",
+        "INV0120x04",
+        "INV0160x01",
+        "INV0200x01",
+        "INV0240x01",
+        "INV0280x01",
+        "INV0320x04",
+        "INV0360x00"
+      ],
+      "probe_term": "invoice",
+      "monitor_interval_ms": 2.0,
+      "ready_timeout_s": 180.0,
+      "search_timeout_s": 60.0,
+      "action": "drop every index, then construct",
+      "container": "wm-neo4j",
+      "op_timeout_s": 300.0
+    }
+  },
+  "seed": 20261126,
+  "started_at": "2026-11-16T05:45:55.851318Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "issue",
+    "basis_ref": "https://github.com/getzep/graphiti/issues/1643",
+    "known_deviation": null
+  },
+  "engine_settings": {},
+  "expected_indexes": [
+    "community_group_id",
+    "community_name",
+    "community_uuid",
+    "created_at_edge_index",
+    "created_at_entity_index",
+    "created_at_episodic_index",
+    "edge_name_and_fact",
+    "entity_group_id",
+    "entity_uuid",
+    "episode_content",
+    "episode_group_id",
+    "episode_uuid",
+    "expired_at_edge_index",
+    "has_episode_group_id",
+    "has_episode_uuid",
+    "has_member_uuid",
+    "invalid_at_edge_index",
+    "mention_group_id",
+    "mention_uuid",
+    "name_edge_index",
+    "name_entity_index",
+    "next_episode_group_id",
+    "next_episode_uuid",
+    "node_name_and_summary",
+    "relation_group_id",
+    "relation_uuid",
+    "saga_group_id",
+    "saga_name",
+    "saga_uuid",
+    "valid_at_edge_index",
+    "valid_at_episodic_index"
+  ],
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "g6a.fresh.startup: load, every index ready, then the suite",
+      "expected": "400 ingests ok; 800 entities, 2000 facts, 400 episodes; every query returns exactly its fact; probe 2000",
+      "observed": "400 of 400 ingests ok; 800 entities, 2000 facts, 400 episodes; indexes ready: True (31 index keys); 10 of 10 queries returned exactly their fact; probe 2000",
+      "met": true
+    }
+  ],
+  "unready_at_first_query": {
+    "trials": 20,
+    "valid": 20
+  },
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 14,
+        "fail": 7,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 7,
+          "unit": "queries not identical",
+          "detail": "at once: 3 of 10 identical, 0 silently different, 7 error(s) {'target.ClientError': 7}",
+          "witnesses": [
+            "1-c00-at_once-00",
+            "1-c00-at_once-01",
+            "1-c00-at_once-02",
+            "1-c00-at_once-03",
+            "1-c00-at_once-04",
+            "1-c00-at_once-05",
+            "1-c00-at_once-06"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 7,
+          "unit": "error log records",
+          "detail": "7 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 3,
+          "different": 0,
+          "errors": 7,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 7
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.285,
+        "index_ready_after_ms": 1453.777,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 579.034
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 9,
+          "under_construction_span_ms": 1281.822,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 8,
+          "ready_seen": true,
+          "samples": 79
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 7,
+          "log_warnings": 0
+        },
+        "monitor_samples": 79
+      }
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 17,
+        "fail": 4,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 4,
+          "unit": "queries not identical",
+          "detail": "at once: 6 of 10 identical, 0 silently different, 4 error(s) {'target.ClientError': 4}",
+          "witnesses": [
+            "2-c00-at_once-00",
+            "2-c00-at_once-01",
+            "2-c00-at_once-02",
+            "2-c00-at_once-03"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "error log records",
+          "detail": "4 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 6,
+          "different": 0,
+          "errors": 4,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 4
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.324,
+        "index_ready_after_ms": 964.115,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 711.394
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 862.785,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 88
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 4,
+          "log_warnings": 0
+        },
+        "monitor_samples": 88
+      }
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.259,
+        "index_ready_after_ms": 1067.451,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 75.096
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 3,
+          "under_construction_span_ms": 978.381,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 2,
+          "ready_seen": true,
+          "samples": 101
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 101
+      }
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.302,
+        "index_ready_after_ms": 797.126,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 422.139
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 6,
+          "under_construction_span_ms": 722.979,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 5,
+          "ready_seen": true,
+          "samples": 104
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 104
+      }
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.214,
+        "index_ready_after_ms": 939.178,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 100.046
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 4,
+          "under_construction_span_ms": 865.61,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 2,
+          "ready_seen": true,
+          "samples": 102
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 102
+      }
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 19,
+        "fail": 2,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 2,
+          "unit": "queries not identical",
+          "detail": "at once: 8 of 10 identical, 0 silently different, 2 error(s) {'target.ClientError': 2}",
+          "witnesses": [
+            "6-c00-at_once-00",
+            "6-c00-at_once-01"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 2,
+          "unit": "error log records",
+          "detail": "2 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 8,
+          "different": 0,
+          "errors": 2,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 2
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.226,
+        "index_ready_after_ms": 838.285,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 602.576
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 771.373,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 99
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 2,
+          "log_warnings": 0
+        },
+        "monitor_samples": 99
+      }
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.216,
+        "index_ready_after_ms": 895.6,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 71.783
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 6,
+          "under_construction_span_ms": 823.909,
+          "probe_rows_while_under_construction": null,
+          "probe_errors_while_under_construction": 6,
+          "ready_seen": true,
+          "samples": 115
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 115
+      }
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 17,
+        "fail": 4,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 4,
+          "unit": "queries not identical",
+          "detail": "at once: 6 of 10 identical, 0 silently different, 4 error(s) {'target.ClientError': 4}",
+          "witnesses": [
+            "8-c00-at_once-00",
+            "8-c00-at_once-01",
+            "8-c00-at_once-02",
+            "8-c00-at_once-03"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 4,
+          "unit": "error log records",
+          "detail": "4 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 6,
+          "different": 0,
+          "errors": 4,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 4
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.228,
+        "index_ready_after_ms": 845.487,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 71.294
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 747.223,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 86
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 4,
+          "log_warnings": 0
+        },
+        "monitor_samples": 86
+      }
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 20,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 1,
+          "unit": "queries not identical",
+          "detail": "at once: 9 of 10 identical, 0 silently different, 1 error(s) {'target.ClientError': 1}",
+          "witnesses": [
+            "9-c00-at_once-00"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 1,
+          "unit": "error log records",
+          "detail": "1 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 9,
+          "different": 0,
+          "errors": 1,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 1
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.206,
+        "index_ready_after_ms": 824.792,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 63.246
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 8,
+          "under_construction_span_ms": 751.942,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 7,
+          "ready_seen": true,
+          "samples": 105
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 1,
+          "log_warnings": 0
+        },
+        "monitor_samples": 105
+      }
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 20,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 1,
+          "unit": "queries not identical",
+          "detail": "at once: 9 of 10 identical, 0 silently different, 1 error(s) {'target.ClientError': 1}",
+          "witnesses": [
+            "10-c00-at_once-00"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 1,
+          "unit": "error log records",
+          "detail": "1 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 9,
+          "different": 0,
+          "errors": 1,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 1
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.211,
+        "index_ready_after_ms": 1144.707,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 59.855
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 8,
+          "under_construction_span_ms": 1065.199,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 7,
+          "ready_seen": true,
+          "samples": 103
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 1,
+          "log_warnings": 0
+        },
+        "monitor_samples": 103
+      }
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 14,
+        "fail": 7,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 7,
+          "unit": "queries not identical",
+          "detail": "at once: 3 of 10 identical, 0 silently different, 7 error(s) {'target.ClientError': 7}",
+          "witnesses": [
+            "11-c00-at_once-00",
+            "11-c00-at_once-01",
+            "11-c00-at_once-02",
+            "11-c00-at_once-03",
+            "11-c00-at_once-04",
+            "11-c00-at_once-05",
+            "11-c00-at_once-06"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 7,
+          "unit": "error log records",
+          "detail": "7 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 3,
+          "different": 0,
+          "errors": 7,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 7
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.216,
+        "index_ready_after_ms": 1223.972,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 731.622
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 8,
+          "under_construction_span_ms": 1147.466,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 7,
+          "ready_seen": true,
+          "samples": 71
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 7,
+          "log_warnings": 0
+        },
+        "monitor_samples": 71
+      }
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 20,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 1,
+          "unit": "queries not identical",
+          "detail": "at once: 9 of 10 identical, 0 silently different, 1 error(s) {'target.ClientError': 1}",
+          "witnesses": [
+            "12-c00-at_once-00"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 1,
+          "unit": "error log records",
+          "detail": "1 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 9,
+          "different": 0,
+          "errors": 1,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 1
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.211,
+        "index_ready_after_ms": 1173.304,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 77.86
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 6,
+          "under_construction_span_ms": 1098.026,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 5,
+          "ready_seen": true,
+          "samples": 100
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 1,
+          "log_warnings": 0
+        },
+        "monitor_samples": 100
+      }
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.217,
+        "index_ready_after_ms": 1249.175,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 245.768,
+            "at_most_ms": 419.635
+          },
+          "not_ready_after_creation_kinds": [
+            "under construction"
+          ],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 7,
+          "under_construction_span_ms": 1166.492,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 102
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 102
+      }
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.237,
+        "index_ready_after_ms": 1729.266,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 84.947
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 1660.133,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 99
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 99
+      }
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.219,
+        "index_ready_after_ms": 2060.169,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 57.741
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 4,
+          "under_construction_span_ms": 1992.236,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 2,
+          "ready_seen": true,
+          "samples": 102
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 102
+      }
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.209,
+        "index_ready_after_ms": 1406.104,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 8.195,
+            "at_most_ms": 136.642
+          },
+          "not_ready_after_creation_kinds": [
+            "under construction"
+          ],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 1327.778,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 3,
+          "ready_seen": true,
+          "samples": 100
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 100
+      }
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 12,
+        "fail": 9,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 9,
+          "unit": "queries not identical",
+          "detail": "at once: 1 of 10 identical, 0 silently different, 9 error(s) {'target.ClientError': 9}",
+          "witnesses": [
+            "17-c00-at_once-00",
+            "17-c00-at_once-01",
+            "17-c00-at_once-02",
+            "17-c00-at_once-03",
+            "17-c00-at_once-04",
+            "17-c00-at_once-05",
+            "17-c00-at_once-06",
+            "17-c00-at_once-07",
+            "17-c00-at_once-08"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 9,
+          "unit": "error log records",
+          "detail": "9 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 1,
+          "different": 0,
+          "errors": 9,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 9
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.211,
+        "index_ready_after_ms": 1186.412,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 902.261
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 1116.664,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 71
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 9,
+          "log_warnings": 0
+        },
+        "monitor_samples": 71
+      }
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 21,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "at once: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": true,
+          "magnitude": 0,
+          "unit": "error log records",
+          "detail": "0 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.21,
+        "index_ready_after_ms": 722.157,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 62.748
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 5,
+          "under_construction_span_ms": 654.354,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 4,
+          "ready_seen": true,
+          "samples": 105
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 0,
+          "log_warnings": 0
+        },
+        "monitor_samples": 105
+      }
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 20,
+        "fail": 1,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 1,
+          "unit": "queries not identical",
+          "detail": "at once: 9 of 10 identical, 0 silently different, 1 error(s) {'target.ClientError': 1}",
+          "witnesses": [
+            "19-c00-at_once-00"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 1,
+          "unit": "error log records",
+          "detail": "1 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 9,
+          "different": 0,
+          "errors": 1,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 1
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.207,
+        "index_ready_after_ms": 732.036,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 50.744
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 8,
+          "under_construction_span_ms": 658.889,
+          "probe_rows_while_under_construction": null,
+          "probe_errors_while_under_construction": 8,
+          "ready_seen": true,
+          "samples": 103
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 1,
+          "log_warnings": 0
+        },
+        "monitor_samples": 103
+      }
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:4a7231c4d482822b1c5fa8a53cd1c07c6dd481c3583d1f8240aa43f10cd4f820",
+      "release_spread_ms": 0.0,
+      "max_in_flight": 1,
+      "outcomes": {
+        "ok": 19,
+        "fail": 2,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:99d6291b667be7e7334e636b29a6ce6c33ded2ae7f211d6149ec766977dfef8d",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I4.at_once",
+          "held": false,
+          "magnitude": 2,
+          "unit": "queries not identical",
+          "detail": "at once: 8 of 10 identical, 0 silently different, 2 error(s) {'target.ClientError': 2}",
+          "witnesses": [
+            "20-c00-at_once-00",
+            "20-c00-at_once-01"
+          ]
+        },
+        {
+          "invariant": "I4.ready",
+          "held": true,
+          "magnitude": 0,
+          "unit": "queries not identical",
+          "detail": "after every index was ready: 10 of 10 identical, 0 silently different, 0 error(s)",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": true,
+          "magnitude": 0,
+          "unit": "data changes",
+          "detail": "the group's facts, entities and episodes match the control",
+          "witnesses": []
+        },
+        {
+          "invariant": "TASK",
+          "held": true,
+          "magnitude": 0,
+          "unit": "never-retrieved task exceptions",
+          "detail": "no task exception went unretrieved",
+          "witnesses": []
+        },
+        {
+          "invariant": "ERR",
+          "held": false,
+          "magnitude": 2,
+          "unit": "error log records",
+          "detail": "2 log record(s) at ERROR, 0 at WARNING",
+          "witnesses": []
+        }
+      ],
+      "g6": {
+        "variant": "fresh",
+        "at_once": {
+          "queries": 10,
+          "identical": 8,
+          "different": 0,
+          "errors": 2,
+          "order_only": 0,
+          "error_types": {
+            "target.ClientError": 2
+          }
+        },
+        "ready": {
+          "queries": 10,
+          "identical": 10,
+          "different": 0,
+          "errors": 0,
+          "order_only": 0,
+          "error_types": {}
+        },
+        "first_query_index_state": {
+          "rows": 0,
+          "states": {},
+          "missing": 31,
+          "relates_to_fulltext": "absent",
+          "ready": false
+        },
+        "first_query_met_unready_index": true,
+        "first_query_offset_ms": 0.212,
+        "index_ready_after_ms": 770.022,
+        "uc": {
+          "not_ready_after_creation_ms": {
+            "at_least_ms": 0.0,
+            "at_most_ms": 380.957
+          },
+          "not_ready_after_creation_kinds": [],
+          "builds_completed_on_graph": 1,
+          "under_construction_seen": true,
+          "under_construction_samples": 6,
+          "under_construction_span_ms": 691.672,
+          "probe_rows_while_under_construction": {
+            "min": 2000,
+            "max": 2000
+          },
+          "probe_errors_while_under_construction": 5,
+          "ready_seen": true,
+          "samples": 94
+        },
+        "builds": {
+          "count": 1,
+          "on_group": 1,
+          "failed": 0,
+          "cancelled": 0
+        },
+        "watch": {
+          "unretrieved": 0,
+          "unretrieved_types": [],
+          "loop_errors": 0,
+          "log_errors": 2,
+          "log_warnings": 0
+        },
+        "monitor_samples": 94
+      }
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I4.at_once",
+      "status": "OBSERVED",
+      "trials_violating": 11,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 1.0,
+        "max": 9,
+        "unit": "queries not identical"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/getzep/graphiti/issues/1643",
+      "witnesses": [
+        "1-c00-at_once-00",
+        "1-c00-at_once-01",
+        "1-c00-at_once-02",
+        "1-c00-at_once-03",
+        "1-c00-at_once-04",
+        "1-c00-at_once-05",
+        "1-c00-at_once-06",
+        "2-c00-at_once-00",
+        "2-c00-at_once-01",
+        "2-c00-at_once-02",
+        "2-c00-at_once-03",
+        "6-c00-at_once-00",
+        "6-c00-at_once-01"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I4.ready",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "queries not identical"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/getzep/graphiti/issues/1643",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I2",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "data changes"
+      },
+      "basis": "issue",
+      "basis_ref": "https://github.com/getzep/graphiti/issues/1643",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-16T05:50:53.532976Z"
+}

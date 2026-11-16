@@ -4,7 +4,7 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.2, 2026-11-13. Implemented in M2. Results are in §11 and [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md). M5 Phase C: the G6–G8 run plan is declared in §5 (2026-11-16), before any batch. A finding counts only when a run in `evidence/` backs it. |
+| Status | Specification v0.2, 2026-11-13. Implemented in M2. Results are in §11 and [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md). M5 Phase C: the G6–G8 run plan and its amendments are in §5; the results are in §12 and [evidence/M5_GRAPHITI.md](../../evidence/M5_GRAPHITI.md), with [evidence/M5_GRAPHITI_B1.md](../../evidence/M5_GRAPHITI_B1.md) for the G7 control. Phase C awaits the maintainer's review. A finding counts only when a run in `evidence/` backs it. |
 | Project | [getzep/graphiti](https://github.com/getzep/graphiti), Apache-2.0. A Python framework that keeps a temporal knowledge graph in Neo4j, FalkorDB, Kuzu or Neptune. |
 | Line under test | graphiti-core v0.31.x. Primary pin: **v0.31.2**, tag commit `d72407dcedac911e1be9fc15b55e8c05a3efcc36` (2026-10-20), which is also the current PyPI release. |
 | Other builds | main at `ebef986a0b2360211b65751c111cacb4a7d790eb` (2026-11-11); [#1867](https://github.com/getzep/graphiti/pull/1867) at head `a30934e18b9582fbea3aca742269fc2174b67f07`; [#2119](https://github.com/getzep/graphiti/pull/2119) at head `b2b727e05467346b6516e2c68e193f8142ef208b` |
@@ -474,3 +474,136 @@ The tracker was checked on 2026-11-13 (read-only).
 | One `search(num_results=1)` | the shared limit stays 10 | it moves from 10 to 1, on both backends |
 | 60 concurrent searches, FalkorDB | 60 ok | 18 ok, 42 `MaxConnectionsError` |
 | 60 concurrent searches, Neo4j | 60 ok | 60 ok |
+
+## 12. Results (M5)
+
+### 12.1 Provenance
+
+| Batch | Harness | Commands | What it holds | Report |
+|---|---|---|---|---|
+| `m5g-20261116T051149Z` (main) | `8b9785a`, clean | 24, of which 23 exit 0 | The 23 declared rows (§5, command table). Row 11 hung and was ended; it left no `run.json` (§12.6). | [evidence/M5_GRAPHITI.md](../../evidence/M5_GRAPHITI.md) |
+| `m5h-20261116T071955Z` (re-run) | `425e22e`, clean | 1, exit 4294967295 | Row 11 again, after the stall-recovery fix. It hung again and was ended under the maintainer's ruling. No `run.json`, so no report. | none (the reporter builds from manifests only) |
+| `m5i-20261116T092138Z` (explanatory control) | `0395799`, clean | 2, both exit 0 | G7 `kill_start` on both layouts with `appendonly yes` (maintainer ruling 4) | [evidence/M5_GRAPHITI_B1.md](../../evidence/M5_GRAPHITI_B1.md) |
+
+- **False start.** The first launch, `m5g-20261116T044019Z`, ran no runs. The batch driver, which is kept uncommitted under `.state` by design, passed a relative interpreter path that Windows `CreateProcess` could not resolve. It stopped before row 1 and wrote nothing to `evidence/`. The fixed driver launched the main batch.
+- **Ended runs.** Two runs were ended while hung. Their partial directories are kept as written: `20261116T055056Z-3d69b1c9` (states 0–5) and `20261116T071959Z-74370fb1` (states 0–3). The driver wrote an ERROR.md for each under `evidence/graphiti/errors/<batch>/`.
+- **Maintainer rulings, 2026-11-16.** The G6 size of 2,000 facts is accepted as declared. The #2119 review order is accepted: the diff was read before installing, and the review was written into this blueprint after the environment was built (K21, `886f4c6`).
+- **Changes after the main batch.** Three harness commits, each declared in §5 before the batch that used it:
+  - `425e22e` ends a stalled search's server transactions before the next G6 trial;
+  - `e369a16` adds the G7 appendonly control;
+  - `0395799` bounds searches and probe reads without waiting for cancellation.
+
+  No completed cell was re-run, and no evidence was edited.
+- Every number below is [measured] from the run named beside it, through the reports above or the run's own `run.json` and `history.jsonl`.
+
+### 12.2 Controls first
+
+- **Sequential controls.** Met in all 24 completed runs: 22 in the main batch and 2 in the control batch.
+- **G6.** The control load reproduced 800 entities, 2,000 facts and 400 episodes. Every query returned exactly its fact, and the probe counted 2,000.
+- **Races.** The overlap control was met in all five races: 20 of 20 valid trials had two or more operations in flight. Over the 100 valid race trials the release spread had p99 3.49 ms and max 5.87 ms, under the 92 ms gate.
+- **Validity.** Every completed run had all its trials valid.
+
+### 12.3 G6. Index readiness at startup
+
+| Build | Backend | Cell | Valid | First query met an index that was not ready | At once: identical / different / error | After ready | Never-retrieved exceptions | Verdict | Run |
+|---|---|---|---|---|---|---|---|---|---|
+| v0.31.2 | FalkorDB | G6a | 20 of 20 | 20 of 20 | 200 / 0 / 0 | 200 / 0 / 0 | 0 | PASS | `20261116T051153Z-2e987ec0` |
+| main | FalkorDB | G6a | 20 of 20 | 20 of 20 | 200 / 0 / 0 | 200 / 0 / 0 | 0 | PASS | `20261116T051801Z-c9fd6666` |
+| #2119 | FalkorDB | G6a | 20 of 20 | 20 of 20 | 200 / 0 / 0 | 200 / 0 / 0 | 0 | PASS | `20261116T052409Z-5885a291` |
+| v0.31.2 | FalkorDB | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T053018Z-2290cc18` |
+| main | FalkorDB | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T053508Z-67de8ce9` |
+| #2119 | FalkorDB | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T053958Z-f4b4332f` |
+| v0.31.2 | FalkorDB | G6c | 20 of 20 | – | I2, I1B, I4: 0 of 20 | – | 0 | PASS | `20261116T054448Z-74713339` |
+| main | FalkorDB | G6c | 20 of 20 | – | 0 of 20 | – | 0 | PASS | `20261116T054508Z-0928df36` |
+| #2119 | FalkorDB | G6c | 20 of 20 | – | 0 of 20 | – | 0 | PASS | `20261116T054530Z-07a4e09a` |
+| v0.31.2 | Neo4j | G6a | 20 of 20 | 20 of 20 | 161 / 0 / 39 | 200 / 0 / 0 | 0 | OBSERVED: I4.at_once in 11 of 20 | `20261116T054555Z-85bc1662` |
+| main | Neo4j | G6a | – | – | – | – | – | INVALID (§12.6) | `20261116T055056Z-3d69b1c9`, `20261116T071959Z-74370fb1` |
+| #2119 | Neo4j | G6a | 20 of 20 | 20 of 20 | 174 / 0 / 26 | 200 / 0 / 0 | 0 | OBSERVED: I4.at_once in 8 of 20 | `20261116T064351Z-20ab7a28` |
+| v0.31.2 | Neo4j | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T064831Z-bea83c1a` |
+| main | Neo4j | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T065525Z-d552844d` |
+| #2119 | Neo4j | G6b | 10 of 10 | 0 of 10 | 100 / 0 / 0 | 100 / 0 / 0 | 0 | PASS | `20261116T070159Z-af2cbe2f` |
+| – | Neo4j | G6c | – | – | – | – | – | NOT_APPLICABLE: Neo4j's `clone` returns the same driver (K23) | – |
+
+**Findings.**
+
+- **G6-F1, master §13's question** [measured, history monitor records, RELATES_TO fulltext index only]. On FalkorDB 6.0.4, a fulltext query against an index in `UNDER CONSTRUCTION` returned fewer rows than the control, or all of them, and never an error.
+  - In G6a, counted in monitor samples:
+    - v0.31.2: 3 samples with fewer rows, 5 with all 2,000 (`20261116T051153Z-2e987ec0`);
+    - main: 1 and 4 (`20261116T051801Z-c9fd6666`);
+    - #2119: 58 and 2 (`20261116T052409Z-5885a291`).
+  - With the index not yet created, the same query returned 0 rows and no error: 154, 159 and 163 samples in those three runs.
+  - On Neo4j 5.26.2 the same situations differ. A missing fulltext index is a typed error, `ProcedureCallFailed` ("There is no such fulltext schema index"). A `POPULATING` index returned all 2,000 rows: 11 samples in `20261116T054555Z-85bc1662`, 12 in `20261116T064351Z-20ab7a28`.
+  - The status and the probe are read one after the other, so a sample may straddle a change.
+- **G6-F2, awaiting the build is not enough on FalkorDB (KD-F4, #2119).** On #2119's head, every index was still not ready after the awaited build on the group's graph returned, in 20 of 20 trials, each time because one was `UNDER CONSTRUCTION`. The interval was at least 11.69 ms at the median and 17.18 ms at most, and at most 36.66 ms (`20261116T052409Z-5885a291`). Graphiti's answers were still identical, 200 of 200, because the cosine half of its hybrid search needs no index and finds each query's fact on its own [inference from the stub embedder: each query word scores above Graphiti's 0.6 floor against its fact]. A search that depends on fulltext matching alone would see the fewer rows of G6-F1 [inference].
+- **G6-F3, every FalkorDB search starts an index build (K24).** G6a made 420 `build_indices_and_constraints` calls in 20 trials on every build: 21 per trial, one for the new root driver and one for each of the 20 searches (`20261116T051153Z-2e987ec0`, `20261116T051801Z-c9fd6666`, `20261116T052409Z-5885a291`). On #2119 each search awaits its own build first (K21).
+- **G6-F4, Graphiti on Neo4j right after construction.** The Neo4j driver also builds indexes in the background (K23). In G6a the at-once searches raised `ProcedureCallFailed` because the fulltext index did not exist yet:
+  - v0.31.2: 39 of 200 queries, in 11 of 20 trials (`20261116T054555Z-85bc1662`);
+  - #2119: 26 of 200, in 8 of 20 (`20261116T064351Z-20ab7a28`).
+
+  Once every index was `ONLINE`, all 200 answers were identical on both. This is OBSERVED: no document promises answers before the indexes are ready, and the basis is #1643. #2119 changes only the FalkorDB driver (K21).
+- **Clean results, with credit to the project.**
+  - No G6 run recorded a never-retrieved task exception, so #1643's "Task exception was never retrieved" did not appear under these conditions.
+  - G6b was clean on both backends and all three builds. After a restart, every index was already `OPERATIONAL` or `ONLINE` when the first at-once query ran (no trial in any cell met an index that was not ready), and every answer was identical.
+  - G6c was clean on all three builds. Eight concurrent ingests into eight new graphs lost nothing, duplicated nothing and answered as the control did, which is credit to the #1676 fix. Its 320 builds per run all completed.
+
+### 12.4 G7. Persistence across container actions
+
+| Layout | Action | Persistence settings | Valid | Trials with loss | Lost per trial | Verdict | Run |
+|---|---|---|---|---|---|---|---|
+| root (`/data`) | compose restart | appendonly no, appendfsync everysec, save 3600 1 300 100 60 10000 | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T070849Z-c09d11b2` |
+| root | down, then up | same | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T070935Z-cdf2ec96` |
+| root | kill, then start | same | 10 of 10 | 10 of 10 | 10 episodes, 2 entities, 10 facts | OBSERVED | `20261116T071025Z-e638bddf` |
+| mcp (`/var/lib/falkordb/data`) | compose restart | same | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T071106Z-079f03e1` |
+| mcp | down, then up | same | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T071148Z-932b738f` |
+| mcp | kill, then start | same | 10 of 10 | 10 of 10 | 10 episodes, 2 entities, 10 facts | OBSERVED | `20261116T071238Z-cfee79ff` |
+| root, control | kill, then start | **appendonly yes**, appendfsync everysec, same save | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T092142Z-a5ceedc5` |
+| mcp, control | kill, then start | **appendonly yes**, appendfsync everysec, same save | 10 of 10 | 0 of 10 | 0 | PASS | `20261116T092229Z-98725745` |
+
+- **G7-F1.** With the settings the pinned image runs by default, `appendonly no` and `save 3600 1 300 100 60 10000`, killing the container lost every episode, entity and fact ingested since the last snapshot, in 10 of 10 trials on both layouts. The graph itself was gone afterwards. The explanatory control turned the append-only file on and kept everything in 10 of 10 trials on both layouts.
+  - Per the maintainer's ruling, the loss is OBSERVED and tied to that persistence configuration. It is not reported as a Graphiti defect or a volume-path defect.
+- **G7-F2, credit.** Both layouts kept everything across `docker compose restart` and across `down` then `up`, which recreates the container and keeps the volume. That held in 10 of 10 trials each.
+  - The root layout mounts its volume at `/data`. In the pinned image that path is a symbolic link to the data directory (K26), so the volume does hold the data [inference from K26 and these runs].
+  - Whether `falkordb:latest`, which upstream pins, has the same link was not checked.
+- **G7-F3, OBSERVED.** The root layout's `FALKORDB_ARGS=--port 6379 --cluster-enabled no` replaces the image's default module arguments: the graph module reported no arguments, where the mcp layout reported `MAX_QUEUED_QUERIES 25 TIMEOUT 1000 RESULTSET_SIZE 10000` (every G7 root run against every mcp run).
+- The combined image (`mcp_server/docker/docker-compose.yml`) is NOT_EXERCISED: it needs an unpinned upstream image.
+
+### 12.5 G8. Deletion permanence
+
+| Backend | Sequential control | Overlap | I5 | I2 (`cause = delete`) | I1B | Run |
+|---|---|---|---|---|---|---|
+| FalkorDB, driver bound to the group's graph | met | 20 of 20 | 0 of 20 | 0 of 20 | 0 of 20 | `20261116T071319Z-334d816c` |
+| Neo4j | met | 20 of 20 | 0 of 20 | **20 of 20** OBSERVED | 0 of 20 | `20261116T071325Z-4bc1eaa9` |
+
+- **G8-F1, possible Graphiti defect, for the maintainer's review.** On Neo4j, in 20 of 20 trials, `remove_episode(G8E)` and `add_episode(G8N)` ran concurrently and both were acknowledged.
+  - Afterwards G8N's own fact, "Alice audited Payments", and the entity Payments were gone. Two items that a live, acknowledged episode references were lost to the delete (I2, `cause = delete`).
+  - The sequential control, the remove and then the add, kept both (`20261116T071325Z-4bc1eaa9`).
+  - A plausible reading [inference from K25 and graphiti.py L2174–2213]: `remove_episode` counts Payments' mentions before G8N's mention is written, so Payments looks orphaned, and it deletes the node with the edge G8N had just attached.
+  - On FalkorDB the same race kept everything in 20 of 20 trials.
+  - The support level is none, so the result is OBSERVED, not FAIL. No ad hoc runs followed it. The single-file repro (P5) waits for Phase E.
+- I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
+
+### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j
+
+- **INVALID: the harness could not bound a stalled search on this build.** Runs `20261116T055056Z-3d69b1c9` (main batch) and `20261116T071959Z-74370fb1` (re-run batch `m5h`).
+  - The first hung in its sixth trial, after writing states 0–5. A search stalled, and closing the instance did not end its server transactions; the next trial's data read waited behind them.
+  - After the fix in `425e22e`, the re-run hung in its fourth trial, after writing states 0–3. This time the 60 s search timeout itself never fired, and the process showed no CPU change.
+  - Both were ended (driver notes in `evidence/graphiti/errors/m5g-20261116T051149Z/` and `evidence/graphiti/errors/m5h-20261116T071955Z/`), and `wm-neo4j` was restarted afterwards with no transaction left open. Row 11 is not run a third time (maintainer ruling).
+- In the batches it reproduced on main only: v0.31.2 and #2119 completed G6a on Neo4j. Two scratch smoke runs on v0.31.2 before the batch, kept out of `evidence/`, also saw a stalled search (§5, amendments).
+- The cause is not established [inference]. `asyncio.wait_for` waits for a timed-out call to finish cancelling, so a call that answers cancellation with more waiting would hold it forever without using CPU. A unit test shows this mechanism with a fake, and `0395799` replaces the wait. A call that blocks the event loop outright would explain it too. Neither was confirmed, and no further Neo4j G6 cell ran.
+- The Neo4j driver's console output during G8 also showed `DeadlockDetected` transient errors that the driver retried. They are not part of any run's evidence.
+
+### 12.7 Not run, and choices made without the maintainer
+
+- **Not run.**
+  - G6 at v0.1's 20k facts (§5).
+  - G6c on Neo4j (NOT_APPLICABLE).
+  - The combined MCP image (NOT_EXERCISED).
+  - A third run of G6a on Neo4j with main.
+  - Single-file repros (Phase E).
+  - Nothing was posted. No outreach drafts were written in Phase C; any comment on #2119 or #2117 would be a draft for the maintainer under master §11.1.
+- **Choices taken as the most conservative option** (maintainer ruling 1, 2026-11-16):
+  1. After a stall, end the leftover server transactions and fall back to restarting the test container. This disturbs the next trial least and always leaves a clean server.
+  2. Give the `m5h` batch no report, because it has no manifest to build one from.
+  3. Restart `wm-neo4j` after ending the `m5h` run, although no transaction was left.
+  4. Record the two G6a Neo4j/main runs as one INVALID cell rather than reporting their partial trials.
+  5. Report G6-F1 from the monitor records for the RELATES_TO index alone. The report's column counts samples taken while any index was under construction.

@@ -1,0 +1,55 @@
+{
+  "k": "control",
+  "digest": "sha256:22939812f1343efc8fbbd5a1b45623e9b75dcca542c8d2ffa1f8d685faa0252e",
+  "state": {
+    "variant": "root",
+    "action": null,
+    "lost": {
+      "lost": {
+        "episodes": 0,
+        "entities": 0,
+        "facts": 0
+      },
+      "lost_total": 0,
+      "examples": {},
+      "before": {
+        "episodes": 10,
+        "entities": 2,
+        "facts": 10
+      },
+      "after": {
+        "episodes": 10,
+        "entities": 2,
+        "facts": 10
+      }
+    },
+    "graph_after": true,
+    "settings_before": {
+      "appendonly": "no",
+      "appendfsync": "everysec",
+      "save": "3600 1 300 100 60 10000",
+      "dir": "/var/lib/falkordb/data",
+      "graph_module": {
+        "ver": 60004,
+        "args": []
+      }
+    },
+    "settings_after": {
+      "appendonly": "no",
+      "appendfsync": "everysec",
+      "save": "3600 1 300 100 60 10000",
+      "dir": "/var/lib/falkordb/data",
+      "graph_module": {
+        "ver": 60004,
+        "args": []
+      }
+    },
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "witnessmark-g7_g7_root_data",
+        "destination": "/data"
+      }
+    ]
+  }
+}

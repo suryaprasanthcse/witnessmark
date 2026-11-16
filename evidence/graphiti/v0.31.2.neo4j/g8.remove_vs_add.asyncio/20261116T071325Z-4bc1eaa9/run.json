@@ -1,0 +1,1039 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261116T071325Z-4bc1eaa9",
+  "batch": "m5g-20261116T051149Z",
+  "harness": {
+    "version": "0.1.0",
+    "commit": "8b9785af52e2b5f3466700831dde9518c2d99c33",
+    "dirty": false
+  },
+  "target": {
+    "name": "graphiti",
+    "repo": "getzep/graphiti",
+    "ref": "v0.31.2",
+    "package_version": "0.31.2"
+  },
+  "components": [
+    {
+      "role": "sut",
+      "name": "graphiti-core",
+      "version": "0.31.2",
+      "config": {
+        "build": "v0.31.2",
+        "backend": "neo4j",
+        "telemetry": "off",
+        "falkordb_pool": null,
+        "driver": "6.4.1"
+      }
+    },
+    {
+      "role": "store",
+      "name": "neo4j",
+      "version": "Neo4j 5.26.2 Community"
+    },
+    {
+      "role": "stub",
+      "name": "witnessmark-graphiti-stubs",
+      "version": "0.1.0",
+      "config": {
+        "fixture": "g8",
+        "llm": "ideal-model fixture answers",
+        "embedder": "hashed bag of words, 1024 dimensions",
+        "reranker": "word overlap"
+      }
+    }
+  ],
+  "host": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz",
+    "cores": 8,
+    "memory_gb": 23.8,
+    "python": "3.12.14",
+    "clock_offsets_ms": {},
+    "docker": "29.9.3",
+    "vm_cpus": 8,
+    "vm_memory_gb": 11.6
+  },
+  "scenario": {
+    "id": "g8.remove_vs_add.asyncio",
+    "invariants": [
+      "I5",
+      "I2",
+      "I1B"
+    ],
+    "mode": "asyncio",
+    "clients": 2,
+    "trials": 20,
+    "params": {
+      "support": "none",
+      "op_timeout_s": 300.0,
+      "processes": null,
+      "spread_gate_ms": 92.0
+    }
+  },
+  "seed": 20261139,
+  "started_at": "2026-11-16T07:13:25.348526Z",
+  "expectation": {
+    "role": "target",
+    "support": "none",
+    "basis": "inferred",
+    "basis_ref": "MASTER_BLUEPRINT.md#55-i5-deletion-permanence",
+    "known_deviation": null
+  },
+  "controls": [
+    {
+      "kind": "sequential",
+      "configuration": "g8.remove_vs_add.asyncio: 2 clients, one at a time",
+      "expected": "episodes G8S and G8N; Alice, Acme, Payments once each; 'Alice works at Acme' (1 episode) and 'Alice audited Payments'; no 'Alice approved the Payments budget'",
+      "observed": "episodes ['G8N', 'G8S']; entities {'acme': 1, 'alice': 1, 'payments': 1}; facts {'Alice audited Payments': 1, 'Alice works at Acme': 1}; 'Alice works at Acme' carried by 1 episode(s)",
+      "met": true
+    },
+    {
+      "kind": "overlap",
+      "configuration": "g8.remove_vs_add.asyncio: 2 clients x 20 trials",
+      "expected": "two or more ingests in flight at once in every valid trial",
+      "observed": "20 of 20 valid trials had two or more in flight",
+      "met": true
+    }
+  ],
+  "trials": [
+    {
+      "k": 1,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.81,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/1.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "1-c00-0",
+            "1-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.727,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/2.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "2-c00-0",
+            "2-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.635,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/3.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "3-c00-0",
+            "3-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.626,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/4.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "4-c00-0",
+            "4-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.575,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/5.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "5-c00-0",
+            "5-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 6,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.639,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/6.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "6-c00-0",
+            "6-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 7,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.748,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/7.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "7-c00-0",
+            "7-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 8,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.661,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/8.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "8-c00-0",
+            "8-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 9,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.632,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/9.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "9-c00-0",
+            "9-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 10,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.802,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/10.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "10-c00-0",
+            "10-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 11,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.807,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/11.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "11-c00-0",
+            "11-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.588,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/12.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "12-c00-0",
+            "12-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 13,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.629,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/13.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "13-c00-0",
+            "13-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 14,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.784,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/14.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "14-c00-0",
+            "14-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 15,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.645,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/15.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "15-c00-0",
+            "15-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 16,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.818,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/16.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "16-c00-0",
+            "16-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 17,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.625,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/17.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "17-c00-0",
+            "17-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 18,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.675,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/18.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "18-c00-0",
+            "18-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 19,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.633,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/19.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "19-c00-0",
+            "19-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    },
+    {
+      "k": 20,
+      "valid": true,
+      "precondition_digest": "sha256:57a898a18f0045bfaf8868956a56a5e6a7aa44f2534ac8eb75df7ebb432b6ecb",
+      "release_spread_ms": 0.624,
+      "max_in_flight": 2,
+      "outcomes": {
+        "ok": 2,
+        "fail": 0,
+        "unknown": 0
+      },
+      "quiesce_ms": 0.0,
+      "final_state_digest": "sha256:a9fd3909d9b5be3658f5ffdc6bc73d9d3b5df0799027e5b27e909f4119980a6c",
+      "state_file": "state/20.json",
+      "checks": [
+        {
+          "invariant": "I5",
+          "held": true,
+          "magnitude": 0,
+          "unit": "items the delete should have removed",
+          "detail": "G8E and its own fact are gone; the shared fact is carried by one episode",
+          "witnesses": []
+        },
+        {
+          "invariant": "I2",
+          "held": false,
+          "magnitude": 2,
+          "unit": "items lost to the delete",
+          "detail": "cause = delete: missing ['fact Alice audited Payments', 'entity payments']",
+          "witnesses": [
+            "20-c00-0",
+            "20-c01-0"
+          ]
+        },
+        {
+          "invariant": "I1B",
+          "held": true,
+          "magnitude": 1,
+          "unit": "records per key",
+          "detail": "2 entities in wm_g8, one record each",
+          "witnesses": []
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "invariant": "I5",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "unit": "items the delete should have removed"
+      },
+      "basis": "inferred",
+      "basis_ref": "MASTER_BLUEPRINT.md#55-i5-deletion-permanence",
+      "witnesses": [],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I2",
+      "status": "OBSERVED",
+      "trials_violating": 20,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 2,
+        "median": 2.0,
+        "max": 2,
+        "unit": "items lost to the delete"
+      },
+      "basis": "inferred",
+      "basis_ref": "MASTER_BLUEPRINT.md#55-i5-deletion-permanence",
+      "witnesses": [
+        "1-c00-0",
+        "1-c01-0",
+        "2-c00-0",
+        "2-c01-0",
+        "3-c00-0",
+        "3-c01-0"
+      ],
+      "note": "support: none"
+    },
+    {
+      "invariant": "I1B",
+      "status": "PASS",
+      "trials_violating": 0,
+      "trials_valid": 20,
+      "magnitude": {
+        "min": 1,
+        "median": 1.0,
+        "max": 1,
+        "unit": "records per key"
+      },
+      "basis": "inferred",
+      "basis_ref": "MASTER_BLUEPRINT.md#55-i5-deletion-permanence",
+      "witnesses": [],
+      "note": "support: none"
+    }
+  ],
+  "finished_at": "2026-11-16T07:13:59.102204Z"
+}

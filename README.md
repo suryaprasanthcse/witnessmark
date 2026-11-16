@@ -2,7 +2,7 @@
 
 Witnessmark checks seven concurrency and temporal invariants, I1 to I7, on graph databases and agent-memory layers. Every verdict comes with a witness: the raw, replayable record of the operations that produced it.
 
-> **M1 to M4 are reviewed and signed off. M5 Phase B (Omnigraph runs) is signed off: [evidence/M5_OMNIGRAPH.md](evidence/M5_OMNIGRAPH.md) and the Omnigraph blueprint, §14. M5 Phase C (Graphiti G6 to G8) is signed off: [evidence/M5_GRAPHITI.md](evidence/M5_GRAPHITI.md) and the Graphiti blueprint, §12. M5 Phase D (Cognee C2 through `improve`) is signed off: [evidence/M5_COGNEE.md](evidence/M5_COGNEE.md) and the Cognee blueprint, §13. M5 Phase E (closeout) is in progress.**
+> **M1 to M4 are reviewed and signed off. M5 Phase B (Omnigraph runs) is signed off: [evidence/M5_OMNIGRAPH.md](evidence/M5_OMNIGRAPH.md) and the Omnigraph blueprint, §14. M5 Phase C (Graphiti G6 to G8) is signed off: [evidence/M5_GRAPHITI.md](evidence/M5_GRAPHITI.md) and the Graphiti blueprint, §12. M5 Phase D (Cognee C2 through `improve`) is signed off: [evidence/M5_COGNEE.md](evidence/M5_COGNEE.md) and the Cognee blueprint, §13. M5 Phase E (closeout) ran: the traceability audit, the G8 repro and the M5 summary are in [MASTER_BLUEPRINT.md](MASTER_BLUEPRINT.md), §12.1. M5 awaits the maintainer's review.**
 > - M1 calibrated the core runner and the two baseline adapters against FalkorDB 6.0.4 and Neo4j 5.26.2.
 > - M2 added the memory-layer runner and the Graphiti adapter. Results: [evidence/M2_GRAPHITI.md](evidence/M2_GRAPHITI.md), and the Graphiti blueprint's §11.
 > - M3 added the Cognee adapter and its HTTP stub endpoint. Results: [evidence/M3_COGNEE.md](evidence/M3_COGNEE.md) (with three re-run reports), and the Cognee blueprint's §12.

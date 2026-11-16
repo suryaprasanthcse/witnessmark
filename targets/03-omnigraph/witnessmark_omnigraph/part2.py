@@ -21,6 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from itertools import count
 from pathlib import Path
+from witnessmark import SCHEMA_VERSION
 from witnessmark import env as witnessmark_env
 from witnessmark.adapters import make_engine
 from witnessmark.adapters.base import EngineError, EngineUnavailable
@@ -310,7 +311,7 @@ def _manifest(repo: Path, batch: str, build: dict, build_name: str, storage: str
               scenario: str, mode: str, started: datetime, trials: list[dict], *,
               run_id: str | None = None, **extra) -> dict:
     record = {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id or _run_id(started),
         "batch": batch,
         "started_at": _iso(started),

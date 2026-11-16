@@ -76,5 +76,41 @@ class MeasurementManifestRuleTest(unittest.TestCase):
         self.assertGreater(measurement, 0)
 
 
+class SchemaVersionTest(unittest.TestCase):
+    """Maintainer ruling, M5 Phase E: the Omnigraph Part 2 writers emit the §9.2 value "0.1" from now on. The 64
+    measurement manifests written before the fix carry the integer 1 and stay as written, like all evidence."""
+
+    def test_the_part2_writer_emits_the_schema_value(self):
+        from unittest import mock
+
+        from witnessmark import SCHEMA_VERSION
+        from witnessmark_omnigraph import part2
+
+        with mock.patch.object(part2.witnessmark_env, "harness_info", return_value={"commit": "0" * 40}), \
+                mock.patch.object(part2.witnessmark_env, "host_info", return_value={}):
+            record = part2._manifest(ROOT, "batch", {"digest": "sha256:0", "image": "image"}, "v0.15.0", "local",
+                                     "o5.cross_process_ryw", "visibility", part2._utc(), [],
+                                     run_id="20261116T120000Z-12345678")
+        self.assertEqual(SCHEMA_VERSION, "0.1")
+        self.assertEqual(record["schema_version"], "0.1")
+
+    def test_the_falkordb_sweep_writer_emits_the_schema_value(self):
+        from witnessmark_omnigraph.costcurve import falkordb_manifest
+
+        record = falkordb_manifest("20261116T120000Z-12345678", "batch", {"scenario": {"id": "x"}}, {}, {})
+        self.assertEqual(record["schema_version"], "0.1")
+
+    def test_only_the_64_earlier_measurement_manifests_carry_the_integer(self):
+        integer = []
+        for path in sorted((ROOT / "evidence").glob("**/run.json")):
+            record = json.loads(path.read_text(encoding="utf-8"))
+            with self.subTest(run=path.parent.name):
+                self.assertIn(record["schema_version"], (1, "0.1"))
+            if record["schema_version"] == 1:
+                integer.append(record["scenario"]["id"])
+        self.assertEqual(len(integer), 64)
+        self.assertTrue(set(integer) <= MEASUREMENT_SCENARIOS, set(integer) - MEASUREMENT_SCENARIOS)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from witnessmark import SCHEMA_VERSION
 from witnessmark import env as witnessmark_env
 from witnessmark.adapters import make_engine
 from witnessmark.adapters.base import EngineError, EngineUnavailable
@@ -574,6 +575,12 @@ def observe_falkordb(capture: OperationCapture, session, n: int) -> dict:
     return {"tasks": tasks}
 
 
+def falkordb_manifest(run_id: str, batch: str, header: dict, extra: dict, fields: dict) -> dict:
+    """The FalkorDB sweep's manifest; it carries the §9.2 schema value like every other writer."""
+    return {"schema_version": SCHEMA_VERSION, "run_id": run_id, "batch": batch, **header, **extra,
+            "finished_at": iso(utc_now()), **fields}
+
+
 def run_o2b_falkordb(repo: Path, evidence: Path, batch: str, *, command: str, smoke: bool = False,
                      gate_ms: float | None = None, seed: int = 0, host: str = "127.0.0.1",
                      port: int = 16380) -> tuple[dict, Path]:
@@ -634,8 +641,7 @@ def run_o2b_falkordb(repo: Path, evidence: Path, batch: str, *, command: str, sm
         fields = _finish_sweep({}, trials, plan, run_id)
         if hung:
             fields["status"] = "incomplete"
-        manifest = {"schema_version": 1, "run_id": run_id, "batch": batch, **header, **extra,
-                    "finished_at": iso(utc_now()), **fields}
+        manifest = falkordb_manifest(run_id, batch, header, extra, fields)
         run_dir.write_history(history)
         run_dir.write_manifest(check_manifest_fields(manifest))
         run_dir.write_repro(falkordb_repro(run_id, command, header, component))

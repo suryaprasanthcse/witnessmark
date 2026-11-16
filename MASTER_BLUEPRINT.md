@@ -1091,6 +1091,12 @@ scenario with its sequential control and the applicable controls in §6.2.
   fixed in `f7ae8f2`) was re-run in `m5d-20261116T003205Z`, where the FalkorDB
   curve met the S28 band. Reports: `evidence/M5_OMNIGRAPH.md` and
   `evidence/M5_OMNIGRAPH_B2.md`. Results: Omnigraph blueprint §14.
+- [x] O1 method change: from `f7ae8f2` each O1 load keeps one connection,
+  where M4 opened one per request, and from `fb97518` each read retried after
+  a dropped kept connection is its own history record. Every O1 cell was
+  re-run on that method in `m5e-20261116T004953Z` (`fb97518`), 8 of 8 commands
+  exit 0, with no read retry. The S28 band was met. Report:
+  `evidence/M5_OMNIGRAPH_B3.md`. Batch 2's and `m5d`'s O1 runs are superseded.
 
 The O4 epoch-claim test and its dependent probes wait for an upstream release
 with a claim route. The O1 catalog-width axis and MinIO conditional-write

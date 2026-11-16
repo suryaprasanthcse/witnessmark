@@ -4,7 +4,7 @@ Part of Witnessmark. Read it with the [master blueprint](../../MASTER_BLUEPRINT.
 
 | | |
 |---|---|
-| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all four batches are §14. Phase B awaits review. |
+| Status | Specification v0.1, 2026-11-13. Part 1 and the M4 batches (O1, O4, O5, I6 controls) are recorded in §10. M5 Phase B: the run plan is §12, batch 1 and the maintainer decision are §13, and the results of all five batches are §14. Phase B awaits review. |
 | Project | [ModernRelay/omnigraph](https://github.com/ModernRelay/omnigraph), MIT, written in Rust. A typed property graph stored as Lance datasets on local disk or object storage, with git-style branches, typed merges and time travel. |
 | Versions under test | **v0.15.0**, tag commit `373834b4c1` (2026-11-09): the latest stable tag, from before the writer epoch fence.<br>**edge-20261113-b2dbaff**, commit `b2dbaff7584eb849a98fa139876e0ae474e929ea`: 35 commits after v0.15.0. It includes [#1350](https://github.com/ModernRelay/omnigraph/pull/1350), merged 2026-11-11, which adds writer epoch fencing. |
 | Binaries | `omnigraph` and `omnigraph-server`, packaged from the official pinned Linux release archives in a Linux image after checking their published SHA-256 values. No piped install script is used. |
@@ -1052,9 +1052,9 @@ them. Batch 2 runs as declared in §12, with the amendment.
 
 ## 14. Results (M5)
 
-**Provenance.** Four batches on the host of §10 (Windows 11, 11th Gen
+**Provenance.** Five batches on the host of §10 (Windows 11, 11th Gen
 i5-11320H, 8 logical cores, 23.8 GB, Docker VM 8 CPUs and 11.6 GB). Every run
-records a clean tree. The four reports regenerate from `evidence/` byte for
+records a clean tree. The five reports regenerate from `evidence/` byte for
 byte. The switchyard containers stayed up and idle on the host during every
 batch (under 0.2% CPU each when checked before batch 1).
 
@@ -1062,8 +1062,9 @@ batch (under 0.2% CPU each when checked before batch 1).
 |---|---|---|---|
 | `m5-20261115T222957Z` | [evidence/M5_OMNIGRAPH_CALIBRATION.md](../../evidence/M5_OMNIGRAPH_CALIBRATION.md) | `772ef96` | batch 1, calibration: the FalkorDB controls, and O2a and O2c without a spread gate (§13) |
 | `m5c-20261115T223540Z` | [evidence/M5_OMNIGRAPH_B1.md](../../evidence/M5_OMNIGRAPH_B1.md) | `772ef96` | re-run of batch 1's seven Neo4j control cells, which the driver had started before Neo4j answered (§13) |
-| `m5b-20261115T230235Z` | [evidence/M5_OMNIGRAPH.md](../../evidence/M5_OMNIGRAPH.md) | `6a15b9c` | batch 2, the main batch: 37 commands, 36 exit 0 |
-| `m5d-20261116T003205Z` | [evidence/M5_OMNIGRAPH_B2.md](../../evidence/M5_OMNIGRAPH_B2.md) | `f7ae8f2` | re-run of the one batch-2 cell that failed on a harness bug, O1 on v0.15.0 local with the FalkorDB curve |
+| `m5b-20261115T230235Z` | [evidence/M5_OMNIGRAPH.md](../../evidence/M5_OMNIGRAPH.md) | `6a15b9c` | batch 2, the main batch: 37 commands, 36 exit 0. Its O1 runs are superseded by `m5e` |
+| `m5d-20261116T003205Z` | [evidence/M5_OMNIGRAPH_B2.md](../../evidence/M5_OMNIGRAPH_B2.md) | `f7ae8f2` | re-run of the one batch-2 cell that failed on a harness bug, O1 on v0.15.0 local with the FalkorDB curve. **Superseded by `m5e`** |
+| `m5e-20261116T004953Z` | [evidence/M5_OMNIGRAPH_B3.md](../../evidence/M5_OMNIGRAPH_B3.md) | `fb97518` | every O1 cell, both builds, local, MinIO and proxy, with the FalkorDB curve, on the kept-connection method (§12, amendment 2); 8 of 8 commands exit 0. **The M5 O1 results** |
 
 **Why the re-runs exist.** Nothing was re-run to change a result. Each earlier
 run stays in `evidence/` and in its report.
@@ -1072,27 +1073,31 @@ run stays in `evidence/` and in its report.
 |---|---|---|
 | Neo4j control cells | Batch 1's driver started them before Neo4j answered HTTP. They exited 1 in under 1 s and wrote no run directory; their notes are in `evidence/omnigraph/errors/m5-20261115T222957Z/`. The driver is untracked. | `m5c` |
 | O1, v0.15.0, local, `--include-falkor` | Harness bug. The three closed-loop loads opened one TCP connection per request, and the sockets left in TIME_WAIT exhausted the host's ephemeral ports: `WinError 10048` in the unrelated reader. The run stopped before its manifest was complete, and before the FalkorDB curve [measured: `20261115T232536Z-6d1be538`, its `ERROR.md` and `evidence/omnigraph/errors/m5b-20261115T230235Z/31-o1-v0.15.0-local/ERROR.md`]. Fixed in `f7ae8f2`: each load keeps one connection. A scratch check against both pinned servers added 0 and 1 TIME_WAIT sockets over 300 kept reads, against 295 without keep-alive. | `m5d` |
+| Every O1 cell | Method change, not a result. The kept connection changes O1's method (§3 O1, "Connection model"). After `m5d`, v0.15.0 local was the only O1 cell on kept connections, so the maintainer ruled that every O1 cell be re-run on one model. `fb97518` also records each read retried after a dropped kept connection as its own history record and counts it per sample. | `m5e` |
 
-The other five O1 runs of batch 2 completed on the per-request connections
-[measured: `20261115T233008Z-ba6c2bba`, `20261115T233710Z-d6e9001c`,
+**Superseded O1 runs.** Batch 2's five completed O1 runs opened a connection
+per request [measured: `20261115T233008Z-ba6c2bba`, `20261115T233710Z-d6e9001c`,
 `20261115T235639Z-1a7662ca`, `20261116T000227Z-a91e2dae`,
-`20261116T001000Z-dedd3d1f`]. Their loads open a connection per request, while
-the `m5d` run's loads keep one, so the reader timings of v0.15.0 local and the
-other cells come from different client connection handling. The same bug
-touched O2b, whose agents also open a connection per request: one read per
-build ended with `WinError 10048` (Results, O2b).
+`20261116T001000Z-dedd3d1f`]. Batch 2's failed run is
+`20261115T232536Z-6d1be538`. `m5d`'s run kept connections
+[measured: `20261116T003206Z-579fed57`]. All seven stay in `evidence/` and in
+`evidence/M5_OMNIGRAPH.md` and `evidence/M5_OMNIGRAPH_B2.md`. All seven are
+superseded by `m5e`, which ran every O1 cell on one connection model. No
+number below comes from them. The same port bug touched O2b, whose agents
+still open a connection per request: one read per build ended with
+`WinError 10048` (Results, O2b).
 
 ### Controls
 
 | Control | Result | Runs |
 |---|---|---|
-| FalkorDB `GRAPH.COPY` against S28 (master §6.5, §7.2) | **met** at all three sizes: 85.2, 474.7 and 1,957.3 ms against 165, 546 and 2,400 (−48%, −13%, −18%). The 32k cell is 2 points inside the band. Run under `appendonly yes` and `appendfsync always` | `20261116T003206Z-579fed57` (`m5d`) |
+| FalkorDB `GRAPH.COPY` against S28 (master §6.5, §7.2) | **met** at all three sizes: 121.5, 321.2 and 1,955.0 ms against 165, 546 and 2,400 (−26%, −41%, −19%). Run under `appendonly yes` and `appendfsync always`. `m5d`'s superseded curve also met it, at 85.2, 474.7 and 1,957.3 ms (`20261116T003206Z-579fed57`) | `20261116T005007Z-772bf510` (`m5e`) |
 | FalkorDB 6.0.4, five M1 shapes (negative) | 0 of 20 trials violating in each, in batch 1 and batch 2; sequential controls met | batch 1 §13; batch 2 `20261115T231353Z-aacd795d`, `20261115T231355Z-e3f43105`, `20261115T231358Z-4ac87436`, `20261115T231400Z-99a48567`, `20261115T231402Z-1d44e6d1` |
 | Neo4j 5.26.2, three naive shapes (positive) | fired in 20 of 20 trials each, in `m5c` and in batch 2 | batch 2 `20261115T231405Z-2793c658`, `20261115T231419Z-2365e346`, `20261115T231439Z-ff2bf67f` |
 | Neo4j 5.26.2, four negative shapes | 0 of 20 trials violating in each, in `m5c` and in batch 2 | batch 2 `20261115T231414Z-902d7816`, `20261115T231425Z-f5bfeba7`, `20261115T231431Z-36b7ecf4`, `20261115T231445Z-cde1d9cd` |
 | O2a, O2c and O3 sequential controls, both builds (batch 2) | met in all six runs, with the documented refusal type for every later operation | the six race runs below |
 | O6 sequential control, both builds | met: identical normalised results from Neo4j, FalkorDB and Omnigraph | `20261115T232412Z-8935cb2f`, `20261115T232421Z-31c6fa46` |
-| I6a prefix and I6b isolation, end of each O1 curve | gapless, non-empty prefix (5 entries) and isolation held in 6 of 6 complete O1 runs | the six complete O1 runs |
+| I6a prefix and I6b isolation, end of each O1 curve | gapless, non-empty prefix (5 entries) and isolation held in 6 of 6 `m5e` runs (and in the 6 superseded complete runs) | the six `m5e` O1 runs |
 
 ### Results
 
@@ -1147,38 +1152,61 @@ and no holder check failed. Medians:
   per request. These two repetitions were not re-run.
 - The comparison with FalkorDB stays internal (master §11.5).
 
-**O1, branch creation with an unrelated-graph reader and writer.** Cell
-medians across n ∈ {32k, 128k, 512k} and s ∈ {0, 4, 16, 64}:
+**O1, branch creation with an unrelated-graph reader and writer (`m5e`, kept
+connections).** Every cell ran on the kept-connection method (§3 O1). Cell
+medians across n ∈ {32k, 128k, 512k} and s ∈ {0, 4, 16, 64}, with three
+create/delete warm-ups and five measured repetitions per cell:
 
 | Build, storage | Create (ms) | Main-reader stall (ms) | Unrelated reader stall (ms) | Unrelated writer stall (ms) | Run |
 |---|---|---|---|---|---|
-| v0.15.0, local (`m5d`, kept connections) | 8.27–15.34 | 0–2.96 | 5.72–6.95 | 6.84–15.34 | `20261116T003206Z-579fed57` |
-| edge, local | 8.30–14.62 | 0–4.24 | 6.05–10.94 | 6.71–14.62 | `20261115T235639Z-1a7662ca` |
-| v0.15.0, MinIO | 51.37–70.68 | 39.26–59.72 | 15.60–50.59 | 31.56–68.97 | `20261115T233008Z-ba6c2bba` |
-| edge, MinIO | 55.82–143.55 | 38.82–107.13 | 11.50–86.00 | 50.68–143.55 | `20261116T000227Z-a91e2dae` |
+| v0.15.0, local | 8.02–13.88 | 0–2.96 | 4.41–7.34 | 5.61–13.88 | `20261116T005007Z-772bf510` |
+| edge, local | 7.02–15.34 | 0–2.27 | 4.55–9.05 | 7.02–15.34 | `20261116T012433Z-cb2af23d` |
+| v0.15.0, MinIO | 49.00–73.40 | 37.64–55.60 | 18.84–51.45 | 37.01–69.39 | `20261116T005740Z-b787c6ff` |
+| edge, MinIO | 48.44–116.17 | 35.62–105.17 | 20.12–49.45 | 40.11–116.17 | `20261116T013014Z-7bf20e6c` |
 
+- **Read retries.** No read was retried after a dropped kept connection in
+  any of the six runs. No `kept_connection_dropped` record appears in their
+  histories, and every sample's `read_retries` is 0 [measured: the six `m5e`
+  O1 runs; `evidence/M5_OMNIGRAPH_B3.md`, "Read retries" columns]. Their only
+  unknown outcomes are 1 to 4 readiness polls per MinIO and proxy run, during
+  stack start-up, answered with a closed connection (trial 0, kind
+  `readiness`). Batch 2 had the same kind.
 - Through the 17 ms proxy, one create plus delete took 34 to 38 requests on
-  both builds. GET response bytes ran from 58,996 to 498,962 (v0.15.0) and
-  59,335 to 502,610 (edge) [measured: `20261115T233710Z-d6e9001c`,
-  `20261116T001000Z-dedd3d1f`].
-- Copy-weight cycles (create, claim, score, discard) on a local root were 74.9,
-  97.9 and 209.2 ms on v0.15.0 and 87.9, 110.0 and 331.5 ms on edge, at 32k,
-  128k and 512k [measured: `20261116T003206Z-579fed57`,
-  `20261115T235639Z-1a7662ca`].
+  v0.15.0 and 34 to 41 on edge. GET response bytes ran from 58,338 to 498,411
+  (v0.15.0) and 58,668 to 502,220 (edge) [measured: `20261116T010446Z-36dc0553`,
+  `20261116T013703Z-aade14a0`].
+- Copy-weight cycles (create, claim, score, discard) on a local root were 63.9,
+  107.5 and 256.4 ms on v0.15.0 and 76.0, 104.3 and 218.5 ms on edge, at 32k,
+  128k and 512k [measured: `20261116T005007Z-772bf510`,
+  `20261116T012433Z-cb2af23d`].
 - The stall metrics are the longest gap between completions inside the create
-  window. A write takes longer than a local create here, so an unrelated
-  writer's gap often equals the whole create window, and the metric does not
-  separate a blocked writer from a slow one [inference from the metric and
-  the equal values]. On MinIO, the unrelated reader's longest gap was 0.21 to
-  0.98 times the create time per cell, and under half of it in 4 of 12 cells
-  on v0.15.0 and 8 of 12 on edge. In those cells it kept completing reads
-  during creation [measured: the two MinIO runs]. The unrelated stall columns
-  per cell are in `evidence/M5_OMNIGRAPH.md` and `evidence/M5_OMNIGRAPH_B2.md`.
-- Compared with M4, local create times are higher (M4 v0.15.0 6.0 to 8.2 ms)
-  with three loads running instead of one [measured: M4
-  `20261115T172253Z-0adb5788`]. The two batches also differ in their
-  connection handling and the number of loads, so the change is not
-  attributed to Omnigraph [inference].
+  window. A write takes longer than a local create here, so the unrelated
+  writer's gap often equals the whole create window. On MinIO it was 0.73 to
+  1.0 times the create time per cell. The metric does not separate a blocked
+  writer from a slow one [inference from the metric and the equal values].
+  On MinIO, the unrelated reader's longest gap was 0.34 to 0.96 (v0.15.0) and
+  0.24 to 0.91 (edge) times the create time per cell, and under half of it in
+  3 and 4 of 12 cells. In those cells it kept completing reads during
+  creation [measured: the two `m5e` MinIO runs].
+- **Comparison with M4, with the method change.** M4's O1 had one load, the
+  main reader, and it opened a new TCP connection per request. M5's O1 has
+  three loads, each on one kept connection (§3 O1). With that difference:
+  - local create medians were 6.0–8.2 ms (v0.15.0) and 5.35–11.25 ms (edge)
+    in M4, against 8.02–13.88 and 7.02–15.34 ms here;
+  - MinIO create medians were 36.2–70.9 and 37.4–88.6 ms in M4, against
+    49.00–73.40 and 48.44–116.17 ms here;
+  - main-reader stall medians were 0–0.66 and 0–0.75 ms (local) and 27–60 and
+    28–81 ms (MinIO) in M4, against 0–2.96, 0–2.27, 37.64–55.60 and
+    35.62–105.17 ms here;
+  - proxy request counts were 34–39 and 34–37 in M4, against 34–38 and 34–41
+    here [measured: M4 `20261115T172253Z-0adb5788`, `20261115T175653Z-12eb6ff6`,
+    `20261115T173025Z-fc74457b`, `20261115T180251Z-742224c3`,
+    `20261115T173716Z-d303435d`, `20261115T181001Z-adf60896`; M5 the six `m5e`
+    runs].
+
+  The load count and the connection model both changed between the two
+  milestones. So the differences are not attributed to Omnigraph, and the
+  reader figures are not one method measured twice [inference].
 - The FalkorDB side ran once, beside the v0.15.0 local curve, and met S28 (see
   Controls). The comparison stays internal (master §11.5).
 
@@ -1228,4 +1256,5 @@ medians across n ∈ {32k, 128k, 512k} and s ∈ {0, 4, 16, 64}:
 - The O1 catalog-width axis and MinIO's conditional-write qualification,
   which stay deferred (§11).
 - O5 with a concurrent second reader; O5 measures process turnover only.
-- An O2b repeat with kept connections for the agents.
+- An O2b repeat with kept connections for the agents. O2b's agents still
+  open a connection per request.

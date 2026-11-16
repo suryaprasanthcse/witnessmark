@@ -71,7 +71,8 @@ class ReportM5Test(unittest.TestCase):
                                      "time_to_all_claimed_ms": stats, "claim_latency_p50_ms": {"median": 20},
                                      "claim_latency_p99_ms": {"median": 30}}],
                         "trials": [{"k": 1, "n": 2, "warmup": True, "valid": True, "holders_ok": False},
-                                   {"k": 2, "n": 2, "warmup": False, "valid": True, "holders_ok": True}]}
+                                   {"k": 2, "n": 2, "warmup": False, "valid": True, "holders_ok": True,
+                                    "claimed": 2, "agent_status": {"claimed": 2}}]}
         parity = base | {"run_id": "p", "started_at": "2", "scenario": {"id": "o6.traversal_parity", "mode": "cases"},
                          "controls": {"sequential": {"met": True, "classifications": {"q_live": "identical"},
                                                      "errors": {}}},
@@ -89,7 +90,7 @@ class ReportM5Test(unittest.TestCase):
                             {"create_ms": 1.0, "unrelated_reader_stall_ms": 4.0, "unrelated_writer_stall_ms": 6.0}]}]}
         text = report.memory_markdown([sweep, parity, transfer, curve], "b", "T")
         self.assertIn("| omnigraph | v0.15.0 | local | 55 | 2 | 5 / 5 | 3 [2–4] | 1 [0–1] | 1.50 / 2 | 3 [2–4] | "
-                      "20 / 30 | 0 of 1 | `s` |", text)
+                      "20 / 30 | 0 of 1 | 0 | `s` |", text)
         self.assertIn("| v0.15.0 | local | sequential control | q_live | identical | none | `p` |", text)
         self.assertIn("| v0.15.0 | local | trial 1 | q_live | silently different | neo4j: q_live | `p` |", text)
         self.assertIn("| v0.15.0 | local | ok | 0 | no / no | yes | yes | ok | ok | none | not engaged | OBSERVED | "

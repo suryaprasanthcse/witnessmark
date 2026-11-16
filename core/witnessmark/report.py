@@ -537,8 +537,8 @@ def sweep_table(runs: list[dict]) -> str:
     lines = ["| Engine | Build | Storage | Gate (ms) | N | Valid / measured repetitions | Attempts, median [IQR] | "
              "Wasted attempts, median [IQR] | Attempts per agent, median / max (medians) | "
              "Time to all claimed, median [IQR] (ms) | Claim latency p50 / p99, medians (ms) | "
-             "Holder check failed (measured repetitions) | Run |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "Holder check failed (measured repetitions) | Agents that did not claim (measured repetitions) | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for run in runs:
         engine, build, storage = _engine_where(run)
         gate = (run.get("spread_gate") or {}).get("gate_ms")
@@ -546,6 +546,8 @@ def sweep_table(runs: list[dict]) -> str:
             n = row.get("n")
             measured = [t for t in run.get("trials", []) if t.get("n") == n and not t.get("warmup")]
             holder_failures = sum(1 for t in measured if t.get("holders_ok") is False)
+            unclaimed = sum(n - t.get("claimed", n) for t in measured)
+            ended = sorted({status for t in measured for status in t.get("agent_status", {}) if status != "claimed"})
             lines.append(f"| {engine} | {build} | {storage} | {'off' if gate is None else _fmt(gate)} | {n} | "
                          f"{row.get('valid_repetitions')} / {row.get('measured_repetitions')} | "
                          f"{_iqr(row.get('attempts_total'))} | {_iqr(row.get('wasted_attempts'))} | "
@@ -554,7 +556,8 @@ def sweep_table(runs: list[dict]) -> str:
                          f"{_iqr(row.get('time_to_all_claimed_ms'))} | "
                          f"{_fmt((row.get('claim_latency_p50_ms') or {}).get('median'))} / "
                          f"{_fmt((row.get('claim_latency_p99_ms') or {}).get('median'))} | "
-                         f"{holder_failures} of {len(measured)} | `{run['run_id']}` |")
+                         f"{holder_failures} of {len(measured)} | "
+                         f"{unclaimed}{' (' + ', '.join(ended) + ')' if ended else ''} | `{run['run_id']}` |")
     return "\n".join(lines)
 
 

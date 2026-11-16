@@ -4,7 +4,7 @@ Part of Witnessmark. Read it together with the [master blueprint](../../MASTER_B
 
 | | |
 |---|---|
-| Status | Specification v0.2, 2026-11-13. Implemented in M2. Results are in §11 and [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md). A finding counts only when a run in `evidence/` backs it. |
+| Status | Specification v0.2, 2026-11-13. Implemented in M2. Results are in §11 and [evidence/M2_GRAPHITI.md](../../evidence/M2_GRAPHITI.md). M5 Phase C: the G6–G8 run plan is declared in §5 (2026-11-16), before any batch. A finding counts only when a run in `evidence/` backs it. |
 | Project | [getzep/graphiti](https://github.com/getzep/graphiti), Apache-2.0. A Python framework that keeps a temporal knowledge graph in Neo4j, FalkorDB, Kuzu or Neptune. |
 | Line under test | graphiti-core v0.31.x. Primary pin: **v0.31.2**, tag commit `d72407dcedac911e1be9fc15b55e8c05a3efcc36` (2026-10-20), which is also the current PyPI release. |
 | Other builds | main at `ebef986a0b2360211b65751c111cacb4a7d790eb` (2026-11-11); [#1867](https://github.com/getzep/graphiti/pull/1867) at head `a30934e18b9582fbea3aca742269fc2174b67f07`; [#2119](https://github.com/getzep/graphiti/pull/2119) at head `b2b727e05467346b6516e2c68e193f8142ef208b` |
@@ -45,6 +45,17 @@ All source links point at the v0.31.2 tag.
 | K18 | `FalkorDriver` builds the falkordb client with redis-py's defaults: a pool of 100 connections that raises `MaxConnectionsError` ("Too many connections") when all are busy, instead of waiting. Neo4j's driver waits for a free connection. | [code], observed in G1 |
 | K19 | graphiti-core 0.31.2 imports `httpx` (llm_client/client.py) without declaring it. With openai 3.x, which no longer depends on httpx, `import graphiti_core` fails until httpx is installed by hand. A commenter on #2012 hit the same thing. | [code] [measured: install] |
 | K20 | Graphiti sends anonymous telemetry (PostHog) unless `GRAPHITI_TELEMETRY_ENABLED` is off. The adapter switches it off before importing graphiti_core, and refuses to run if the switch did not take. | [code] |
+
+### 1.3 Learned while preparing M5 Phase C (2026-11-16)
+
+| # | Fact | Tag |
+|---|---|---|
+| K21 | [#2119](https://github.com/getzep/graphiti/pull/2119) (open, fixes #1643; author Tyagiquamar) still had head `b2b727e05467346b6516e2c68e193f8142ef208b` on 2026-11-16, the pinned head; it had not moved. Its diff against its base `7e0342a4` changes two files. `graphiti_core/driver/falkordb_driver.py` gains 22 lines: `execute_query` now first awaits `_await_initialized()` ([falkordb_driver.py L239](https://github.com/getzep/graphiti/blob/b2b727e05467346b6516e2c68e193f8142ef208b/graphiti_core/driver/falkordb_driver.py#L239)), and that helper ([L273–292](https://github.com/getzep/graphiti/blob/b2b727e05467346b6516e2c68e193f8142ef208b/graphiti_core/driver/falkordb_driver.py#L273-L292)) returns at once when there is no build task, when the task is the one running (the build's own queries), or when it is done (it then retrieves the task's exception). Otherwise it awaits the task and logs a failed build instead of raising. `tests/driver/test_falkordb_driver.py` gains one unit test (34 lines). Nothing else changes, so the change stays on K9's path. | [gh] [code] |
+| K22 | #2119's head is a merge of its base into the branch. GitHub's compare of `b2b727e0…ebef986a` lists one changed file, `signatures/version1/cla.json` [gh], and the installed trees agree: graphiti_core at #2119's head is main `ebef986a` plus `falkordb_driver.py` alone [code: diff of the two environments' graphiti_core]. Between v0.31.2 and main, graphiti_core differs only in four `llm_client/` files: a removed `DEFAULT_TEMPERATURE` constant and Anthropic model names [code: diff of the v0.31.2 and main environments]. The stubs replace the model clients, so G6–G8 run the same driver and pipeline code on v0.31.2 and main [inference]. | [gh] [code] [inference] |
+| K23 | `Neo4jDriver`'s constructor also schedules `build_indices_and_constraints` as a background task ([neo4j_driver.py L92–97](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/driver/neo4j_driver.py#L92-L97)). Neo4j's `clone` is the base class's, which returns the same driver ([driver.py L131–133](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/driver/driver.py#L131-L133)), so a Neo4j group never starts a build of its own. | [code] |
+| K24 | `Graphiti.search` is wrapped by `handle_multiple_group_ids` ([graphiti.py L1912](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L1912)). On FalkorDB a single group id is routed to a call-scoped `driver.clone(database=gid)` ([decorators.py L60–67](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/decorators.py#L60-L67)), so every search for a group constructs a `FalkorDriver`, which starts an index build on that group's graph (K9). | [code] |
+| K25 | `remove_episode` reads and deletes through `self.driver` ([graphiti.py L2174–2213](https://github.com/getzep/graphiti/blob/v0.31.2/graphiti_core/graphiti.py#L2174-L2213)), not through the request scope `add_episode` uses. On FalkorDB that reaches only the driver's own graph, so G8 binds the driver to the group's graph there. | [code] |
+| K26 | The pinned FalkorDB 6.0.4 image starts `redis-server --dir /var/lib/falkordb/data --loadmodule … ${FALKORDB_ARGS}`, with `FALKORDB_ARGS` defaulting to `MAX_QUEUED_QUERIES 25 TIMEOUT 1000 RESULTSET_SIZE 10000`. Its `/data` is a symbolic link to `/var/lib/falkordb/data`. The running baseline reports `appendonly no`, `appendfsync everysec` and `save 3600 1 300 100 60 10000`. G7 records these settings in every run. | [code: `/var/lib/falkordb/bin/run.sh` and the image's environment, read from the pinned image] |
 
 ## 2. How ingestion works, and where it can race
 
@@ -183,13 +194,177 @@ Each case runs in its own group: setup episodes first, then the case. All six ca
   - `limit1`: `num_results=1`.
 - **Checks.** Each case records the shared limit after the read (K17) and checks I7a.
 
-### G6–G8 (not yet implemented)
+### G6–G8: the M5 Phase C run plan
 
-- **G6:** index readiness at startup (#2119, #1643).
-- **G7:** persistence across restarts (#2117, K11).
-- **G8:** deletion permanence.
+Declared on 2026-11-16, before the first Phase C batch (master §10, no fishing). It follows the v0.1 designs (commit `80a5623`, §5), with the maintainer's rulings of 2026-11-16 (master §12.1, Phase C):
 
-The v0.1 designs stand. They come after M2.
+- G6, G7 and G8 run on the released pin v0.31.2;
+- G6 also runs on main `ebef986a` and on #2119's head `b2b727e0`, the one approved pull-request build;
+- only the digest-pinned FalkorDB 6.0.4 and Neo4j 5.26.2 are used;
+- models are stubbed and telemetry is off.
+
+**Builds.**
+
+| Build label | Environment | Frozen requirements | Scenarios |
+|---|---|---|---|
+| `v0.31.2` | `.state/venvs/graphiti-v0.31.2` | `requirements/v0.31.2.txt` | G6, G7, G8 |
+| `main-ebef986a` | `.state/venvs/graphiti-main-ebef986a` | `requirements/main-ebef986a.txt` | G6 |
+| `pr2119-b2b727e0` | `.state/venvs/graphiti-pr2119-b2b727e0` | `requirements/pr2119-b2b727e0.txt`: v0.31.2's frozen set, with graphiti-core taken from git at `b2b727e0` (K21, K22). `uv pip freeze` of the environment matches the file. | G6 |
+
+**Rules for every cell.**
+
+- The sequential control runs first (k = 0). A cell whose control is not met is INVALID by rule (master §9).
+- The seed is 20261116 plus the cell's row in the command table below. No scenario draws random numbers; the seed is recorded.
+- The two races, G6c and G8, run in `asyncio` mode with the 92 ms spread gate (master §6.3) and an overlap control. G6a, G6b and G7 release no clients together, so they have no gate.
+- Evidence goes to `evidence/graphiti/<build>.<backend>/<scenario>.<mode>/<run_id>/` with all four §9.1 files. Container actions are `nemesis` records with invocation and return times; stub calls are records with phase `stub`.
+
+#### G6. Index readiness at startup (I4 while indexes build; #2119, #1643, K9, KD-F4)
+
+**Load for G6a and G6b.**
+
+- Group `wm_g6` gets 400 episodes of 5 facts each: 2,000 facts and 800 entities. They are loaded through the stubbed `add_episode`, one episode at a time.
+- Each fact has a token of its own (`INV<episode>x<k>`) and the shared word "invoice".
+- **Why 2,000 facts and not v0.1's 20k.** Scratch timing done before this declaration (kept out of `evidence/`):
+  - With 5 facts per episode, stubbed `add_episode` loaded 2,000 facts in 198 s on FalkorDB.
+  - With 25 facts per episode, one `add_episode` failed with FalkorDB's `Max pending queries exceeded` (the pinned image's `MAX_QUEUED_QUERIES 25`, K26) once the group held about 650 facts. `add_episode_bulk` with 10 episodes failed the same way.
+  - At the measured rate, 20k facts would take well over 30 minutes per load, and G6 loads twelve times.
+
+  The size is fixed for every G6a and G6b run [inference from the scratch timing].
+
+**Search suite.**
+
+- Ten `Graphiti.search(query, group_ids=["wm_g6"])` calls with the default `num_results` (10). Each searches for one fact's own token, so its right answer is exactly that fact.
+- A raw probe on the harness's own connection runs the fulltext procedure Graphiti uses and counts the group's facts that match "invoice". The control answer is 2,000.
+  - FalkorDB: `db.idx.fulltext.queryRelationships('RELATES_TO', …)`.
+  - Neo4j: `db.index.fulltext.queryRelationships('edge_name_and_fact', …)`.
+
+**Control (k = 0).**
+
+1. After the load, wait until every index is ready: on FalkorDB, every row of `db.indexes()` is `OPERATIONAL`; on Neo4j, every non-lookup index in `SHOW INDEXES` is `ONLINE`.
+2. Record that index set as the expected set.
+3. Run the suite and the probe, and dump the group.
+
+The control is met when all 400 ingests succeed, the dump holds 800 entities, 2,000 facts and 400 episodes, every query returns exactly its fact, and the probe counts 2,000.
+
+**Measured in every trial.**
+
+- **Answers.** The suite runs at once and again after every expected index is ready. Each query's answer is classified against the control as identical, silently different or an error (master §5.4; answers are compared as multisets).
+- **Errors.** Search exceptions, plus log records at ERROR or above from Graphiti and its clients.
+- **Never-retrieved task exceptions.** The event loop's exception handler, read after a garbage collection at the end of the trial.
+- **Index builds.** Every `build_indices_and_constraints` call: its database, start, end and outcome. A wrapper records them; it awaits the original and changes nothing else.
+- **Index monitor.** On its own connection, the monitor samples the index state and the probe every 2 ms. It starts just before the trial's action and stops once every expected index is ready. Consecutive identical samples are recorded once, with their count.
+- **UNDER CONSTRUCTION after creation returns** (KD-F4, FalkorDB): the time from the end of the first completed build on the group's graph to the first sample in which every expected index is ready. The trial also records whether any sample saw `UNDER CONSTRUCTION`, and the probe's rows while one did. This answers master §13's question.
+- **State at the first query.** The index state when the first at-once query was invoked, so a clean cell says whether that query met an index that was not ready.
+- **I2.** The group's data (a digest of its facts, entities and episodes, read on the harness's connection) is the same after the trial as in the control.
+
+**Verdicts.** The invariants are I4.at_once, I4.ready and I2. The support level is none: no Graphiti document promises answers before the indexes are ready. The basis is issue #1643. A violation is OBSERVED, and a clean cell is PASS.
+
+- **G6a, fresh.** T = 20. Each trial:
+  1. Close the previous instance after its background work.
+  2. Drop every index (FalkorDB: every index on the `wm_g6` graph; Neo4j: every non-lookup index), wait until none is listed, and check the data digest.
+  3. Start the monitor.
+  4. Construct a new Graphiti with a new driver and run the suite at once; the first search is called with no await after construction.
+  5. Wait until every expected index is ready, then run the suite again.
+- **G6b, populated.** T = 10, because each Neo4j restart takes tens of seconds. After the control, FalkorDB gets a `SAVE`, recorded as a setup record, because the pinned image runs `appendonly no` (K26). Each trial:
+  1. Check the data digest and close the instance.
+  2. Restart the test container (`docker restart wm-falkordb` or `wm-neo4j`, recorded as nemesis `restart`).
+  3. Poll until the server answers: FalkorDB `PING`; Neo4j `RETURN 1`.
+  4. Start the monitor, construct, and run the suite at once.
+  5. Wait until every expected index is ready, then run the suite again.
+- **G6c, many groups (FalkorDB only).** T = 20.
+  - Eight groups, `wm_g6c_0` to `wm_g6c_7`, get one episode of 5 facts each.
+  - Each trial deletes the eight graphs (`GRAPH.DELETE`, so no index exists). One Graphiti instance then releases eight `add_episode` calls together through an asyncio barrier, one per group. Each call's clone starts its own build on a new graph (K9).
+  - Then quiesce, wait until every group's indexes are ready, dump, and search each group for one fact while the monitor samples all eight graphs.
+  - Sequential control: the same eight ingests one at a time, from the same reset.
+  - Checks: I2 (every fact of every acknowledged episode is present), I1B (one entity per key per group), I4 (each group's answer equals the control's), never-retrieved exceptions, errors, builds, and UNDER CONSTRUCTION after creation for each graph.
+  - The support level is supported: concurrent calls for different groups are the case the #1676 fix covers (K15). The basis is documented, so a violation is FAIL.
+
+**Cells (15 runs).**
+
+- G6a and G6b run on FalkorDB and on Neo4j, and G6c on FalkorDB. Each runs on v0.31.2, main and #2119's head.
+- The original design's checks apply on Neo4j to G6a (its driver also starts a background build, K23) and to G6b (restart, then wait for `ONLINE`).
+- G6c on Neo4j is NOT_APPLICABLE: Neo4j's `clone` returns the same driver (K23), and every group shares one database (K10).
+- #2119 changes only the FalkorDB driver, so its Neo4j cells are expected to match main [inference]. They run anyway, as ruled.
+
+#### G7. Persistence across restarts (I2 across a restart; #2117, K11, K12)
+
+**Compose file.** `targets/01-zep-graphiti/docker/compose-g7.yml` uses the project name `witnessmark-g7`. It runs the pinned FalkorDB 6.0.4 digest, with ports on 127.0.0.1 and named volumes. It reproduces two upstream volume layouts at v0.31.2 [code]:
+
+| Variant | Service, container, port | Volume | Upstream layout reproduced |
+|---|---|---|---|
+| root | `falkordb-root`, `wm-g7-root`, 16391 | `g7_root_data` at `/data` | [docker-compose.yml L50–64](https://github.com/getzep/graphiti/blob/v0.31.2/docker-compose.yml#L50-L64): the volume at `/data` (L55–56), `FALKORDB_ARGS=--port 6379 --cluster-enabled no` (L57–58), and the `redis-cli ping` health check (L59–64) |
+| mcp | `falkordb-mcp`, `wm-g7-mcp`, 16392 | `g7_mcp_data` at `/var/lib/falkordb/data` | [mcp_server/docker/docker-compose-falkordb.yml L2–17](https://github.com/getzep/graphiti/blob/v0.31.2/mcp_server/docker/docker-compose-falkordb.yml#L2-L17): the volume (L10–11), an empty `FALKORDB_PASSWORD` and `BROWSER=1` (L7–9), and the health check (L12–17). The web UI port 3000 is not published. |
+
+- Upstream pins `falkordb/falkordb:latest`; the harness file uses the pinned digest instead.
+- The combined image (`mcp_server/docker/docker-compose.yml`) is NOT_EXERCISED, because it needs an unpinned upstream image (`zepai/knowledge-graph-mcp:latest`, built upstream).
+
+**Each trial.**
+
+1. Remove the variant's container and volume, then start it with `docker compose up -d <service>`.
+2. Wait for `PING`, and record `appendonly`, `appendfsync`, `save`, `dir` and the module's arguments.
+3. Open Graphiti v0.31.2 (stubbed) and ingest K = 10 episodes into group `wm_g7`, one at a time, one fact each.
+4. Dump, then close Graphiti.
+5. Apply the cell's action.
+6. Wait for `PING`, record the settings again, reopen, and dump.
+
+**Actions**, all recorded as nemesis records:
+
+- `compose_restart`: `docker compose restart <service>` (`restart`).
+- `down_up`: `docker compose down` (`stop`; it removes the container and keeps the volume), then `docker compose up -d <service>` (`start`).
+- `kill_start`: `docker kill <container>` (`kill`), then `docker start <container>` (`start`).
+
+**Control (k = 0).** The same steps without the action. The control is met when the dump holds 10 episodes, 2 entities and 10 facts.
+
+**Check.** I2: every episode, entity and fact in the dump before the action is in the dump after it. The magnitude is the number of items lost. The support level is none and the basis is issue #2117; that a declared named volume implies persistence is [inference]. Loss is reported as OBSERVED, with the persistence settings beside it.
+
+**Cells (6 runs).** Two variants × three actions, on v0.31.2 only; the original design asks for no build comparison. T = 10.
+
+#### G8. Deletion permanence (I5, with overreach reported under I2)
+
+**Fixture (group `wm_g8`).**
+
+- `G8S`: "Alice works at Acme" (entities Alice and Acme).
+- `G8E`: repeats that fact and adds "Alice approved the Payments budget" (entities Alice, Acme and Payments). Before the race it is the only episode that names Payments.
+- `G8N`: "Alice audited Payments" (entities Alice and Payments).
+
+**Setup in every trial.** Reset the group, then add `G8S` and then `G8E`.
+
+**Race** (`asyncio`, M2's shape). Two clients are released together: c00 runs `remove_episode(G8E)` and c01 runs `add_episode(G8N)`.
+
+**Sequential control.** The same two operations one at a time: the remove, then the add. The expected state is:
+
+- episodes `G8S` and `G8N`;
+- entities Alice, Acme and Payments, one each;
+- facts "Alice works at Acme" (carried by one episode) and "Alice audited Payments";
+- no "Alice approved the Payments budget".
+
+Running the two operations in the other order gives the same state.
+
+**Checks (master §5.5).**
+
+- **I5.** After an acknowledged remove, `G8E` and "Alice approved the Payments budget" are gone, and the concurrent ingest brought neither back.
+- **I2 with `cause = delete`** (overreach): "Alice works at Acme" (still carried by `G8S`) and `G8S` itself remain. After an acknowledged add, `G8N`, "Alice audited Payments" and Payments are present.
+- **I1B.** One entity per key.
+
+**Backends.** FalkorDB, with the driver bound to the group's graph (K25), and Neo4j, both on v0.31.2. T = 20, with the 92 ms spread gate and an overlap control.
+
+**Support.** None: no Graphiti document covers `remove_episode` running at the same time as `add_episode`, and K15's sequential requirement names `add_episode` only. The basis is inferred (master §5.5). A violation is reported as OBSERVED.
+
+#### Command table (one main batch, `m5g-<UTC time>`)
+
+Every command runs from the repository root with the build's environment's Python, as `targets/01-zep-graphiti/wm_graphiti.py <command> … --seed <20261116 + row> --batch <id>`. Every G6 command for main or #2119 also passes `--build` and `--commit`.
+
+| Rows | Command |
+|---|---|
+| 1–3 | `startup --scenario g6a.fresh --backend falkordb --trials 20` on v0.31.2, main, #2119 |
+| 4–6 | `startup --scenario g6b.populated --backend falkordb --trials 10` on the three builds |
+| 7–9 | `race --scenario g6c.many_groups --backend falkordb --trials 20` on the three builds |
+| 10–12 | `startup --scenario g6a.fresh --backend neo4j --trials 20` on the three builds |
+| 13–15 | `startup --scenario g6b.populated --backend neo4j --trials 10` on the three builds |
+| 16–21 | `persistence --variant root\|mcp --action compose_restart\|down_up\|kill_start --trials 10` on v0.31.2 (root first, actions in that order) |
+| 22–23 | `race --scenario g8.remove_vs_add --backend falkordb\|neo4j --trials 20` on v0.31.2 |
+
+The batch brings the baselines up only through `baselines/docker-compose.yml`, and G7's containers only through its compose file.
 
 ## 6. Checks
 

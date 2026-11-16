@@ -433,9 +433,10 @@ def _completion_gap(values, started: int, finished: int) -> float:
 def _timed_branch_create(client: OmnigraphClient, queries: dict[str, str], name: str,
                          capture: RunCapture) -> dict:
     rss_before = _rss_mb("wm-omnigraph-a")
-    main = capture.client("http://127.0.0.1:18080", label="c01")
-    other = capture.client("http://127.0.0.1:18080", graph="unrelated", label="c02")
-    writer = capture.client("http://127.0.0.1:18080", graph="unrelated", label="c03")
+    # Each closed-loop load keeps one connection (client.py, keep_alive).
+    main = capture.client("http://127.0.0.1:18080", label="c01", keep_alive=True)
+    other = capture.client("http://127.0.0.1:18080", graph="unrelated", label="c02", keep_alive=True)
+    writer = capture.client("http://127.0.0.1:18080", graph="unrelated", label="c03", keep_alive=True)
     writes = count()
 
     def read(source):

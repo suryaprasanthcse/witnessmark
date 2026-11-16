@@ -123,6 +123,7 @@ class OmnigraphClient:
         bearer_token: str | None = None,
         timeout: float = 60.0,
         observed=None,
+        keep_alive: bool = False,
     ):
         parsed = urlsplit(endpoint)
         if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -137,6 +138,12 @@ class OmnigraphClient:
         self.bearer_token = bearer_token
         self.timeout = timeout
         self._observed = observed
+        # keep_alive reuses one HTTP/1.1 connection for this client's requests. A closed-loop load that opens a
+        # connection per request leaves a socket in TIME_WAIT per request and can exhaust the Windows host's
+        # ephemeral ports (WinError 10048, batch m5b-20261115T230235Z, O1 on v0.15.0 local). One client per
+        # thread: the connection is not shared.
+        self.keep_alive = keep_alive
+        self._kept: http.client.HTTPConnection | None = None
 
     def _connection(self) -> http.client.HTTPConnection:
         cls = http.client.HTTPSConnection if self._scheme == "https" else http.client.HTTPConnection
@@ -167,12 +174,26 @@ class OmnigraphClient:
             encoded = body if isinstance(body, bytes) else json.dumps(body, separators=(",", ":")).encode("utf-8")
             headers["Content-Type"] = content_type
 
-        connection = self._connection()
+        reused = self.keep_alive and self._kept is not None
+        connection = self._kept if reused else self._connection()
         try:
-            connection.request(method, path, body=encoded, headers=headers)
-            response = connection.getresponse()
+            try:
+                connection.request(method, path, body=encoded, headers=headers)
+                response = connection.getresponse()
+            except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError):
+                # The server closed an idle kept connection before answering. Only a read is sent again, on a
+                # fresh connection; a write's outcome stays unknown, as without keep-alive.
+                if not (reused and ((method == "POST" and path.endswith("/query")) or method == "GET")):
+                    raise
+                connection.close()
+                self._kept = None
+                connection = self._connection()
+                connection.request(method, path, body=encoded, headers=headers)
+                response = connection.getresponse()
             raw = response.read()
             status = response.status
+            if self.keep_alive and not response.will_close:
+                self._kept, connection = connection, None
         except (TimeoutError, socket.timeout) as exc:
             return OperationResult(Outcome.UNKNOWN, kind="timeout", message=str(exc) or "timed out")
         except OSError as exc:
@@ -190,7 +211,10 @@ class OmnigraphClient:
                 message=str(exc) or type(exc).__name__,
             )
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
+                if connection is self._kept:
+                    self._kept = None
 
         payload: Any = None
         if raw:

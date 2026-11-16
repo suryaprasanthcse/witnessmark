@@ -1228,15 +1228,21 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 **M6 candidates (recorded at Phase E, not started).**
 
 - Enforce §9.7 in the verdict code from M6, with a report column for runs below half their declared trials. Case suites such as G3 need their own count (§9.7).
+- Graphiti G8 on current main (newer than `ebef986a`), as a new declared run, if the upstream thread asks for it. Not started.
+- A Cypher-only FalkorDB reproduction of fulltext answers while an index is `UNDER CONSTRUCTION`, without Graphiti, as a new declared run; and the same question on the C engine if a build is pinned. Not started.
+- Graphiti G6a on Neo4j with main: why the harness could not bound the stalled search (`0395799` bounds it from M6 on; re-run only as a new declared cell). Not started.
+- Cognee: #5253 on a rebased head if its author rebases (a pull-request build that needs the maintainer's approval); R4 with a pinned PostgreSQL baseline and the #4167 build, if approved; the C3 fixture variant on R3. Not started.
+- §11.5 for any comparative publication: the licence checks and the vendor-first notices, before any FalkorDB comparison leaves the repository. Not started.
+- Master §13's open question on running clients inside the Docker network. Not started.
 
-**Status, Phase E (2026-11-16).** Steps 1 to 3 ran. Step 4, the maintainer's M5 review, is not recorded.
+**Status, Phase E (2026-11-16).** Steps 1 to 3 ran. Step 4 is recorded below.
 
 - [x] Phase D sign-off recorded (`f25653d`). Rulings (a), (d) and (e) applied (`4deb2fc`, `b5593f0`); the `schema_version` ruling applied in the writer (`4153b02`) and in §9.2 (`62bcbda`).
 - [x] Step 1: nothing was re-run. No harness fix required a re-run, and the `schema_version` fix changes no evidence.
 - [x] G8-F1's P5 repro, declared before it ran (`37aefe8`) and recorded (`79015bb`): 19 of 20 iterations differed on Neo4j on both v0.31.2 and main `ebef986a`, 0 of 20 on FalkorDB on both, and the sequential control was as expected in all four runs (Graphiti blueprint §12.5).
 - [x] Step 2: all 21 committed reports regenerate byte for byte. The §9.6 audit (`48ca0d7`) read 204 number-bearing claim blocks in the four M5 Results sections and these statuses, 50 of them tagged [measured], and checked their numbers against the manifests, histories and reports of the runs they cite. Every [measured] claim now names its run or batch id. The one exception is the P5 repro's counts, which carry the tag declared for them and come from console output kept outside `evidence/`. One count was wrong and is corrected (the first ended G6a run wrote states 0–7, not 0–5). One omission is added (G6c's observe-phase builds that ended running). One stale tag is retagged (the Omnigraph admission-cap docs check). No other mismatch was found.
 - [x] Step 3: seven drafts in `drafts/m5/`: a sending plan and six messages, written for the maintainer under §11.1. They are gitignored, not committed and not sent.
-- [ ] Step 4: the maintainer's M5 review.
+- [x] Step 4: the maintainer's M5 review.
 
 **M5 summary.** On the host of §10. Tags as in §9.4; every run id is in `evidence/`.
 
@@ -1250,7 +1256,12 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 
 M5's exit criterion, "every number traces to a run_id", holds for the Results sections and these statuses after `48ca0d7`, with the P5 repro's counts as the declared exception above.
 
-Phase E awaits the maintainer's M5 review.
+**M5 review (maintainer, 2026-11-16).** M5 is reviewed and signed off.
+
+- Reviewed: Phases A to E, commits `8444dc8` to `36d1898`. Each phase's commits were checked read-only before its sign-off: sole authorship and no attribution lines, run plans committed before their batches, selftest passing, every committed report regenerating byte for byte, no committed evidence changed, every new run with its four §9.1 files and a valid history, and the privacy and clean-room scans clean.
+- Accepted as recorded: the INVALID cells (Graphiti G6a on Neo4j with main; Cognee R3, control not met), the NOT_EXERCISED cells (#5253, the combined Graphiti MCP image, Cognee's session-fed `improve` stages), the insufficient-valid-trials readings under §9.7, and the P5 repro counts as the declared exception to the run-id rule.
+- Findings carried forward as possible upstream defects or questions, not as conclusions: Graphiti G8-F1 (P5 repro: 19 of 20 on Neo4j on v0.31.2 and main `ebef986a`, 0 of 20 on FalkorDB); Graphiti G6-F2 and FalkorDB's fulltext answers while an index is `UNDER CONSTRUCTION` (§13); Omnigraph's O2a refusal type. G7's kill loss is recorded as FalkorDB persistence configuration, and O2b as the cost of documented behaviour.
+- Contribution drafts: prepared under §11.1 and reviewed by the maintainer. They stay outside the repository; sending is the maintainer's, one message at a time, and nothing is recorded here about when or whether they are sent.
 
 ## 13. Open questions
 

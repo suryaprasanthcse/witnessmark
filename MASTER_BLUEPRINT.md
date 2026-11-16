@@ -1119,7 +1119,7 @@ Phase C follows Phase B and ends when G6, G7 and G8 have recorded outcomes and e
 
 [Graphiti scenarios (§5)](targets/01-zep-graphiti/MASTER_BLUEPRINT.md#5-scenarios)
 
-**Status, Phase C (2026-11-16).** G6, G7 and G8 ran; Phase C awaits the maintainer's review.
+**Status, Phase C (2026-11-16).** G6, G7 and G8 ran. Reviewed and signed off by the maintainer on 2026-11-16.
 
 - [x] Phase B sign-off recorded (`9761daa`). The run plan was declared before any batch (`886f4c6`), with pre-batch amendments (`8b9785a`) and the #2119 review (K21).
 - [x] Main batch `m5g-20261116T051149Z` (`8b9785a`): 24 commands, 23 exit 0. Row 11 (G6a on Neo4j, main) hung and was ended. The false start `m5g-20261116T044019Z` ran nothing (a driver path bug). Report: `evidence/M5_GRAPHITI.md`.

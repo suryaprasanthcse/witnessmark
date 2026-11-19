@@ -1277,7 +1277,7 @@ These stay listed in §12.1 as candidates.
 
 #### Phase A — Declaration
 
-- [ ] This section and the §12 row, committed on `m6` before any code. Exit: the commit exists, and `python wm.py selftest` passes unchanged.
+- [x] This section and the §12 row, committed on `m6` before any code. Exit: the commit exists, and `python wm.py selftest` passes unchanged. Met in `cc2a2c0` (selftest 243 OK).
 
 #### Phase B — §9.7 in the verdict code
 
@@ -1304,7 +1304,7 @@ The rule: a verdict computed on fewer than half the run's declared trials (`tria
 
 Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduction anyone can run, as the basis of the FalkorDB issue and of any later fix PR modelled on FalkorDB/FalkorDB#3581 (vector-only, merged 2026-11-17).
 
-- [ ] **The repro.** `baselines/repros/repro_falkordb_fulltext_under_construction.py`.
+- [x] **The repro.** `baselines/repros/repro_falkordb_fulltext_under_construction.py` (`48b113f`).
   - Standard library only, with a minimal RESP client inline. It imports nothing from `witnessmark`, so an outsider can run it with one file.
   - Arguments: host, port, relationship count N, trials T.
 - [ ] **What each trial does.**
@@ -1320,11 +1320,18 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 
   | # | Engine | Command |
   |---|---|---|
-  | 1 | FalkorDB 6.0.4 (pinned digest, Rust) | `python baselines/repros/repro_falkordb_fulltext_under_construction.py 127.0.0.1 <port> 2000 20` |
-  | 2 | FalkorDB 6.0.4 | the same with N = 20000 |
+  | 1 | FalkorDB 6.0.4 (pinned digest, Rust) | `python baselines/repros/repro_falkordb_fulltext_under_construction.py 127.0.0.1 16380 2000 20` |
+  | 2 | FalkorDB 6.0.4 | `python baselines/repros/repro_falkordb_fulltext_under_construction.py 127.0.0.1 16380 20000 20` |
   | 3 (only with the maintainer's approval to pull and pin the image) | FalkorDB v4.22.4 (C engine), pinned by digest | the same with N = 20000 |
 
   If N = 2000 catches no under-construction sample, that is a result, not a reason to retune. Command 2 is the declared larger size.
+
+  **Declaration of commands 1 and 2 (2026-11-19, committed before either ran).**
+  - **Repro.** `baselines/repros/repro_falkordb_fulltext_under_construction.py` at `48b113f`, with its unit tests in `core/tests/test_m6_fulltext_repro.py` (a fake transport, no network). Fixed in the script: the graph `wm_m6_fulltext_repro`, the probe term `quokka` (every fact is `fact <i> mentions quokka`), load batches of 1,000 relationships, each between two new `Entity` nodes, and a timeout of 120 s per trial.
+  - **Index statement.** `CREATE FULLTEXT INDEX FOR ()-[r:RELATES_TO]-() ON (r.fact)`, the relationship DDL form [docs: FalkorDB/docs `cypher/indexing/fulltext-index.mdx` L567–589 @ `1ec5540a986ac596c5e4fc8f0bbc6f309c13a67a`]. At that commit the procedure form is marked as not working on 6.0, and the DDL form as working on v4.x and 6.0 (L11–13). `db.indexes()` yields each index's status (`cypher/indexing/index.mdx` L46).
+  - **Samples.** Each sample sends the two reads as `GRAPH.RO_QUERY`, as G6's monitor did, with no pause between samples. Before `CREATE` the trial checks that the relationships loaded number N and that no RELATES_TO fulltext index is listed; otherwise the trial is invalid. Exit status: 0 if every trial is valid and no under-construction sample returned fewer rows or an error, 1 if every trial is valid and one did, 2 if any trial is invalid.
+  - **How it runs.** From the root of the `m6` worktree, after `docker compose -f baselines/docker-compose.yml up -d falkordb` (FalkorDB 6.0.4, digest `sha256:bef8acb1…4d7f`, on 127.0.0.1:16380). Command 1, then command 2, each once, with stdout and stderr to `.state/scratch/m6-repro/cmd1-n2000-t20.txt` and `cmd2-n20000-t20.txt`, and the exit status recorded beside them. The container is not restarted between them.
+  - **Before this declaration.** One smoke check of the script with N = 10 and 1 trial (`.state/scratch/m6-repro/smoke-n10-t1.txt`, exit 0, the index `OPERATIONAL` on its first sample). It checked that the commands parse on 6.0.4 and is not a result.
 - [ ] **Recording.** Results go into §13's fulltext row and the Graphiti blueprint's G6-F1 (tags per §9.4). The C-engine row is recorded only if command 3 ran.
 - [ ] **Exit criterion.** Commands 1 and 2 ran, and their results are recorded with the repro's commit hash.
 

@@ -8,15 +8,19 @@ after the other, in either order, the group ends with episodes G8S and G8N, the 
 each, and the facts "Alice works at Acme" (carried by G8S) and "Alice audited Payments".
 
 Variants:
-    gather  the two calls released together through an asyncio.Barrier, nothing else changed (P5's concurrent case)
+    gather  the two calls released together through an asyncio.Barrier, nothing else changed (P5's concurrent case);
+            the steps below are only timestamped
     held    the same, but add_episode's bulk write (add_nodes_and_edges_bulk, which writes the episode, its MENTIONS
             edges, its entities and its facts) waits until remove_episode has run its per-entity MENTIONS count for
-            every entity the removed episode mentions. Everything else in both calls runs unchanged. The hold is a
-            wrapper installed by this script around graphiti_core.graphiti.add_nodes_and_edges_bulk,
-            graphiti_core.graphiti.get_mentioned_nodes and the Graphiti instance's driver.execute_query, for the
-            concurrent case only.
+            every entity the removed episode mentions. This orders the write after the count only; the deletes are
+            not made to wait.
+    pinned  as held, and remove_episode, once that count has run, waits until the bulk write has returned before it
+            goes on to its saves and deletes, so every iteration runs count -> write -> delete
+Everything else in both calls runs unchanged. The waits and timestamps are wrappers installed by this script around
+graphiti_core.graphiti.add_nodes_and_edges_bulk and get_mentioned_nodes, Edge.delete_by_uuids, Node.delete_by_uuids
+and the Graphiti instance's driver.execute_query, for the concurrent case only.
 
-    python repro_g8_held_write.py [neo4j|falkordb] [gather|held] [iterations]
+    python repro_g8_held_write.py [neo4j|falkordb] [gather|held|pinned] [iterations]
 
 Needs Neo4j on bolt://127.0.0.1:17687 (no auth) or FalkorDB on 127.0.0.1:16380, and graphiti-core. The model,
 embedder and reranker are inline deterministic fakes that answer from the fixture below, so there is no API key and no
@@ -61,23 +65,53 @@ EXPECTED = {"episodes": ["G8N", "G8S"], "entities": ["Acme", "Alice", "Payments"
 # --- the hold -----------------------------------------------------------------------------------------------------
 
 
-class HeldWrite:
-    """Holds add_episode's bulk write until remove_episode has counted the MENTIONS of every entity it mentions.
+MODES = ("observe", "held", "pinned")
+VARIANT_MODES = {"gather": "observe", "held": "held", "pinned": "pinned"}
 
-    remove_episode calls get_mentioned_nodes once, then runs one COUNT_MARK query per returned entity, then saves and
-    deletes. The hold opens when the last of those counts has returned (or at once if there is no entity). A bulk write
-    that arrives after that passes without waiting. `events` keeps (label, ms since `start`) in the order they happened.
+
+class HeldWrite:
+    """Times, and in two modes orders, add_episode's bulk write against remove_episode's count and deletes.
+
+    remove_episode calls get_mentioned_nodes once, runs one COUNT_MARK query per returned entity, saves the edges other
+    episodes still support, then calls Edge.delete_by_uuids and Node.delete_by_uuids. "The count has run" means the
+    last of those count queries has returned (or get_mentioned_nodes found no entity).
+
+        observe  no waiting; every step below is timestamped
+        held     the bulk write waits until the count has run (a write that arrives later passes at once)
+        pinned   as held, and remove_episode, once its count has run, waits until the bulk write has returned before
+                 it goes on to its saves and deletes: count -> write -> delete, forced from both sides
+
+    Each wait gives up after `timeout_s`, notes "hold timed out" and goes on. `events` keeps (label, ms since `start`)
+    in the order they happened.
     """
 
-    def __init__(self, timeout_s: float = HOLD_TIMEOUT_S, clock=time.perf_counter):
+    def __init__(self, timeout_s: float = HOLD_TIMEOUT_S, clock=time.perf_counter, mode: str = "held"):
+        if mode not in MODES:
+            raise ValueError(f"unknown mode {mode!r}")
+        self.mode = mode
         self.timeout_s = timeout_s
         self.clock = clock
         self.t0 = clock()
         self.counted = asyncio.Event()
+        self.written = asyncio.Event()
         self.expected: int | None = None
         self.seen = 0
         self.timed_out = False
         self.events: list[tuple[str, float]] = []
+
+    async def _wait(self, event: asyncio.Event, who: str) -> None:
+        try:
+            await asyncio.wait_for(event.wait(), self.timeout_s)
+        except asyncio.TimeoutError:
+            self.timed_out = True
+            self.note(f"hold timed out ({who})")
+
+    async def _after_count(self, opened: bool) -> None:
+        """In pinned mode, the remove call that ran the last count waits here for the bulk write."""
+        if opened and self.mode == "pinned":
+            self.note("remove waits for the write")
+            await self._wait(self.written, "remove")
+            self.note("remove resumes")
 
     def start(self) -> None:
         self.t0 = self.clock()
@@ -88,23 +122,29 @@ class HeldWrite:
     def at(self, label: str) -> float | None:
         return next((ms for name, ms in self.events if name == label), None)
 
-    def _maybe_open(self) -> None:
+    def _maybe_open(self) -> bool:
+        """Open the write's gate once the count has run; True for the call that opened it."""
         if self.expected is not None and self.seen >= self.expected and not self.counted.is_set():
             self.note("count done")
             self.counted.set()
+            return True
+        return False
 
     def install(self, module, driver):
-        """Wrap module.get_mentioned_nodes, module.add_nodes_and_edges_bulk and driver.execute_query; return undo."""
+        """Wrap module.get_mentioned_nodes, module.add_nodes_and_edges_bulk, module.Edge.delete_by_uuids,
+        module.Node.delete_by_uuids and driver.execute_query; return a function that undoes all five."""
         original_mentioned = module.get_mentioned_nodes
         original_bulk = module.add_nodes_and_edges_bulk
         original_execute = driver.execute_query
         had_own = "execute_query" in vars(driver)
+        deletes = [(cls, label, vars(cls)["delete_by_uuids"], cls.delete_by_uuids)
+                   for cls, label in ((module.Edge, "edge"), (module.Node, "node"))]
 
         async def get_mentioned_nodes(*args, **kwargs):
             nodes = await original_mentioned(*args, **kwargs)
             self.expected = len(nodes)
             self.note(f"remove found {len(nodes)} mentioned entities")
-            self._maybe_open()
+            await self._after_count(self._maybe_open())
             return nodes
 
         async def execute_query(cypher, /, *args, **kwargs):
@@ -112,24 +152,37 @@ class HeldWrite:
             result = await original_execute(cypher, *args, **kwargs)
             if COUNT_MARK in str(cypher):
                 self.seen += 1
-                self._maybe_open()
+                await self._after_count(self._maybe_open())
             return result
 
         async def add_nodes_and_edges_bulk(*args, **kwargs):
             self.note("bulk write reached the hold")
-            try:
-                await asyncio.wait_for(self.counted.wait(), self.timeout_s)
-            except asyncio.TimeoutError:
-                self.timed_out = True
-                self.note("hold timed out")
+            if self.mode != "observe":
+                await self._wait(self.counted, "write")
             self.note("bulk write starts")
-            result = await original_bulk(*args, **kwargs)
+            try:
+                result = await original_bulk(*args, **kwargs)
+            except BaseException:
+                self.note("bulk write raised")
+                raise
+            finally:
+                self.written.set()
             self.note("bulk write returned")
             return result
+
+        def timed_delete(label, bound):
+            async def delete_by_uuids(*args, **kwargs):
+                self.note(f"{label} delete starts")
+                result = await bound(*args, **kwargs)
+                self.note(f"{label} delete returned")
+                return result
+            return delete_by_uuids
 
         module.get_mentioned_nodes = get_mentioned_nodes
         module.add_nodes_and_edges_bulk = add_nodes_and_edges_bulk
         driver.execute_query = execute_query
+        for cls, label, _, bound in deletes:
+            cls.delete_by_uuids = staticmethod(timed_delete(label, bound))
 
         def undo():
             module.get_mentioned_nodes = original_mentioned
@@ -138,8 +191,20 @@ class HeldWrite:
                 driver.execute_query = original_execute
             else:
                 del driver.execute_query  # the class's method shows through again
+            for cls, _, descriptor, _ in deletes:
+                setattr(cls, "delete_by_uuids", descriptor)
 
         return undo
+
+    def first_delete(self) -> float | None:
+        starts = [ms for name, ms in self.events if name.endswith("delete starts")]
+        return min(starts) if starts else None
+
+    def pinned_order(self) -> bool:
+        """count done <= write starts, and write returned <= the first delete starts."""
+        done, start, wrote, delete = (self.at("count done"), self.at("bulk write starts"),
+                                      self.at("bulk write returned"), self.first_delete())
+        return None not in (done, start, wrote, delete) and done <= start and wrote <= delete
 
     def summary(self) -> str:
         reached, started, done = self.at("bulk write reached the hold"), self.at("bulk write starts"), self.at("count done")
@@ -148,9 +213,16 @@ class HeldWrite:
             parts.append("bulk write never reached")
         else:
             held = started - reached if started is not None else None
-            parts.append(f"bulk write reached the hold {fmt(reached)}, started {fmt(started)}"
-                         + (f" (held {held:.1f} ms)" if held is not None and done is not None and reached < done
-                            else " (not held: the count had already run)"))
+            waited = (" (no hold in observe mode)" if self.mode == "observe" else
+                      f" (held {held:.1f} ms)" if held is not None and done is not None and reached < done
+                      else " (not held: the count had already run)")
+            parts.append(f"bulk write reached the hold {fmt(reached)}, started {fmt(started)}{waited}, "
+                         f"returned {fmt(self.at('bulk write returned'))}")
+        parts.append(f"first delete starts {fmt(self.first_delete())}")
+        if self.mode == "pinned":
+            parts.append(f"remove waited {fmt(self.at('remove waits for the write'))} to "
+                         f"{fmt(self.at('remove resumes'))}")
+        parts.append("order count -> write -> delete " + ("yes" if self.pinned_order() else "NO"))
         if self.timed_out:
             parts.append("HOLD TIMED OUT")
         return "; ".join(parts)
@@ -370,53 +442,48 @@ async def run(backend: str, variant: str, iterations: int) -> int:
           f"graphiti-core {dist.version} from {source}")
     kit = build(backend)
     graphiti = kit["graphiti"]
-    if variant == "held":
-        HeldWrite().install(kit["module"], graphiti.driver)()  # fails here if a hook target is missing
+    mode = VARIANT_MODES[variant]
+    HeldWrite(mode=mode).install(kit["module"], graphiti.driver)()  # fails here if a hook target is missing
     try:
         g8e = await kit["reset_and_seed"]()
         ops = [await outcome(graphiti.remove_episode(g8e)), await outcome(kit["add"]("G8N"))]
         if not report("sequential control (remove, then add)", ops, await kit["observe"]()):
             print("the sequential control did not reach the expected state; the concurrent result means nothing")
             return 2
-        differing = held_count = timeouts = 0
+        differing = held_count = timeouts = ordered = 0
         for i in range(1, iterations + 1):
             g8e = await kit["reset_and_seed"]()
-            hold = HeldWrite() if variant == "held" else None
-            undo = hold.install(kit["module"], graphiti.driver) if hold else None
+            hold = HeldWrite(mode=mode)
+            undo = hold.install(kit["module"], graphiti.driver)
             barrier = asyncio.Barrier(3)
 
             async def released(name, make_call):
                 await barrier.wait()
-                if hold:
-                    hold.note(f"{name} released")
+                hold.note(f"{name} released")
                 result = await outcome(make_call())
-                if hold:
-                    hold.note(f"{name} returned")
+                hold.note(f"{name} returned")
                 return result
 
             try:
-                if hold:
-                    hold.start()  # times are ms from here, just before the two calls are released
+                hold.start()  # times are ms from here, just before the two calls are released
                 tasks = [asyncio.create_task(released("remove", lambda: graphiti.remove_episode(g8e))),
                          asyncio.create_task(released("add", lambda: kit["add"]("G8N")))]
                 await barrier.wait()
                 ops = list(await asyncio.gather(*tasks))
             finally:
-                if undo:
-                    undo()
+                undo()
             same = report(f"concurrent {i:02d}", ops, await kit["observe"]())
             differing += not same
-            if hold:
-                print(f"    hold: {hold.summary()}")
-                print("    order: " + ", ".join(f"{label} {ms:.1f}" for label, ms in hold.events))
-                reached, done = hold.at("bulk write reached the hold"), hold.at("count done")
-                held_count += reached is not None and done is not None and reached < done
-                timeouts += hold.timed_out
+            print(f"    hold: {hold.summary()}")
+            print("    order: " + ", ".join(f"{label} {ms:.1f}" for label, ms in hold.events))
+            reached, done = hold.at("bulk write reached the hold"), hold.at("count done")
+            held_count += reached is not None and done is not None and reached < done
+            ordered += hold.pinned_order()
+            timeouts += hold.timed_out
         line = (f"{backend} {variant}: sequential control as expected; concurrent: {differing} of {iterations} "
                 "iterations differed from the expected state")
-        if variant == "held":
-            line += (f"; the bulk write reached the hold before the count had run in {held_count} of {iterations}"
-                     f"; hold timeouts {timeouts}")
+        line += (f"; the bulk write reached the hold before the count had run in {held_count} of {iterations}"
+                 f"; order count -> write -> delete in {ordered} of {iterations}; hold timeouts {timeouts}")
         print(line)
         if timeouts:
             return 3
@@ -429,8 +496,9 @@ def main(argv: list[str]) -> int:
     backend = argv[1] if len(argv) > 1 else "neo4j"
     variant = argv[2] if len(argv) > 2 else "gather"
     iterations = int(argv[3]) if len(argv) > 3 else 20
-    if backend not in ("neo4j", "falkordb") or variant not in ("gather", "held"):
-        print("usage: python repro_g8_held_write.py [neo4j|falkordb] [gather|held] [iterations]", file=sys.stderr)
+    if backend not in ("neo4j", "falkordb") or variant not in VARIANT_MODES:
+        print("usage: python repro_g8_held_write.py [neo4j|falkordb] [gather|held|pinned] [iterations]",
+              file=sys.stderr)
         return 64
     return asyncio.run(run(backend, variant, iterations))
 

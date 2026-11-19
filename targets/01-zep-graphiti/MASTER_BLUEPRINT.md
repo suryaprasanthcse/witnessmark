@@ -666,6 +666,41 @@ Command counts follow master §12.1's counting rule: every command the driver lo
       | 8 | Neo4j | pinned | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py neo4j pinned 20` |
 
     - **Recording.** Counts as [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, <backend>, pinned, k of 20], with the sequential control, the number of iterations that ran count → write → delete, and each iteration's order. They are recorded and not chased.
+  - **Commands 7 and 8, `pinned`: results (2026-11-19).** Each ran once, at `73dc7ef`, on the same baselines and build. Both exited 1. The sequential control was as expected, both calls were acknowledged in every iteration, and no hold timed out.
+
+    | # | Backend | Concurrent iterations that differed | What differed | Ran count → write → delete | Write reached the hold before the count | Remove waited for the write |
+    |---|---|---|---|---|---|---|
+    | 7 | FalkorDB, bound | **20 of 20** [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, falkordb, pinned, 20 of 20] | Payments and "Alice audited Payments" missing in all 20; G8N present; nothing unexpected | 20 of 20 | 0 of 20 | 20 of 20, 24.1 to 50.5 ms |
+    | 8 | Neo4j | **20 of 20** [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, neo4j, pinned, 20 of 20] | the same two items in all 20 | 20 of 20 | 8 of 20 | 20 of 20, 27.7 to 65.2 ms |
+
+    **Per-iteration order** [measured: commands 7 and 8, the repro's timeline]. Milliseconds from just before the release; "count" is when the last `MENTIONS` count returned. In every row the write started at or after the count and returned before the remove resumed, and the first delete started after that.
+
+    | k | FalkorDB: count | write starts | write returned | remove resumes | edge delete starts | node delete starts | node delete returned | remove returned | Neo4j: count | write starts | write returned | remove resumes | edge delete starts | node delete starts | node delete returned | remove returned |
+    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+    | 1 | 147.1 | 179.0 | 197.5 | 197.6 | 205.7 | 207.2 | 211.7 | 239.0 | 42.4 | 42.8 | 71.1 | 71.2 | 89.6 | 100.0 | 114.6 | 156.0 |
+    | 2 | 60.5 | 78.1 | 90.9 | 91.0 | 100.7 | 103.0 | 108.9 | 131.1 | 53.3 | 54.0 | 84.7 | 84.8 | 102.0 | 113.5 | 127.3 | 169.7 |
+    | 3 | 62.3 | 77.6 | 93.6 | 93.8 | 101.2 | 102.6 | 107.2 | 129.0 | 47.8 | 48.6 | 81.2 | 81.3 | 99.7 | 113.1 | 137.1 | 183.5 |
+    | 4 | 44.6 | 63.9 | 76.1 | 76.2 | 84.8 | 86.0 | 91.0 | 110.1 | 41.9 | 42.6 | 73.6 | 73.7 | 91.6 | 105.2 | 118.2 | 161.2 |
+    | 5 | 48.3 | 70.7 | 81.9 | 82.0 | 90.0 | 91.7 | 95.9 | 114.3 | 45.5 | 45.5 | 74.5 | 74.6 | 96.0 | 139.0 | 152.6 | 197.8 |
+    | 6 | 53.5 | 72.0 | 83.7 | 83.8 | 90.7 | 92.0 | 95.6 | 115.5 | 50.0 | 50.0 | 88.2 | 88.3 | 107.2 | 118.4 | 131.6 | 168.9 |
+    | 7 | 47.1 | 62.3 | 71.2 | 71.3 | 78.6 | 80.6 | 84.2 | 100.6 | 42.3 | 42.9 | 73.5 | 73.5 | 91.9 | 104.0 | 117.7 | 174.2 |
+    | 8 | 44.1 | 63.6 | 72.6 | 72.7 | 79.9 | 81.1 | 85.5 | 103.9 | 67.8 | 67.8 | 125.0 | 125.1 | 145.3 | 161.3 | 177.9 | 224.0 |
+    | 9 | 45.7 | 64.5 | 77.8 | 77.9 | 85.8 | 87.7 | 92.2 | 109.5 | 42.4 | 42.4 | 70.2 | 70.3 | 87.2 | 98.6 | 110.9 | 156.4 |
+    | 10 | 49.3 | 68.3 | 80.2 | 80.4 | 86.5 | 87.6 | 90.5 | 105.7 | 63.1 | 63.1 | 95.5 | 95.6 | 115.5 | 129.1 | 150.8 | 195.8 |
+    | 11 | 53.8 | 73.6 | 86.1 | 86.2 | 92.8 | 93.9 | 96.5 | 112.0 | 51.7 | 52.5 | 116.9 | 116.9 | 166.4 | 178.6 | 221.8 | 265.3 |
+    | 12 | 50.9 | 66.2 | 76.3 | 76.4 | 83.2 | 84.8 | 88.9 | 105.5 | 39.0 | 40.4 | 66.6 | 66.7 | 83.7 | 96.6 | 108.6 | 146.4 |
+    | 13 | 47.5 | 61.3 | 72.9 | 73.1 | 81.6 | 82.9 | 88.2 | 104.6 | 42.1 | 42.6 | 72.6 | 72.7 | 89.3 | 101.3 | 116.3 | 159.8 |
+    | 14 | 41.9 | 57.8 | 66.7 | 66.8 | 72.9 | 74.3 | 78.1 | 92.1 | 50.9 | 51.0 | 83.8 | 83.9 | 104.3 | 116.6 | 130.7 | 174.4 |
+    | 15 | 41.7 | 56.6 | 65.7 | 65.8 | 71.8 | 73.2 | 77.1 | 91.4 | 40.8 | 42.2 | 69.6 | 69.6 | 88.9 | 101.3 | 114.2 | 154.9 |
+    | 16 | 45.3 | 65.7 | 79.5 | 79.7 | 88.6 | 90.2 | 94.2 | 118.4 | 52.2 | 52.3 | 81.0 | 81.1 | 101.3 | 115.9 | 130.0 | 172.5 |
+    | 17 | 47.0 | 62.5 | 74.1 | 74.2 | 80.0 | 80.9 | 84.8 | 107.0 | 52.2 | 52.2 | 91.7 | 91.8 | 122.8 | 137.4 | 156.6 | 212.6 |
+    | 18 | 39.4 | 59.2 | 70.2 | 70.2 | 77.1 | 78.3 | 81.4 | 99.7 | 51.1 | 53.3 | 88.0 | 88.1 | 109.5 | 121.8 | 137.1 | 217.1 |
+    | 19 | 46.1 | 63.4 | 72.1 | 72.2 | 78.7 | 80.4 | 85.3 | 102.7 | 53.4 | 55.6 | 113.6 | 113.6 | 148.9 | 160.5 | 174.4 | 229.2 |
+    | 20 | 40.8 | 60.3 | 71.1 | 71.2 | 78.2 | 79.5 | 82.9 | 100.1 | 48.5 | 50.4 | 79.4 | 79.5 | 98.4 | 111.4 | 129.7 | 180.4 |
+
+    - **What happened.** With the order forced, the outcome no longer depends on the backend. G8N's own fact "Alice audited Payments" and the entity Payments were gone in 20 of 20 iterations on FalkorDB as on Neo4j, while G8N itself survived. That fits the "Likely mechanism" above [inference from the forced order and the code]: the count saw Payments mentioned only by G8E, the add then attached G8N's mention and fact to Payments, and the delete removed Payments with them. The loss under this order is now measured on FalkorDB too.
+    - **Reading, corrected.** The 0 of 20 on FalkorDB in commands 1 and 5 does not mean FalkorDB avoids the loss. In those runs nothing forced the delete to wait for the write; a likely reason they kept everything is that the deletes ran before the add's write [inference: command 7 loses whenever the write lands between the count and the delete, and command 5's write returned before `remove_episode` returned without the deletes being timed]. Commands 1 to 6 remain the counts for unforced concurrency. G8-F1 stays OBSERVED, support level none, now on both backends when the interleaving occurs.
+    - **No Neo4j retries.** Neither pinned run logged a `DeadlockDetected` retry.
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
 
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j

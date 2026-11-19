@@ -1380,6 +1380,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
     The details are in the Graphiti blueprint, §12.5. A reply to #2159 is drafted under §11.1 and not sent.
   - **Amendment 2 (2026-11-19, before the pinned code or runs).** `held` only ordered the write after the count; it never made the delete wait, so it does not force the count → write → delete interleaving asked on #2159. The G8 run adds a `pinned` variant that forces it from both sides: the add's bulk write waits for `remove_episode`'s last count, and `remove_episode` waits after that count until the write has returned. Deletes are timestamped in every variant.
   - **Declared (2026-11-19).** Commands 7 (FalkorDB 6.0.4) and 8 (Neo4j 5.26.2), `pinned`, 20 iterations each, on main `4ef979c7` with the repro at `73dc7ef`. The details are in the Graphiti blueprint, §12.5.
+  - **Status, pinned (2026-11-19).** Both ran once (`b3e1bd1` declared them). Every iteration ran count → write → delete, and the sequential control was as expected. G8N's fact and Payments were lost in 20 of 20 on FalkorDB and 20 of 20 on Neo4j [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, commands 7 and 8]. So FalkorDB's 0 of 20 in the unforced runs came from the order those runs happened to take, not from FalkorDB avoiding the loss. The per-iteration order is in the Graphiti blueprint, §12.5. The #2159 draft leads with these counts and is not sent.
 - [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
 
 #### Rules for all phases

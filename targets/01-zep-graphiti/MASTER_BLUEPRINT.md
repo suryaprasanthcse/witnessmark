@@ -650,6 +650,22 @@ Command counts follow master §12.1's counting rule: every command the driver lo
     - **Where the add's write landed** [measured: commands 5 and 6, the repro's per-iteration timeline]. In every held iteration on both backends, the bulk write started after `remove_episode`'s last count and returned before `remove_episode` returned. It started 17.4 to 43.2 ms after the count on FalkorDB and 0.5 to 10.3 ms after it on Neo4j. On FalkorDB the add had not reached its write by the time the count finished in any iteration, so the hold never had to wait. The repro does not timestamp `remove_episode`'s deletes, so whether each write landed before or after them is not measured.
     - **Neo4j console output.** The driver logged `Neo.TransientError.Transaction.DeadlockDetected` and retried 14 times in command 3 and 4 times in command 6, with none on FalkorDB [measured: commands 1, 3, 5 and 6, console output]. Recorded, not explained.
     - **Reading.** The full add path, `add_episode` through its bulk write, reproduces G8-F1 on Neo4j on current main, with or without the hold. On FalkorDB neither variant lost anything in these 40 iterations. That is a measured count on this fixture and this host, not a guarantee: why FalkorDB kept everything is still not established (see "Likely mechanism" above), and the deletes' order relative to the write is not known. The classification stays OBSERVED, support level none.
+  - **Why `held` is not the interleaving asked on #2159** (recorded 2026-11-19, master §12.2 amendment 2). `held` orders the write after the count, but nothing makes `remove_episode`'s deletes wait for the write. In command 5 the hold never waited, and the deletes were not timestamped. So commands 5 and 6 do not test count → write → delete.
+  - **Declaration of commands 7 and 8, `pinned` (2026-11-19, committed before either ran).**
+    - **Repro.** `repros/repro_g8_held_write.py` at `73dc7ef`, with its tests in `core/tests/test_m6_g8_hold.py` (17, with fakes). Variant `pinned` forces the order from both sides:
+      - the add's bulk write waits until `remove_episode`'s last `MENTIONS` count has returned, as in `held`;
+      - `remove_episode`, inside the wrapper of that last count, waits until the bulk write has returned before it goes on to its saves (L2556–2558) and its deletes (L2560–2562).
+
+      Each wait has the 60 s timeout, notes "hold timed out" and goes on. `Edge.delete_by_uuids` and `Node.delete_by_uuids`, called only by `remove_episode`, are timestamped from this commit in every variant. Each iteration prints its order (count done, write start, write returned, the delete starts and returns) and whether it ran count → write → delete. The build, venv, fixture and baselines are as for commands 1 to 6.
+    - **Before this declaration.** One smoke check per backend of `pinned` with 0 iterations: the sequential control only, plus installing and removing all five wrappers on the real package (`.state/scratch/m6-g8/smoke-<backend>-pinned-0.txt`, both exit 0, control as expected).
+    - **Commands.** Each runs once, in this order, with stdout and stderr to `.state/scratch/m6-g8/cmd7-falkordb-pinned.txt` and `cmd8-neo4j-pinned.txt` and the exit status beside them.
+
+      | # | Backend | Variant | Command |
+      |---|---|---|---|
+      | 7 | FalkorDB, bound | pinned | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py falkordb pinned 20` |
+      | 8 | Neo4j | pinned | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py neo4j pinned 20` |
+
+    - **Recording.** Counts as [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, <backend>, pinned, k of 20], with the sequential control, the number of iterations that ran count → write → delete, and each iteration's order. They are recorded and not chased.
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
 
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j

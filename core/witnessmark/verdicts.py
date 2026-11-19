@@ -48,6 +48,37 @@ def verdict(invariant: str, trials: list[dict], sequential_met: bool, expectatio
     return record
 
 
+DECLARED_TRIALS = "declared trials"
+CHECKING_CASES = "cases checking the invariant"
+
+
+def sufficiency(declared: int, valid: int, counted: str) -> dict:
+    """Master §9.7: a verdict on fewer than half of its declared count reads as insufficient valid trials."""
+    return {"declared": declared, "valid": valid, "sufficient": valid * 2 >= declared, "counted": counted}
+
+
+def add_sufficiency(manifest: dict) -> dict:
+    """Add §9.7's `sufficiency` field to every verdict of a manifest about to be written. `status` is kept as computed.
+
+    The count is read from the manifest. A case suite, whose trials carry a `case` id, judges each invariant only in
+    the cases that check it, so its count is those trials (valid or not); every other run counts `scenario.trials`.
+    A manifest without a verdict list (a measurement run, §9.2) is left as it is.
+    """
+    verdicts = manifest.get("verdicts")
+    if not isinstance(verdicts, list):
+        return manifest
+    trials = manifest.get("trials") or []
+    case_suite = any(trial.get("case") for trial in trials)
+    for record in verdicts:
+        if case_suite:
+            declared = sum(1 for trial in trials
+                           if any(check.get("invariant") == record["invariant"] for check in trial.get("checks") or []))
+            record["sufficiency"] = sufficiency(declared, record["trials_valid"], CHECKING_CASES)
+        else:
+            record["sufficiency"] = sufficiency(manifest["scenario"]["trials"], record["trials_valid"], DECLARED_TRIALS)
+    return manifest
+
+
 def role_control(role: str, configuration: str, trials: list[dict]) -> dict:
     valid = [trial for trial in trials if trial["valid"]]
     violating = sum(1 for trial in valid if not trial["checks"][0]["held"])

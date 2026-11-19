@@ -9,6 +9,8 @@ from pathlib import Path
 
 from .verdicts import percentile
 
+INSUFFICIENT = "insufficient valid trials"
+
 
 def load_runs(evidence_root: Path) -> list[dict]:
     runs = []
@@ -47,14 +49,43 @@ def _fmt(value) -> str:
     return str(value)
 
 
+# --- master §9.7: runs written from M6 on carry `sufficiency` on each verdict; earlier runs render as before ----------
+
+
+def carries_sufficiency(runs: list[dict]) -> bool:
+    return any("sufficiency" in record for run in runs for record in run.get("verdicts") or [])
+
+
+def _status_word(verdict: dict) -> str:
+    """The verdict word, or "insufficient valid trials" below half the declared count. INVALID stays INVALID."""
+    record = verdict.get("sufficiency")
+    if record and not record.get("sufficient") and verdict["status"] != "INVALID":
+        return INSUFFICIENT
+    return verdict["status"]
+
+
+def _sufficiency_cell(run: dict) -> str:
+    """Valid of declared: one figure when every verdict shares it, else one per invariant; "–" without the field."""
+    records = [(v["invariant"], v["sufficiency"]) for v in run.get("verdicts") or [] if "sufficiency" in v]
+    if not records:
+        return "–"
+    figures = {(record["valid"], record["declared"]) for _, record in records}
+    if len(figures) == 1:
+        valid, declared = figures.pop()
+        return f"{valid} of {declared}"
+    return "; ".join(f"{invariant} {record['valid']} of {record['declared']}" for invariant, record in records)
+
+
 def spreads(runs: list[dict]) -> list[float]:
     return [trial["release_spread_ms"] for run in runs for trial in run.get("trials", []) if trial.get("valid")]
 
 
 def runs_table(runs: list[dict]) -> str:
+    extra = carries_sufficiency(runs)
     lines = [
-        "| Engine | Scenario | Role | Sequential control | Role control | Violating trials | Magnitude (min / median / max) | Release spread p50 / max (ms) | Verdict | Run |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| Engine | Scenario | Role | Sequential control | Role control | Violating trials | Magnitude (min / median / max) | Release spread p50 / max (ms) | "
+        + ("Valid of declared | " if extra else "") + "Verdict | Run |",
+        "|---|---|---|---|---|---|---|---|---|---|" + ("---|" if extra else ""),
     ]
     for run in runs:
         verdict = run["verdicts"][0]
@@ -63,7 +94,7 @@ def runs_table(runs: list[dict]) -> str:
         magnitude = verdict.get("magnitude", {})
         run_spreads = [t["release_spread_ms"] for t in run.get("trials", []) if t.get("valid")]
         lines.append(
-            "| {engine} | {scenario} | {role} | {seq} | {rolec} | {viol} of {valid} | {mmin} / {mmed} / {mmax} {unit} | {p50} / {pmax} | {status} | `{run_id}` |".format(
+            "| {engine} | {scenario} | {role} | {seq} | {rolec} | {viol} of {valid} | {mmin} / {mmed} / {mmax} {unit} | {p50} / {pmax} | {suff}{status} | `{run_id}` |".format(
                 engine=run["components"][0].get("name", run["target"]["name"]),
                 scenario=run["scenario"]["id"],
                 role=run.get("expectation", {}).get("role", "–"),
@@ -77,7 +108,8 @@ def runs_table(runs: list[dict]) -> str:
                 unit=magnitude.get("unit", ""),
                 p50=_fmt(percentile(run_spreads, 50)),
                 pmax=_fmt(max(run_spreads) if run_spreads else None),
-                status=verdict["status"],
+                suff=f"{_sufficiency_cell(run)} | " if extra else "",
+                status=_status_word(verdict),
                 run_id=run["run_id"],
             )
         )
@@ -95,7 +127,7 @@ def _where(run: dict) -> tuple[str, str]:
 
 
 def _verdict_cell(verdict: dict) -> str:
-    cell = f"{verdict['invariant']} {verdict['status']} {verdict['trials_violating']}/{verdict['trials_valid']}"
+    cell = f"{verdict['invariant']} {_status_word(verdict)} {verdict['trials_violating']}/{verdict['trials_valid']}"
     magnitude = verdict.get("magnitude", {})
     if verdict["trials_violating"] and magnitude.get("max") is not None:
         cell += f" (max {_fmt(magnitude['max'])} {magnitude.get('unit', '')})"
@@ -103,14 +135,17 @@ def _verdict_cell(verdict: dict) -> str:
 
 
 def race_table(runs: list[dict]) -> str:
-    lines = ["| Build | Backend | Scenario | Sequential control | Overlap control | Verdicts | Run |",
-             "|---|---|---|---|---|---|---|"]
+    extra = carries_sufficiency(runs)
+    lines = ["| Build | Backend | Scenario | Sequential control | Overlap control | "
+             + ("Valid of declared | " if extra else "") + "Verdicts | Run |",
+             "|---|---|---|---|---|---|---|" + ("---|" if extra else "")]
     for run in runs:
         build, backend = _where(run)
         sequential = _control(run, "sequential") or {}
         overlap = _control(run, "overlap") or {}
+        suff = f"{_sufficiency_cell(run)} | " if extra else ""
         lines.append(f"| {build} | {backend} | {run['scenario']['id']} | {'met' if sequential.get('met') else 'NOT met'} "
-                     f"| {overlap.get('observed', '–')} | {'; '.join(_verdict_cell(v) for v in run['verdicts'])} "
+                     f"| {overlap.get('observed', '–')} | {suff}{'; '.join(_verdict_cell(v) for v in run['verdicts'])} "
                      f"| `{run['run_id']}` |")
     return "\n".join(lines)
 
@@ -461,12 +496,14 @@ def _engine_where(run: dict) -> tuple[str, str, str]:
 
 
 def thread_race_table(runs: list[dict]) -> str:
+    extra = carries_sufficiency(runs)
     lines = ["| Engine | Build | Storage | Scenario | Role | Clients | Gate (ms) | Sequential control | Role control | "
              "Valid trials | Violating trials | Outcomes ok / fail / unknown (valid trials) | "
-             "Release spread p50 / max (ms) | Verdict | Run |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "Release spread p50 / max (ms) | " + ("Valid of declared | " if extra else "") + "Verdict | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|" + ("---|" if extra else "")]
     for run in runs:
         engine, build, storage = _engine_where(run)
+        suff = f"{_sufficiency_cell(run)} | " if extra else ""
         verdict = run["verdicts"][0]
         sequential = _control(run, "sequential") or {}
         role = _role_control(run) or {}
@@ -481,7 +518,7 @@ def thread_race_table(runs: list[dict]) -> str:
                      f"{'met' if role.get('met') else 'NOT met'} | {len(valid)} of {len(trials)} | "
                      f"{verdict['trials_violating']} of {verdict['trials_valid']} | "
                      f"{' / '.join(str(v) for v in totals)} | {_fmt(percentile(values, 50))} / "
-                     f"{_fmt(max(values) if values else None)} | {verdict['status']} | `{run['run_id']}` |")
+                     f"{_fmt(max(values) if values else None)} | {suff}{_status_word(verdict)} | `{run['run_id']}` |")
     return "\n".join(lines)
 
 
@@ -730,11 +767,14 @@ def g6_uc_table(runs: list[dict]) -> str | None:
 
 def g7_table(runs: list[dict]) -> str:
     """G7: what survived each container action, with the persistence settings the server reported."""
+    extra = carries_sufficiency(runs)
     lines = ["| Variant | Action | Sequential control | Valid trials | Trials with loss | Items lost per trial "
              "(episodes / entities / facts, largest) | appendonly / appendfsync / save | Graph module arguments | "
-             "Volume at | Verdict | Run |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+             "Volume at | " + ("Valid of declared | " if extra else "") + "Verdict | Run |",
+             "|---|---|---|---|---|---|---|---|---|---|---|" + ("---|" if extra else "")]
     for run in runs:
         params = run["scenario"]["params"]
+        suff = f"{_sufficiency_cell(run)} | " if extra else ""
         trials = run.get("trials", [])
         valid = [t for t in trials if t.get("valid")]
         lost = [t["g7"]["lost"]["lost"] for t in valid]
@@ -747,7 +787,7 @@ def g7_table(runs: list[dict]) -> str:
                      f"{len(valid)} of {len(trials)} | {sum(1 for t in valid if t['g7']['lost']['lost_total'])} of "
                      f"{len(valid)} | {largest} | {settings.get('appendonly', '?')} / "
                      f"{settings.get('appendfsync', '?')} / {settings.get('save', '?')} | "
-                     f"{' '.join(module) if module else 'none'} | {params['volume_mount']} | "
+                     f"{' '.join(module) if module else 'none'} | {params['volume_mount']} | {suff}"
                      f"{'; '.join(_verdict_cell(v) for v in run['verdicts'])} | `{run['run_id']}` |")
     return "\n".join(lines)
 

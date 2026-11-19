@@ -23,7 +23,7 @@ from .evidence import RunDir, crash_note, digest, make_run_id
 from .history import FAIL, OK, UNKNOWN, Op
 from .scenarios import EXPECTATIONS, Expectation, Scenario, client_name
 from .timing import iso, stamp, utc_now
-from .verdicts import role_control, verdict
+from .verdicts import add_sufficiency, role_control, verdict
 
 UNKNOWN_LIMIT = 0.05  # at most 5% of a trial's operations may have an unknown outcome (section 6.3)
 # δ for thread mode: 1.5 × the p99 release spread of the M1 calibration (section 6.3,
@@ -317,6 +317,7 @@ def _run_body(config: RunConfig, expectation: Expectation, header: dict, run_id:
         "trials": trials,
         "verdicts": [verdict(scenario.invariant, trials, sequential_met, expectation, unit)],
     }
+    add_sufficiency(manifest)
     run_dir.write_history(history)
     run_dir.write_manifest(manifest)
     run_dir.write_repro(_repro(config, run_id, component, harness))

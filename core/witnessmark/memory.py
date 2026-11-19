@@ -29,7 +29,7 @@ from .evidence import RunDir, crash_note, digest, make_run_id
 from .history import FAIL, OK, UNKNOWN, Op
 from .stubs import CURRENT_OP
 from .timing import Stamp, iso, stamp, utc_now
-from .verdicts import summarize
+from .verdicts import add_sufficiency, summarize
 
 MODES = ("asyncio", "queue", "process")
 
@@ -358,6 +358,7 @@ def _note_crash(scope: dict) -> None:
 
 def _finish(config: MemoryRunConfig, run_dir: RunDir, manifest: dict, history: list[Op]) -> dict:
     manifest["finished_at"] = iso(utc_now())
+    add_sufficiency(manifest)
     run_dir.write_history(history)
     run_dir.write_manifest(manifest)
     run_dir.write_repro(

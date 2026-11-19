@@ -107,9 +107,10 @@ class HeldWrite:
             self._maybe_open()
             return nodes
 
-        async def execute_query(query, *args, **kwargs):
-            result = await original_execute(query, *args, **kwargs)
-            if COUNT_MARK in str(query):
+        async def execute_query(cypher, /, *args, **kwargs):
+            # Positional-only: graphiti-core passes Cypher parameters as keywords, one of them named `query`.
+            result = await original_execute(cypher, *args, **kwargs)
+            if COUNT_MARK in str(cypher):
                 self.seen += 1
                 self._maybe_open()
             return result

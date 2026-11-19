@@ -23,12 +23,14 @@ COUNT = "MATCH (e:Episodic)-[:MENTIONS]->(n:Entity {uuid: $uuid}) RETURN count(*
 
 
 class FakeDriver:
+    """graphiti-core's drivers take `execute_query(self, cypher_query_, **kwargs)`; the kwargs are Cypher parameters."""
+
     def __init__(self, log):
         self.log = log
 
-    async def execute_query(self, query, **kwargs):
+    async def execute_query(self, cypher_query_, **kwargs):
         await asyncio.sleep(0)
-        self.log.append(("query", query))
+        self.log.append(("query", cypher_query_))
         return [], None, None
 
 
@@ -134,6 +136,24 @@ class HoldTest(unittest.TestCase):
         self.assertEqual(result, "written")
         self.assertTrue(hold.timed_out)
         self.assertIn("HOLD TIMED OUT", hold.summary())
+
+    def test_cypher_parameters_named_query_pass_through(self):
+        """The bug behind M6 G8 commands 2 and 4: the wrapper took a parameter named `query`, and graphiti-core's
+        search passes a Cypher parameter `query=`, so every held add raised TypeError before its write."""
+        async def scenario():
+            log = []
+            module, driver = fake_module(log, mentioned=1), FakeDriver(log)
+            hold = repro.HeldWrite(timeout_s=5)
+            hold.install(module, driver)
+            await module.get_mentioned_nodes(driver, [])
+            await driver.execute_query("CALL db.index.fulltext.queryRelationships('x', $query)", query="Alice",
+                                       limit=10, routing_="r")
+            await driver.execute_query(COUNT, uuid="u", query="also a parameter")
+            return log, hold.counted.is_set()
+
+        log, opened = asyncio.run(scenario())
+        self.assertTrue(opened)
+        self.assertEqual(len(log), 2)
 
     def test_undo_restores_the_originals(self):
         log = []

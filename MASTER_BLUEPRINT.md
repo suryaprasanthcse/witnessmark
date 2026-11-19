@@ -1370,9 +1370,14 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 #### Phase D — Triggered follow-ups (each needs its own go-ahead and its own declared run)
 
 - [ ] **Omnigraph O2a with #1426** (promise on ModernRelay/omnigraph#1424). Trigger: the first numbered Omnigraph release after v0.15.0 that contains #1426 (merge `4570bac7`). Edge builds do not count. The 50-client O2a race and its controls, as in M5, on that release.
-- [ ] **Graphiti G8 on current main.** Trigger: getzep/graphiti#2159 asks for it. The P5 repro (`repros/repro_g8_remove_vs_add.py`) at the main commit of that day, as a new declared run.
+- [x] **Graphiti G8 on current main.** Trigger: getzep/graphiti#2159 asks for it. The P5 repro (`repros/repro_g8_remove_vs_add.py`) at the main commit of that day, as a new declared run.
   - **Amendment (2026-11-19, before anything ran).** The trigger fired on #2159, which asked for a check on the full add path. The G8 run adds an interleaving variant: the add's bulk write is held until `remove_episode`'s count has run, beside the plain concurrent case.
   - **Declared (2026-11-19).** Four commands, plain and held on FalkorDB 6.0.4 and Neo4j 5.26.2, 20 iterations each, on main `4ef979c7` with `repros/repro_g8_held_write.py` at `0ea7470`. The commands and the recording rule are in the Graphiti blueprint, §12.5.
+  - **Status (2026-11-19).** Ran. Six declared commands, each once: 1 and 3 (plain) and 2 and 4 (held) at `0ea7470`, and 5 and 6 (held again) at `6efae63`. Commands 2 and 4 hit a harness bug in the hold's wrapper: every held add raised `TypeError` before its write, so they are not results. The fix and its test are in `6efae63`, and commands 5 and 6 were declared in `b04f678` before they ran. Results, with the sequential control as expected in all six:
+    - plain: Neo4j 19 of 20 iterations lost G8N's fact and Payments, and FalkorDB 0 of 20 [measured: repro_g8_held_write.py at `0ea7470`, main-4ef979c7, commands 3 and 1];
+    - held: Neo4j 20 of 20 and FalkorDB 0 of 20 [measured: repro_g8_held_write.py at `6efae63`, main-4ef979c7, commands 6 and 5].
+
+    The details are in the Graphiti blueprint, §12.5. A reply to #2159 is drafted under §11.1 and not sent.
 - [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
 
 #### Rules for all phases

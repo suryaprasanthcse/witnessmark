@@ -634,6 +634,22 @@ Command counts follow master §12.1's counting rule: every command the driver lo
       |---|---|---|---|
       | 5 | FalkorDB, bound | held | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py falkordb held 20` |
       | 6 | Neo4j | held | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py neo4j held 20` |
+
+  - **M6 run on main `4ef979c7`: results (2026-11-19).** All six declared commands ran once each, in order, on the pinned FalkorDB 6.0.4 and Neo4j 5.26.2 from `baselines/docker-compose.yml`, with graphiti-core installed from git at `4ef979c7` (the repro prints the commit it found). Commands 1 to 4 ran at `0ea7470`, and 5 and 6 at `6efae63`. Both calls were acknowledged in every iteration of commands 1, 3, 5 and 6.
+
+    | # | Backend | Variant | Sequential control | Concurrent iterations that differed | What differed | Bulk write reached the hold before the count had run | Exit |
+    |---|---|---|---|---|---|---|---|
+    | 1 | FalkorDB, bound | gather | as expected | 0 of 20 [measured: repro_g8_held_write.py at `0ea7470`, main-4ef979c7, falkordb, gather, 0 of 20] | – | – | 0 |
+    | 2 | FalkorDB, bound | held | as expected | not a result: harness bug, the add raised `TypeError` in all 20 | – | – | 1 |
+    | 3 | Neo4j | gather | as expected | 19 of 20 [measured: repro_g8_held_write.py at `0ea7470`, main-4ef979c7, neo4j, gather, 19 of 20] | Payments and "Alice audited Payments" missing in all 19; nothing unexpected present | – | 1 |
+    | 4 | Neo4j | held | as expected | not a result: the same harness bug | – | – | 1 |
+    | 5 | FalkorDB, bound | held | as expected | 0 of 20 [measured: repro_g8_held_write.py at `6efae63`, main-4ef979c7, falkordb, held, 0 of 20] | – | 0 of 20: the count had always run first | 0 |
+    | 6 | Neo4j | held | as expected | 20 of 20 [measured: repro_g8_held_write.py at `6efae63`, main-4ef979c7, neo4j, held, 20 of 20] | the same two items in all 20; nothing unexpected present | 2 of 20 (held 2.4 and 94.5 ms) | 1 |
+
+    - **What happened.** On main `4ef979c7`, plain concurrency gave the same picture as P5 on `ebef986a`. On Neo4j, G8N survived but its own fact "Alice audited Payments" and the entity Payments did not, in 19 of 20 iterations; iteration 8 kept everything. On FalkorDB, with the driver bound to the group's graph, all 20 ended in the expected state. With the add's bulk write held until `remove_episode`'s count had run, Neo4j lost the same two items in 20 of 20, and FalkorDB lost nothing in 20 of 20.
+    - **Where the add's write landed** [measured: commands 5 and 6, the repro's per-iteration timeline]. In every held iteration on both backends, the bulk write started after `remove_episode`'s last count and returned before `remove_episode` returned. It started 17.4 to 43.2 ms after the count on FalkorDB and 0.5 to 10.3 ms after it on Neo4j. On FalkorDB the add had not reached its write by the time the count finished in any iteration, so the hold never had to wait. The repro does not timestamp `remove_episode`'s deletes, so whether each write landed before or after them is not measured.
+    - **Neo4j console output.** The driver logged `Neo.TransientError.Transaction.DeadlockDetected` and retried 14 times in command 3 and 4 times in command 6, with none on FalkorDB [measured: commands 1, 3, 5 and 6, console output]. Recorded, not explained.
+    - **Reading.** The full add path, `add_episode` through its bulk write, reproduces G8-F1 on Neo4j on current main, with or without the hold. On FalkorDB neither variant lost anything in these 40 iterations. That is a measured count on this fixture and this host, not a guarantee: why FalkorDB kept everything is still not established (see "Likely mechanism" above), and the deletes' order relative to the write is not known. The classification stays OBSERVED, support level none.
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
 
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j

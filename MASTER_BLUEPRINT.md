@@ -788,7 +788,17 @@ evidence/<target>/<scenario>/<run_id>/
         "basis": { "enum": ["documented", "standard", "baseline", "issue", "inferred"] },
         "basis_ref": { "type": "string", "description": "link or path@commit" },
         "witnesses": { "type": "array", "items": { "type": "string" }, "description": "op_ids in history.jsonl" },
-        "note": { "type": "string" }
+        "note": { "type": "string" },
+        "sufficiency": {
+          "type": "object",
+          "description": "section 9.7; written from M6 on, absent from earlier manifests",
+          "required": ["declared", "valid", "sufficient", "counted"],
+          "properties": {
+            "declared": { "type": "integer" }, "valid": { "type": "integer" },
+            "sufficient": { "type": "boolean", "description": "valid × 2 >= declared" },
+            "counted": { "enum": ["declared trials", "cases checking the invariant"] }
+          }
+        }
       }
     }
   }
@@ -895,6 +905,7 @@ Adopted 2026-11-16 (maintainer ruling at M5 Phase E).
 
 - **Rule.** A verdict computed on fewer than half of the run's declared trials (`trials_valid` × 2 < `scenario.trials`) is read as **insufficient valid trials**. It is not quoted as PASS or FAIL, nor as BOUNDARY for a violation, whatever the manifest says. The Results text names the cause, for example "1 of 20 valid; the other 19 hit the Ladybug lock".
 - **Evidence and reports stay as written.** The verdict code is not changed in M5, because a change would alter committed reports. Enforcing the rule in code, with a report column, is an M6 candidate (§12.1, Phase E).
+- **In code from M6 (`8a4332e`, §12.2 Phase B).** Both manifest writers (`memory._finish` and the core runner) keep `status` as computed and add `sufficiency` to each verdict (§9.2). A run counts `scenario.trials`; a case suite, whose trials carry a `case` id, counts the trials that check the invariant. Reports add a "Valid of declared" column and print "insufficient valid trials" in place of the verdict word below half, except that INVALID stays INVALID; both appear only when a run in the table carries the field. Manifests written before M6 have no field and render as before.
 - **Cells it touches in M3 to M5.** Checked over every committed manifest with a verdict list. Three cells were quoted with a verdict, and their text is corrected:
   - Cognee M3 R2 `c1.k4`: 2 of 20 valid. The other 18 raised `AfterRunHookError` [measured: `20261114T133423Z-70f45910`].
   - Cognee M3 R2 `c1.disjoint.k4`: 5 of 20 valid, the rest `AfterRunHookError` [measured: `20261114T212346Z-a6f1985e`].
@@ -1283,22 +1294,28 @@ These stay listed in §12.1 as candidates.
 
 The rule: a verdict computed on fewer than half the run's declared trials (`trials_valid` × 2 < `scenario.trials`) is read as **insufficient valid trials**.
 
-- [ ] **Where it applies.** Verdicts are computed at run time and stored in each manifest (`core/witnessmark/verdicts.py` `verdict`, `core/witnessmark/memory.py` `_verdicts`). Reports read the stored verdicts. So the rule applies to runs written from M6 on, and committed manifests stay as written (§9.6).
-- [ ] **What the code does.**
+- [x] **Where it applies.** Verdicts are computed at run time and stored in each manifest (`core/witnessmark/verdicts.py` `verdict`, `core/witnessmark/memory.py` `_verdicts`). Reports read the stored verdicts. So the rule applies to runs written from M6 on, and committed manifests stay as written (§9.6).
+- [x] **What the code does.**
   - It keeps the computed status and adds a field, e.g. `"sufficiency": {"declared": n, "valid": k, "sufficient": bool}`.
   - It does not overwrite `status`. Overwriting would make two meanings of `status` coexist across milestones.
   - The report shows a "valid of declared" column, and marks a row below half as "insufficient valid trials" in place of the verdict word. Both appear only when a run in the batch carries the field.
   - Reports of earlier batches therefore stay byte-identical.
-- [ ] **Case suites.** A case suite (M2's G3) judges each invariant only in the case that checks it. Its count is the cases that check that invariant, not `scenario.trials`. The code tells the two apart from the manifest (scenario kind or an explicit per-invariant denominator), not from the scenario's name.
-- [ ] **Tests.**
+- [x] **Case suites.** A case suite (M2's G3) judges each invariant only in the case that checks it. Its count is the cases that check that invariant, not `scenario.trials`. The code tells the two apart from the manifest (scenario kind or an explicit per-invariant denominator), not from the scenario's name.
+- [x] **Tests.**
   - A run at exactly half (sufficient).
   - One below half (insufficient, verdict word replaced in the report).
   - A G3-shaped case suite with `trials_valid` 1 per invariant (sufficient).
   - An old manifest without the field (rendered exactly as before).
-- [ ] **Exit criterion.**
+- [x] **Exit criterion.**
   - selftest passes with the new tests.
   - All 21 committed reports regenerate byte for byte from a fresh clone of `m6`.
   - No evidence file changed.
+
+**Status, Phase B (2026-11-19).** Met at `8a4332e`.
+- **Code.** `core/witnessmark/verdicts.py` (`sufficiency`, `add_sufficiency`), called just before the manifest is written in `core/witnessmark/memory.py` `_finish` and `core/witnessmark/runner.py`. These two writers cover every manifest with a verdict list; the Omnigraph Part 2 measurement manifests have none (§9.2) and are left alone. The report column is in `runs_table`, `race_table`, `thread_race_table` and `g7_table`, the tables that print a verdict word (`core/witnessmark/report.py`).
+- **Two choices, for the maintainer's review.** The field is added from the finished manifest rather than inside `verdict` and `_verdicts`, so one function serves both writers and reads the count from the manifest as this plan asks. And a verdict that is already INVALID keeps that word below half, since §9.7 leaves INVALID cells as they are.
+- **Tests.** `core/tests/test_m6_sufficiency.py`, 13 tests: exactly half (10 of 20, sufficient); below half (9 of 20, the stored status kept and the verdict word replaced in the race, runs and thread-race tables; 1 of 20 for BOUNDARY); INVALID kept; a G3-shaped suite with `trials_valid` 1 for I7C, I2 and MR1 (1 of 1 each, sufficient) and with its one I7C case invalid (0 of 1); a measurement manifest untouched; an old manifest rendered exactly as before, including the committed `M5_COGNEE.md` regenerated and the Cognee R1 run `20261116T123522Z-49f0100f` (1 of 20) shown with the rule applied to a copy; and both writers putting the field into `run.json`.
+- **Exit.** selftest 270 OK. A fresh clone of `m6` at `8a4332e`, in a scratch directory, regenerated all 21 committed reports with `python wm.py report` (`--calibration` for M1, `--memory` with each report's title and batch for the others), and each was identical to its committed blob under `cmp`. No file under `evidence/` changed since `eda0681`, and no committed manifest carries the field.
 
 #### Phase C — FalkorDB fulltext repro, declared run
 

@@ -627,6 +627,13 @@ Command counts follow master §12.1's counting rule: every command the driver lo
       | 4 | Neo4j | held | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py neo4j held 20` |
 
     - **Recording.** Counts as [measured: repro_g8_held_write.py at `0ea7470`, main-4ef979c7, <backend>, <variant>, k of 20], with the sequential control and, for `held`, in how many iterations the bulk write reached the hold before the count had run. Whatever the counts, they are recorded and not chased, and no command is re-run except as a new declared command after a harness bug.
+    - **Commands 2 and 4 failed on a harness bug (2026-11-19).** Both ran once and exited 1 with the sequential control as expected, but in all 20 iterations of each the add raised `TypeError: ... execute_query() got multiple values for argument 'query'` before its bulk write. The hold's `execute_query` wrapper named its first parameter `query`, and graphiti-core passes a Cypher parameter `query=` on the add path. The bulk write never reached the hold, so neither command says anything about the interleaving; their counts are not results. Fixed in `6efae63` (the parameter is positional-only), with a unit test that fails on the old wrapper. Commands 1 and 3 installed no hook and are unaffected.
+    - **Declaration of commands 5 and 6 (2026-11-19, committed before either ran).** The held variant again, at `6efae63`, the same way as above, with outputs to `.state/scratch/m6-g8/cmd5-falkordb-held.txt` and `cmd6-neo4j-held.txt`. Each runs once.
+
+      | # | Backend | Variant | Command |
+      |---|---|---|---|
+      | 5 | FalkorDB, bound | held | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py falkordb held 20` |
+      | 6 | Neo4j | held | `py targets/01-zep-graphiti/repros/repro_g8_held_write.py neo4j held 20` |
 - I5 held on both backends: G8E and its own fact were gone after every acknowledged remove, and no concurrent ingest brought them back.
 
 ### 12.6 INVALID cell: G6a, fresh, on main `ebef986a` with Neo4j

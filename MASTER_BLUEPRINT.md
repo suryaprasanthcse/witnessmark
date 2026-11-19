@@ -1371,6 +1371,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 
 - [ ] **Omnigraph O2a with #1426** (promise on ModernRelay/omnigraph#1424). Trigger: the first numbered Omnigraph release after v0.15.0 that contains #1426 (merge `4570bac7`). Edge builds do not count. The 50-client O2a race and its controls, as in M5, on that release.
 - [ ] **Graphiti G8 on current main.** Trigger: getzep/graphiti#2159 asks for it. The P5 repro (`repros/repro_g8_remove_vs_add.py`) at the main commit of that day, as a new declared run.
+  - **Amendment (2026-11-19, before anything ran).** The trigger fired on #2159, which asked for a check on the full add path. The G8 run adds an interleaving variant: the add's bulk write is held until `remove_episode`'s count has run, beside the plain concurrent case.
 - [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
 
 #### Rules for all phases

@@ -1378,6 +1378,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
     - held: Neo4j 20 of 20 and FalkorDB 0 of 20 [measured: repro_g8_held_write.py at `6efae63`, main-4ef979c7, commands 6 and 5].
 
     The details are in the Graphiti blueprint, §12.5. A reply to #2159 is drafted under §11.1 and not sent.
+  - **Amendment 2 (2026-11-19, before the pinned code or runs).** `held` only ordered the write after the count; it never made the delete wait, so it does not force the count → write → delete interleaving asked on #2159. The G8 run adds a `pinned` variant that forces it from both sides: the add's bulk write waits for `remove_episode`'s last count, and `remove_episode` waits after that count until the write has returned. Deletes are timestamped in every variant.
 - [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
 
 #### Rules for all phases

@@ -990,6 +990,7 @@ Each milestone ends with a review by the maintainer, and the next one starts onl
 | M3 | Cognee adapter, HTTP stub endpoint, matrix rows R1 to R3 | SC passes on every row |
 | M4 | Omnigraph adapter, O1 and I6 controls, O4 failover observations, O5 on a local root | The re-measured FalkorDB copy curve falls inside the S28 band |
 | M5 | Clean reruns, reports regenerated from evidence, drafts | Every number traces to a run_id |
+| M6 | §9.7 enforced in the verdict code; a single-file FalkorDB repro of fulltext answers while an index is `UNDER CONSTRUCTION`; the triggered follow-ups to M5's upstream threads | Phases B and C met their exit criteria; every Phase D item was run or carried forward at review; the 21 M1–M5 reports regenerate byte for byte |
 
 **Status.** M1 met its exit criterion on 2026-11-13:
 
@@ -1262,6 +1263,84 @@ M5's exit criterion, "every number traces to a run_id", holds for the Results se
 - Accepted as recorded: the INVALID cells (Graphiti G6a on Neo4j with main; Cognee R3, control not met), the NOT_EXERCISED cells (#5253, the combined Graphiti MCP image, Cognee's session-fed `improve` stages), the insufficient-valid-trials readings under §9.7, and the P5 repro counts as the declared exception to the run-id rule.
 - Findings carried forward as possible upstream defects or questions, not as conclusions: Graphiti G8-F1 (P5 repro: 19 of 20 on Neo4j on v0.31.2 and main `ebef986a`, 0 of 20 on FalkorDB); Graphiti G6-F2 and FalkorDB's fulltext answers while an index is `UNDER CONSTRUCTION` (§13); Omnigraph's O2a refusal type. G7's kill loss is recorded as FalkorDB persistence configuration, and O2b as the cost of documented behaviour.
 - Contribution drafts: prepared under §11.1 and reviewed by the maintainer. They stay outside the repository; sending is the maintainer's, one message at a time, and nothing is recorded here about when or whether they are sent.
+
+### 12.2 M6 plan
+
+Declared 2026-11-19 on branch `m6`, before any M6 work. `main` stays as published (M1–M5). `m6` merges into `main` only after the maintainer's M6 review, and no earlier than the public release on 2026-11-21. Each phase starts after the maintainer gives it the go-ahead.
+
+**Scope.** Items from the M6 candidates in §12.1 that end in something public or that change how verdicts are read. Not in M6:
+- a new target (that is M7, chosen after the public release);
+- clients inside the Docker network (§13);
+- the G6a stalled-search re-run on Neo4j with main;
+- the Cognee follow-ups (#5253 rebased head, R4, the C3 variant).
+These stay listed in §12.1 as candidates.
+
+#### Phase A — Declaration
+
+- [ ] This section and the §12 row, committed on `m6` before any code. Exit: the commit exists, and `python wm.py selftest` passes unchanged.
+
+#### Phase B — §9.7 in the verdict code
+
+The rule: a verdict computed on fewer than half the run's declared trials (`trials_valid` × 2 < `scenario.trials`) is read as **insufficient valid trials**.
+
+- [ ] **Where it applies.** Verdicts are computed at run time and stored in each manifest (`core/witnessmark/verdicts.py` `verdict`, `core/witnessmark/memory.py` `_verdicts`). Reports read the stored verdicts. So the rule applies to runs written from M6 on, and committed manifests stay as written (§9.6).
+- [ ] **What the code does.**
+  - It keeps the computed status and adds a field, e.g. `"sufficiency": {"declared": n, "valid": k, "sufficient": bool}`.
+  - It does not overwrite `status`. Overwriting would make two meanings of `status` coexist across milestones.
+  - The report shows a "valid of declared" column, and marks a row below half as "insufficient valid trials" in place of the verdict word. Both appear only when a run in the batch carries the field.
+  - Reports of earlier batches therefore stay byte-identical.
+- [ ] **Case suites.** A case suite (M2's G3) judges each invariant only in the case that checks it. Its count is the cases that check that invariant, not `scenario.trials`. The code tells the two apart from the manifest (scenario kind or an explicit per-invariant denominator), not from the scenario's name.
+- [ ] **Tests.**
+  - A run at exactly half (sufficient).
+  - One below half (insufficient, verdict word replaced in the report).
+  - A G3-shaped case suite with `trials_valid` 1 per invariant (sufficient).
+  - An old manifest without the field (rendered exactly as before).
+- [ ] **Exit criterion.**
+  - selftest passes with the new tests.
+  - All 21 committed reports regenerate byte for byte from a fresh clone of `m6`.
+  - No evidence file changed.
+
+#### Phase C — FalkorDB fulltext repro, declared run
+
+Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduction anyone can run, as the basis of the FalkorDB issue and of any later fix PR modelled on FalkorDB/FalkorDB#3581 (vector-only, merged 2026-11-17).
+
+- [ ] **The repro.** `baselines/repros/repro_falkordb_fulltext_under_construction.py`.
+  - Standard library only, with a minimal RESP client inline. It imports nothing from `witnessmark`, so an outsider can run it with one file.
+  - Arguments: host, port, relationship count N, trials T.
+- [ ] **What each trial does.**
+  1. Delete the test graph, then create N `RELATES_TO` relationships whose `fact` contains the probe term, in batches with `UNWIND`.
+  2. Create the fulltext index on `RELATES_TO(fact)`, in the syntax FalkorDB's docs give for 6.0. The exact statement is checked against the docs at a pinned FalkorDB/docs commit, and that commit is cited.
+  3. Sample repeatedly until the index reports `OPERATIONAL`, or a declared timeout. Each sample runs `db.indexes()` (the status of the `RELATES_TO` fulltext index) and then `CALL db.idx.fulltext.queryRelationships('RELATES_TO', <term>) YIELD relationship RETURN count(relationship)`.
+  4. Classify each sample as: no index yet (rows, error); under construction with fewer than N rows; under construction with all N; under construction with an error; operational.
+- [ ] **Controls.**
+  - Sequential control per trial: once `OPERATIONAL`, the query returns exactly N. If it doesn't, the trial is invalid.
+  - The status and the query are read one after the other, so a sample can straddle a change. The output says so, as the G6 report did.
+- [ ] **Output.** Per-trial counts and totals, and the plain Cypher steps of one trial, printed so that the issue can quote them.
+- [ ] **Declared run.** Run from the repository root with the baselines up through `baselines/docker-compose.yml` only. Each command runs once; outputs go under `.state/scratch/m6-repro/` (not committed).
+
+  | # | Engine | Command |
+  |---|---|---|
+  | 1 | FalkorDB 6.0.4 (pinned digest, Rust) | `python baselines/repros/repro_falkordb_fulltext_under_construction.py 127.0.0.1 <port> 2000 20` |
+  | 2 | FalkorDB 6.0.4 | the same with N = 20000 |
+  | 3 (only with the maintainer's approval to pull and pin the image) | FalkorDB v4.22.4 (C engine), pinned by digest | the same with N = 20000 |
+
+  If N = 2000 catches no under-construction sample, that is a result, not a reason to retune. Command 2 is the declared larger size.
+- [ ] **Recording.** Results go into §13's fulltext row and the Graphiti blueprint's G6-F1 (tags per §9.4). The C-engine row is recorded only if command 3 ran.
+- [ ] **Exit criterion.** Commands 1 and 2 ran, and their results are recorded with the repro's commit hash.
+
+#### Phase D — Triggered follow-ups (each needs its own go-ahead and its own declared run)
+
+- [ ] **Omnigraph O2a with #1426** (promise on ModernRelay/omnigraph#1424). Trigger: the first numbered Omnigraph release after v0.15.0 that contains #1426 (merge `4570bac7`). Edge builds do not count. The 50-client O2a race and its controls, as in M5, on that release.
+- [ ] **Graphiti G8 on current main.** Trigger: getzep/graphiti#2159 asks for it. The P5 repro (`repros/repro_g8_remove_vs_add.py`) at the main commit of that day, as a new declared run.
+- [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
+
+#### Rules for all phases
+
+- Commits by the maintainer's identity only, with no attribution trailer.
+- No push.
+- No pull-request builds, except where the maintainer approves one.
+- §11.7 clean room.
+- Every number in a results line carries a run id or a command number from a declared run.
 
 ## 13. Open questions
 

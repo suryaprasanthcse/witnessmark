@@ -1307,16 +1307,16 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 - [x] **The repro.** `baselines/repros/repro_falkordb_fulltext_under_construction.py` (`48b113f`).
   - Standard library only, with a minimal RESP client inline. It imports nothing from `witnessmark`, so an outsider can run it with one file.
   - Arguments: host, port, relationship count N, trials T.
-- [ ] **What each trial does.**
+- [x] **What each trial does.**
   1. Delete the test graph, then create N `RELATES_TO` relationships whose `fact` contains the probe term, in batches with `UNWIND`.
   2. Create the fulltext index on `RELATES_TO(fact)`, in the syntax FalkorDB's docs give for 6.0. The exact statement is checked against the docs at a pinned FalkorDB/docs commit, and that commit is cited.
   3. Sample repeatedly until the index reports `OPERATIONAL`, or a declared timeout. Each sample runs `db.indexes()` (the status of the `RELATES_TO` fulltext index) and then `CALL db.idx.fulltext.queryRelationships('RELATES_TO', <term>) YIELD relationship RETURN count(relationship)`.
   4. Classify each sample as: no index yet (rows, error); under construction with fewer than N rows; under construction with all N; under construction with an error; operational.
-- [ ] **Controls.**
+- [x] **Controls.**
   - Sequential control per trial: once `OPERATIONAL`, the query returns exactly N. If it doesn't, the trial is invalid.
   - The status and the query are read one after the other, so a sample can straddle a change. The output says so, as the G6 report did.
-- [ ] **Output.** Per-trial counts and totals, and the plain Cypher steps of one trial, printed so that the issue can quote them.
-- [ ] **Declared run.** Run from the repository root with the baselines up through `baselines/docker-compose.yml` only. Each command runs once; outputs go under `.state/scratch/m6-repro/` (not committed).
+- [x] **Output.** Per-trial counts and totals, and the plain Cypher steps of one trial, printed so that the issue can quote them.
+- [x] **Declared run.** Run from the repository root with the baselines up through `baselines/docker-compose.yml` only. Each command runs once; outputs go under `.state/scratch/m6-repro/` (not committed).
 
   | # | Engine | Command |
   |---|---|---|
@@ -1332,8 +1332,23 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
   - **Samples.** Each sample sends the two reads as `GRAPH.RO_QUERY`, as G6's monitor did, with no pause between samples. Before `CREATE` the trial checks that the relationships loaded number N and that no RELATES_TO fulltext index is listed; otherwise the trial is invalid. Exit status: 0 if every trial is valid and no under-construction sample returned fewer rows or an error, 1 if every trial is valid and one did, 2 if any trial is invalid.
   - **How it runs.** From the root of the `m6` worktree, after `docker compose -f baselines/docker-compose.yml up -d falkordb` (FalkorDB 6.0.4, digest `sha256:bef8acb1…4d7f`, on 127.0.0.1:16380). Command 1, then command 2, each once, with stdout and stderr to `.state/scratch/m6-repro/cmd1-n2000-t20.txt` and `cmd2-n20000-t20.txt`, and the exit status recorded beside them. The container is not restarted between them.
   - **Before this declaration.** One smoke check of the script with N = 10 and 1 trial (`.state/scratch/m6-repro/smoke-n10-t1.txt`, exit 0, the index `OPERATIONAL` on its first sample). It checked that the commands parse on 6.0.4 and is not a result.
-- [ ] **Recording.** Results go into §13's fulltext row and the Graphiti blueprint's G6-F1 (tags per §9.4). The C-engine row is recorded only if command 3 ran.
-- [ ] **Exit criterion.** Commands 1 and 2 ran, and their results are recorded with the repro's commit hash.
+
+  **Results of commands 1 and 2 (2026-11-19).** Each ran once, as declared, at repro commit `48b113f`, on FalkorDB 6.0.4 (graph module 60004, Redis 8.10.2, the pinned digest) in Docker Desktop, with the client on the Windows host as in M5 (§3.4). Both exited 1: every trial valid, and under-construction samples with fewer rows. The counts are console output kept under `.state/scratch/m6-repro/`, outside `evidence/`, as for the P5 repro.
+
+  | # | N | Valid trials | Samples per trial | Under construction, fewer than N | Under construction, all N | Under construction, error | Index not listed | `CREATE` returned in | First `OPERATIONAL` sample | Exit |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 1 | 2,000 | 20 of 20 | 6–8 | 107 samples, in 20 of 20 trials (5–6 each); counts from 32 to 1,982 | 8 samples, in 8 trials | 0 | 0 | 0.5–0.7 ms | 6.3–8.9 ms | 1 |
+  | 2 | 20,000 | 20 of 20 | 58–72 | 1,257 samples, in 20 of 20 trials (56–70 each); counts from 0 to 19,980 | 10 samples, in 10 trials | 0 | 0 | 0.6–1.2 ms | 102.1–182.6 ms | 1 |
+
+  [measured: repro_falkordb_fulltext_under_construction.py at `48b113f`, commands 1 and 2]
+
+  - **What happened.** While `db.indexes()` reported the RELATES_TO fulltext index `UNDER CONSTRUCTION`, the fulltext query returned fewer relationships than the N that match, with no error, in every trial at both sizes. Once the index reported `OPERATIONAL`, the count was N in all 40 controls. The output merges consecutive samples of one class, so it gives each run's range of counts, not their order.
+  - **0 rows.** At N = 20,000 the lowest count in each of the 20 trials was 0: an index being built answered as a query with no match does. At N = 2,000 the lowest count per trial was 32 to 273.
+  - **All N before OPERATIONAL.** 8 and 10 samples returned all N while the status still read `UNDER CONSTRUCTION`. The status is read before the query, so these may straddle the change [inference].
+  - **The progress field.** At N = 2,000 every under-construction status read `[Indexing] 0/2000: UNDER CONSTRUCTION`, including samples whose query returned 1,975 or 2,000 rows. At N = 20,000 the first under-construction status read `0/20000` in all 20 trials, and the last read `10000/20000` in 19 and `20000/20000` in one. It seems to move in steps of 10,000 [inference from these outputs], so it does not say how much of the index a query will see.
+  - **The index is listed at once.** No sample found the index missing from `db.indexes()` once `CREATE` had returned.
+  - **Against G6-F1.** Graphiti's monitor saw fewer rows in 1 to 58 samples per run (§13). With nothing between samples, the repro saw them in every trial [inference: the tight loop samples the few milliseconds of the build more often]. Results go into §13's fulltext row and the Graphiti blueprint's G6-F1 (tags per §9.4). The C-engine row is recorded only if command 3 ran.
+- [x] **Exit criterion.** Commands 1 and 2 ran, and their results are recorded with the repro's commit hash.
 
 #### Phase D — Triggered follow-ups (each needs its own go-ahead and its own declared run)
 
@@ -1355,7 +1370,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 |---|---|
 | Can the release-spread bounds be met on Windows with Docker Desktop? | Answered for `thread` mode in M1: 50 threads cannot meet 5 ms (p50 7.88 ms), so δ is 40 ms (section 6.3). The other modes are measured when they land. |
 | Should clients run inside the Docker network rather than on the Windows host? | Still open. M1 ran its clients on the Windows host, and M5 keeps them on the host (§3.4). |
-| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Answered in M5 Phase C by Graphiti G6a on FalkorDB 6.0.4. While the RELATES_TO fulltext index was under construction, the query returned fewer rows than the 2,000 of the control, or all of them, and never an error. Counted in monitor samples: 3 fewer and 5 all on v0.31.2, 1 and 4 on main, 58 and 2 on #2119. Before the index existed it returned 0 rows, again with no error [measured: `20261116T051153Z-2e987ec0`, `20261116T051801Z-c9fd6666`, `20261116T052409Z-5885a291`]. Neo4j 5.26.2 differs: a missing index is a typed error, and a populating one returned every row [measured: `20261116T054555Z-85bc1662`, `20261116T064351Z-20ab7a28`]. Graphiti blueprint §12.3, G6-F1. |
+| What does FalkorDB fulltext search return while an index is `UNDER CONSTRUCTION`: the same rows, fewer rows, or an error? | Answered in M5 Phase C by Graphiti G6a on FalkorDB 6.0.4. While the RELATES_TO fulltext index was under construction, the query returned fewer rows than the 2,000 of the control, or all of them, and never an error. Counted in monitor samples: 3 fewer and 5 all on v0.31.2, 1 and 4 on main, 58 and 2 on #2119. Before the index existed it returned 0 rows, again with no error [measured: `20261116T051153Z-2e987ec0`, `20261116T051801Z-c9fd6666`, `20261116T052409Z-5885a291`]. Neo4j 5.26.2 differs: a missing index is a typed error, and a populating one returned every row [measured: `20261116T054555Z-85bc1662`, `20261116T064351Z-20ab7a28`]. Graphiti blueprint §12.3, G6-F1. Reproduced in M6 Phase C without Graphiti, in plain Cypher on the same engine: while the index was under construction the query returned fewer rows, never an error, in 20 of 20 trials at N = 2,000 (107 samples) and 20 of 20 at N = 20,000 (1,257 samples, down to 0 rows), and exactly N once it was `OPERATIONAL` in all 40 controls [measured: repro_falkordb_fulltext_under_construction.py at `48b113f`, commands 1 and 2]. §12.2, Phase C. The C engine was not run. |
 | When do Neo4j fulltext and vector indexes reflect a committed write? | Answered in M2 by Graphiti G4 on Neo4j 5.26.2. Both the writing instance and a second instance saw 10 of 10 writes on the first search [measured: `20261113T175059Z-738c7f37`]. |
 | Which Neo4j release breaks ties (section 7.4)? | Pinned when first needed |
 

@@ -1233,7 +1233,7 @@ Phase E follows Phase D and ends with the maintainer's M5 review recorded in thi
 - A Cypher-only FalkorDB reproduction of fulltext answers while an index is `UNDER CONSTRUCTION`, without Graphiti, as a new declared run; and the same question on the C engine if a build is pinned. Not started.
 - Graphiti G6a on Neo4j with main: why the harness could not bound the stalled search (`0395799` bounds it from M6 on; re-run only as a new declared cell). Not started.
 - Cognee: #5253 on a rebased head if its author rebases (a pull-request build that needs the maintainer's approval); R4 with a pinned PostgreSQL baseline and the #4167 build, if approved; the C3 fixture variant on R3. Not started.
-- §11.5 publication check. The licences checked on 2026-11-18 (FalkorDB SSPL v1, Neo4j Community GPL-3.0 and Omnigraph MIT) contain no restriction on publishing benchmarks. FalkorDB received the O1 and O2b numbers on 2026-11-19 in [Discussion #3866](https://github.com/orgs/FalkorDB/discussions/3866). The Omnigraph notice is scheduled for the evening of 2026-11-19 on [#1397](https://github.com/ModernRelay/omnigraph/issues/1397) (TODO: add the comment link).
+- §11.5 publication check. The licences checked on 2026-11-18 (FalkorDB SSPL v1, Neo4j Community GPL-3.0 and Omnigraph MIT) contain no restriction on publishing benchmarks. FalkorDB received the O1 and O2b numbers on 2026-11-19 in [Discussion #3866](https://github.com/orgs/FalkorDB/discussions/3866). Omnigraph received them on 2026-11-19 in [a comment on #1397](https://github.com/ModernRelay/omnigraph/issues/1397#issuecomment-7010803143).
 - Master §13's open question on running clients inside the Docker network. Not started.
 
 **Status, Phase E (2026-11-16).** Steps 1 to 3 ran. Step 4 is recorded below.

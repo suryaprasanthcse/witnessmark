@@ -90,7 +90,7 @@ The formal definitions are in [MASTER_BLUEPRINT.md](MASTER_BLUEPRINT.md), sectio
 |---|---|---|---|---|
 | getzep/graphiti | [Graphiti blueprint](targets/01-zep-graphiti/MASTER_BLUEPRINT.md) | v0.31.2, main `ebef986a`, #2119 head `b2b727e0`, and #1594 head for G5 | [M2](evidence/M2_GRAPHITI.md), [G5 addendum](evidence/M2_PR1594.md), [M5](evidence/M5_GRAPHITI.md), [G7 control](evidence/M5_GRAPHITI_B1.md) | Concurrent episode ingest, bitemporal expiry, startup indexing, persistence and deletion |
 | topoteretes/cognee | [Cognee blueprint](targets/02-cognee/MASTER_BLUEPRINT.md) | v1.6.8 and v1.6.1 with FalkorDB adapter `ff1324ec` | [M3](evidence/M3_COGNEE.md), [M5](evidence/M5_COGNEE.md) | Multi-worker ingest and delete, LanceDB writers, Ladybug scale ceiling |
-| ModernRelay/omnigraph | [Omnigraph blueprint](targets/03-omnigraph/MASTER_BLUEPRINT.md) | v0.15.0 `373834b4c1` and edge `b2dbaff` | [M4](evidence/M4_OMNIGRAPH.md), [M5](evidence/M5_OMNIGRAPH.md), [M6](evidence/M6_OMNIGRAPH.md) | Branch and claim costs, traversal parity, and the writer epoch fence |
+| ModernRelay/omnigraph | [Omnigraph blueprint](targets/03-omnigraph/MASTER_BLUEPRINT.md) | v0.15.0 `373834b4c1`, edge `b2dbaff` and v0.16.0 `00b8cca8` | [M4](evidence/M4_OMNIGRAPH.md), [M5](evidence/M5_OMNIGRAPH.md), [M6](evidence/M6_OMNIGRAPH.md) | Branch and claim costs, traversal parity, and the writer epoch fence |
 
 The O1 and O2b vendor-first notices follow [master blueprint §11.5](MASTER_BLUEPRINT.md#115-comparative-benchmarks). FalkorDB received the numbers on 2026-11-19 in [Discussion #3866](https://github.com/orgs/FalkorDB/discussions/3866). Omnigraph received them on 2026-11-19 in [a comment on #1397](https://github.com/ModernRelay/omnigraph/issues/1397#issuecomment-7010803143).
 

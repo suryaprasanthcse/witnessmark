@@ -1382,7 +1382,9 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
   - **Amendment 2 (2026-11-19, before the pinned code or runs).** `held` only ordered the write after the count; it never made the delete wait, so it does not force the count → write → delete interleaving asked on #2159. The G8 run adds a `pinned` variant that forces it from both sides: the add's bulk write waits for `remove_episode`'s last count, and `remove_episode` waits after that count until the write has returned. Deletes are timestamped in every variant.
   - **Declared (2026-11-19).** Commands 7 (FalkorDB 6.0.4) and 8 (Neo4j 5.26.2), `pinned`, 20 iterations each, on main `4ef979c7` with the repro at `73dc7ef`. The details are in the Graphiti blueprint, §12.5.
   - **Status, pinned (2026-11-19).** Both ran once (`b3e1bd1` declared them). Every iteration ran count → write → delete, and the sequential control was as expected. G8N's fact and Payments were lost in 20 of 20 on FalkorDB and 20 of 20 on Neo4j [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, commands 7 and 8]. So FalkorDB's 0 of 20 in the unforced runs came from the order those runs happened to take, not from FalkorDB avoiding the loss. The per-iteration order is in the Graphiti blueprint, §12.5. The #2159 draft leads with these counts and is not sent.
-- [ ] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open.
+  - **Upstream since (recorded 2026-11-23).** The maintainer sent the #2159 reply and opened getzep/graphiti#2177, which re-checks mentions and fact episodes in the statements that delete; it is open, with review required, at head `9100d39` [gh: getzep/graphiti#2177]. What it covers and what it leaves to the add side are in the Graphiti blueprint, §12.5. Its numbers are the PR's own tests, not runs of this harness.
+- **Omnigraph trigger (recorded 2026-11-23).** Omnigraph v0.16.0 (tag commit `d311919d`, published 2026-11-20) is the first numbered release after v0.15.0, and it contains #1426: the compare from `4570bac7` to `v0.16.0` is 28 ahead and 0 behind [gh: compare]. The trigger has fired; the run has not been declared or run.
+- [x] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open. G8 ran. Omnigraph O2a is carried forward in the M6 review below, with its trigger fired and the run not started.
 
 #### Rules for all phases
 
@@ -1391,6 +1393,14 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 - No pull-request builds, except where the maintainer approves one.
 - §11.7 clean room.
 - Every number in a results line carries a run id or a command number from a declared run.
+
+**M6 review (maintainer, 2026-11-23).** M6 is signed off, and `m6` merges into `main`.
+
+- Reviewed: Phases A to D, commits `cc2a2c0` to `561bdfa`, checked read-only on 2026-11-19, and the merge of the published `main` into `m6` (`2e6d657`) on 2026-11-23. At `2e6d657`: sole authorship and no attribution lines since `eda0681`; every declared run committed before it ran; selftest 287 OK; all 21 committed reports regenerate byte for byte from a fresh clone (`python wm.py report`, `--calibration` for M1, `--memory` with each report's title and batch for the others, compared with `cmp`); no file under `evidence/` changed since `eda0681`; the privacy and clean-room scan of the diff clean.
+- Accepted as recorded: Phase B's two choices (the sufficiency field added from the finished manifest, and INVALID kept below half); the Phase C repro counts and the G8 repro counts as declared exceptions to the run-id rule, with their console output outside `evidence/`; commands 2 and 4 as harness-bug runs that are not results.
+- Findings carried forward as possible upstream defects, not conclusions: G8-F1, now measured on both backends when the count → write → delete order occurs, with getzep/graphiti#2177 open; FalkorDB's fulltext answers while an index is `UNDER CONSTRUCTION`, now with a standalone repro (FalkorDB/FalkorDB#3931).
+- Carried forward, trigger fired: Omnigraph O2a on v0.16.0. It runs as a new declared run with the maintainer's go-ahead.
+- Pushing the merged `main` is the maintainer's decision, given on 2026-11-23. This lifts "No push" above for that push only.
 
 ## 13. Open questions
 

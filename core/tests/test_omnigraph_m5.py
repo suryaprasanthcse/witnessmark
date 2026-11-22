@@ -38,19 +38,49 @@ class OwnershipTest(unittest.TestCase):
                 ok = subprocess.CompletedProcess([], 0, "")
                 with mock.patch.object(stack, "_cluster", side_effect=[applied, status, ok]) as commands, \
                         mock.patch.object(stack, "_assert_fresh_root"), \
-                        mock.patch.object(stack, "compose", return_value=ok), mock.patch.object(stack, "_wait_url"):
+                        mock.patch.object(stack, "compose", return_value=ok), \
+                        mock.patch.object(stack, "_wait_url") as wait:
                     if holder == "A123" and not apply_code:
                         stack.provision()
                         self.assertEqual(commands.call_args.args, ("force-unlock", "A123"))
                         self.assertEqual([op.kind for op in ops[:3]],
                                          ["cluster_apply", "cluster_status", "cluster_force_unlock"])
                         self.assertTrue(all(op.phase == "setup" and op.client == "nemesis" and op.ret for op in ops[:3]))
+                        wait.assert_called_once_with("http://127.0.0.1:18080/readyz")
                         with self.assertRaisesRegex(RuntimeError, "cannot be retried"):
                             stack.provision()
                     else:
-                        with self.assertRaises(RuntimeError):
+                        error = "cluster apply failed" if apply_code else "cluster status does not name the exact admission lock"
+                        with self.assertRaisesRegex(RuntimeError, error):
                             stack.provision()
                         self.assertNotIn("force-unlock", [item.args[0] for item in commands.call_args_list])
+                        self.assertNotIn("start", [op.kind for op in ops])
+                        wait.assert_not_called()
+
+    def test_bootstrap_records_direct_apply_release_and_starts_without_unlock(self):
+        ops = []
+        capture = OperationCapture(Path.cwd(), RUN, ops.append)
+        stack = part2.Stack(Path.cwd(), "wm-unit-bootstrap", BUILD, "local", capture=capture)
+        applied = subprocess.CompletedProcess([], 0, "Admission lock: A123\n")
+        status = subprocess.CompletedProcess([], 0, '{"lock_id": null}')
+        ok = subprocess.CompletedProcess([], 0, "")
+        with mock.patch.object(stack, "_cluster", side_effect=[applied, status]) as commands, \
+                mock.patch.object(stack, "_assert_fresh_root"), \
+                mock.patch.object(stack, "compose", return_value=ok) as compose, \
+                mock.patch.object(stack, "_wait_url") as wait:
+            stack.provision()
+
+        self.assertEqual([call.args[0] for call in commands.call_args_list], ["apply", "status"])
+        self.assertEqual([op.kind for op in ops], ["cluster_apply", "cluster_status", "cluster_apply_released_lock", "start"])
+        release = ops[2]
+        self.assertEqual((release.phase, release.outcome, release.input["lock_id"]), ("setup", OK, "A123"))
+        self.assertEqual(release.result, {
+            "admission": "released",
+            "basis_ref": "https://github.com/ModernRelay/omnigraph/blob/00b8cca842f2bf009bebeefcf765672b5ff64b26"
+                         "/docs/user/clusters/index.md#bootstrap-a-cluster",
+        })
+        compose.assert_called_with("up", "-d", "--no-build", "wm-omnigraph-a")
+        wait.assert_called_once_with("http://127.0.0.1:18080/readyz")
 
     def test_transfer_starts_b_only_after_clean_exit_and_release(self):
         for exit_code, killed, holder in ((0, False, None), (0, False, "RETAINED"), (137, True, None), (2, False, None)):

@@ -46,6 +46,10 @@ REPETITIONS = 5
 # a 2 s lease closed admission under load in O1 (batch m4c, proxy run).
 LEASE_SECONDS = 2
 DEFAULT_LEASE_SECONDS = 30
+DIRECT_APPLY_RELEASE_DOC = (
+    "https://github.com/ModernRelay/omnigraph/blob/00b8cca842f2bf009bebeefcf765672b5ff64b26"
+    "/docs/user/clusters/index.md#bootstrap-a-cluster"
+)
 # O1's method since f7ae8f2: each closed-loop load (main reader, unrelated reader, unrelated writer) keeps one
 # HTTP/1.1 connection. M4's O1 and batch m5b-20261115T230235Z opened a new connection per request.
 O1_LOAD_CONNECTIONS = {"model": "kept", "per": "load client",
@@ -217,12 +221,23 @@ class Stack:
         if not isinstance(apply, dict):
             raise RuntimeError(f"cluster apply failed: {apply.stdout[-1500:]}")
         status = self.cluster_status(phase="setup")
-        if status["lock_id"] != apply["lock_id"]:
+        lock_id = status["lock_id"]
+        if lock_id is None:
+            if self.capture:
+                now = stamp()
+                self.capture.record(
+                    "nemesis", "cluster_apply_released_lock",
+                    {"target": "wm-omnigraph-a", "root": self.root, "lock_id": apply["lock_id"]},
+                    now, now, OK, result={"admission": "released", "basis_ref": DIRECT_APPLY_RELEASE_DOC},
+                    phase="setup",
+                )
+        elif lock_id != apply["lock_id"]:
             raise RuntimeError("cluster status does not name the exact admission lock left by cluster apply")
-        unlock = self._action("cluster_force_unlock", "wm-omnigraph-a", lambda: self._cluster(
-            "force-unlock", status["lock_id"]), phase="setup", root=self.root, lock_id=status["lock_id"])
-        if unlock.returncode:
-            raise RuntimeError(f"fresh-cluster bootstrap unlock failed: {unlock.stdout[-1500:]}")
+        else:
+            unlock = self._action("cluster_force_unlock", "wm-omnigraph-a", lambda: self._cluster(
+                "force-unlock", lock_id), phase="setup", root=self.root, lock_id=lock_id)
+            if unlock.returncode:
+                raise RuntimeError(f"fresh-cluster bootstrap unlock failed: {unlock.stdout[-1500:]}")
         self._action("start", "wm-omnigraph-a",
                      lambda: self.compose("up", "-d", "--no-build", "wm-omnigraph-a"))
         self._wait_url("http://127.0.0.1:18080/readyz")

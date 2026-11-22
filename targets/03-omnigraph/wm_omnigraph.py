@@ -34,6 +34,10 @@ BUILDS = {
         "image": "witnessmark/omnigraph:edge-b2dbaff",
         "digest": "sha256:b7b8edac24ff8915346cee19eb85ac89c7aeaea6a8069d68410dcbc90e266792",
     },
+    "v0.16.0": {
+        "image": "witnessmark/omnigraph:v0.16.0",
+        "digest": "sha256:5e6f483634c49d471485047a5b06841aa1bc4d55aa27971832bc0a5fef5451da",
+    },
 }
 
 

@@ -1,5 +1,7 @@
 param(
-    [string]$Scratch = ".state/scratch/omnigraph-build"
+    [string]$Scratch = ".state/scratch/omnigraph-build",
+    # Build only these versions (all when empty), so adding a build leaves the others' images alone.
+    [string[]]$Only = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,8 +20,18 @@ $builds = @(
         Commit = "b2dbaff7584eb849a98fa139876e0ae474e929ea"
         Sha256 = "6b5b449cd4c292eae37ebd8d61a667b293714a5ad573b43a97a2299607297b8d"
         Url = "https://github.com/ModernRelay/omnigraph/releases/download/edge-20261113-b2dbaff/omnigraph-linux-x86_64.tar.gz"
+    },
+    @{
+        Version = "v0.16.0"
+        Tag = "witnessmark/omnigraph:v0.16.0"
+        Commit = "00b8cca842f2bf009bebeefcf765672b5ff64b26"
+        Sha256 = "9b080f761e3d0ec7679a5cb60d479ba2e8982bf9797420a2b75ce99c2b029779"
+        Url = "https://github.com/ModernRelay/omnigraph/releases/download/v0.16.0/omnigraph-linux-x86_64.tar.gz"
     }
 )
+if ($Only.Count -gt 0) {
+    $builds = @($builds | Where-Object { $Only -contains $_.Version })
+}
 
 foreach ($build in $builds) {
     $context = Join-Path $Scratch $build.Version
@@ -44,4 +56,4 @@ foreach ($build in $builds) {
 }
 
 docker image inspect --format '{{.RepoTags}} {{.Id}} {{json .Config.Labels}}' `
-    witnessmark/omnigraph:v0.15.0 witnessmark/omnigraph:edge-b2dbaff
+    @($builds | ForEach-Object { $_.Tag })

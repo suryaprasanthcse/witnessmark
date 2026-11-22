@@ -1321,3 +1321,23 @@ create/delete warm-ups and five measured repetitions per cell:
 - The O1 catalog-width axis and MinIO's conditional-write qualification,
   which stay deferred (§11).
 - O5 with a concurrent second reader; O5 measures process turnover only.
+
+## 15. M6: O2a on v0.16.0 (#1424)
+
+Declared 2026-11-23. Batch `m6o-20261122T2102Z` is fixed here. The harness assigns the run ids.
+
+The maintainer promised to repeat the M5 50-client claim race on the next release [gh: ModernRelay/omnigraph#1424]. The first numbered release containing the fix in `4570bac7` is v0.16.0 [gh: ModernRelay/omnigraph#1426 and the v0.16.0 tag]. The Omnigraph image and archive are pinned in §4 (`12b45a3`). The FalkorDB 6.0.4 and Neo4j 5.26.2 image digests are pinned in master §7.2 and §7.3 and in `baselines/docker-compose.yml`.
+
+Expected: one winner and one holder per valid O2a trial. Every admitted losing claim should return `precondition_failure`, including a claim that would also exceed an edge cardinality limit. The expected `CardinalityViolation` count is zero. [docs: [conditional mutations at `00b8cca`](https://github.com/ModernRelay/omnigraph/blob/00b8cca842f2bf009bebeefcf765672b5ff64b26/docs/user/mutations/conditional.md)]
+
+The first zero-trial scratch check stopped during bootstrap [measured: `20261122T204200Z-b3a5b28c`, scratch]. A converged direct apply now releases admission on local storage or S3. The harness records that release and skips the force-unlock (`4e0d49e`). The second scratch check reached `/readyz` and passed the sequential control [measured: `20261122T210143Z-3e22f453`, scratch]. [docs: [cluster bootstrap at `00b8cca`](https://github.com/ModernRelay/omnigraph/blob/00b8cca842f2bf009bebeefcf765672b5ff64b26/docs/user/clusters/index.md#bootstrap-a-cluster)]
+
+From the worktree root, start the baselines with `docker compose -f baselines/docker-compose.yml up -d`. Run each command once in order. The baseline controls use the M5 batch-2 seeds. O2a uses local storage and the M5 per-client actor default. Bring the baselines down with `docker compose -f baselines/docker-compose.yml down`.
+
+| # | Cell | Command |
+|---|---|---|
+| 1 | Negative control, FalkorDB 6.0.4 naive guarded claim | `python wm.py run --engine falkordb --scenario claim.state --shape naive --clients 50 --trials 20 --seed 20261113 --no-spread-gate --batch m6o-20261122T2102Z --evidence evidence` |
+| 2 | Positive control, Neo4j 5.26.2 naive claim | `python wm.py run --engine neo4j --scenario claim.state --shape naive --clients 50 --trials 20 --seed 20261118 --no-spread-gate --batch m6o-20261122T2102Z --evidence evidence` |
+| 3 | O2a, v0.16.0, local | `python targets/03-omnigraph/wm_omnigraph.py race --scenario o2a --build v0.16.0 --storage local --clients 50 --trials 20 --spread-gate-ms 55 --provision --batch m6o-20261122T2102Z --evidence evidence` |
+
+Record stdout, stderr and exit status in `.state/scratch/m6-o2a/`. Record each run id, verdict, valid trial count and sequential control. Stop if a sequential control fails. For O2a, count refusals by type among admitted losers. Compare with M5's 533 `precondition_failure` and 447 `CardinalityViolation` [measured: `20261115T231454Z-7f2e75a3`], and 484 and 496 respectively [measured: `20261115T231539Z-c7be08c9`]. Keep every result.

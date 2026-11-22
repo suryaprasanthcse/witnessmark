@@ -1341,3 +1341,27 @@ From the worktree root, start the baselines with `docker compose -f baselines/do
 | 3 | O2a, v0.16.0, local | `python targets/03-omnigraph/wm_omnigraph.py race --scenario o2a --build v0.16.0 --storage local --clients 50 --trials 20 --spread-gate-ms 55 --provision --batch m6o-20261122T2102Z --evidence evidence` |
 
 Record stdout, stderr and exit status in `.state/scratch/m6-o2a/`. Record each run id, verdict, valid trial count and sequential control. Stop if a sequential control fails. For O2a, count refusals by type among admitted losers. Compare with M5's 533 `precondition_failure` and 447 `CardinalityViolation` [measured: `20261115T231454Z-7f2e75a3`], and 484 and 496 respectively [measured: `20261115T231539Z-c7be08c9`]. Keep every result.
+
+### Results
+
+Each declared command ran once and exited zero. The report records the host and VM. The baseline pins are in master §7.2 and §7.3, and the Omnigraph image is pinned in §4. O2a used one server on local storage, 50 thread-mode clients with separate actors, and a 55 ms gate [measured: `20261122T210504Z-cf3d6bc6`]. [Batch report](../../evidence/M6_OMNIGRAPH.md)
+
+| Command | Run id | Verdict | Valid trials | Sequential control | Race refusals by type |
+|---|---|---|---|---|---|
+| 1. FalkorDB negative control | [measured: `20261122T210451Z-59533624`] | PASS | 20 of 20 | Met | — |
+| 2. Neo4j positive control | [measured: `20261122T210453Z-47fd8e3a`] | KNOWN_DEVIATION | 20 of 20 | Met | — |
+| 3. Omnigraph O2a | [measured: `20261122T210504Z-cf3d6bc6`] | PASS | 20 of 20 | Met, 49 `precondition_failure` | `precondition_failure` 980, `CardinalityViolation` 0 of 980 admitted losers |
+
+### What happened
+
+- FalkorDB had 0 violations in 20 valid trials. Its negative control met the expectation [measured: `20261122T210451Z-59533624`].
+- Neo4j had 18 violations in 20 valid trials. Its positive control fired, as expected for KD-N1 [measured: `20261122T210453Z-47fd8e3a`].
+- Omnigraph had 1 acknowledged winner and 1 holder in each of its 20 valid trials. There were 0 unknown outcomes. The maximum release spread was 16.95 ms [measured: `20261122T210504Z-cf3d6bc6`].
+
+| Build | `precondition_failure` | `CardinalityViolation` | Admitted losers | Run id |
+|---|---|---|---|---|
+| M5 v0.15.0 | 533 | 447 | 980 | [measured: `20261115T231454Z-7f2e75a3`] |
+| M5 edge-b2dbaff | 484 | 496 | 980 | [measured: `20261115T231539Z-c7be08c9`] |
+| M6 v0.16.0 | 980 | 0 | 980 | [measured: `20261122T210504Z-cf3d6bc6`] |
+
+The refusal counts match the change in #1426 for this workload. Every admitted losing claim returned the documented `precondition_failure` [measured: `20261122T210504Z-cf3d6bc6`]. [gh: ModernRelay/omnigraph#1426] [docs: `conditional.md` at `00b8cca`, linked above]

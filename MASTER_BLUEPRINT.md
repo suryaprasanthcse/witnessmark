@@ -1370,8 +1370,9 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 
 #### Phase D — Triggered follow-ups (each needs its own go-ahead and its own declared run)
 
-- [ ] **Omnigraph O2a with #1426** (promise on ModernRelay/omnigraph#1424). Trigger: the first numbered Omnigraph release after v0.15.0 that contains #1426 (merge `4570bac7`). Edge builds do not count. The 50-client O2a race and its controls, as in M5, on that release.
+- [x] **Omnigraph O2a with #1426** (promise on ModernRelay/omnigraph#1424). Trigger: the first numbered Omnigraph release after v0.15.0 that contains #1426 (merge `4570bac7`). Edge builds do not count. The 50-client O2a race and its controls, as in M5, on that release.
   - Declared (2026-11-23): commands 1–3, Omnigraph blueprint §15.
+  - **Status (2026-11-23).** Batch ran as declared. FalkorDB [measured: `20261122T210451Z-59533624`], Neo4j [measured: `20261122T210453Z-47fd8e3a`], O2a [measured: `20261122T210504Z-cf3d6bc6`].
 - [x] **Graphiti G8 on current main.** Trigger: getzep/graphiti#2159 asks for it. The P5 repro (`repros/repro_g8_remove_vs_add.py`) at the main commit of that day, as a new declared run.
   - **Amendment (2026-11-19, before anything ran).** The trigger fired on #2159, which asked for a check on the full add path. The G8 run adds an interleaving variant: the add's bulk write is held until `remove_episode`'s count has run, beside the plain concurrent case.
   - **Declared (2026-11-19).** Four commands, plain and held on FalkorDB 6.0.4 and Neo4j 5.26.2, 20 iterations each, on main `4ef979c7` with `repros/repro_g8_held_write.py` at `0ea7470`. The commands and the recording rule are in the Graphiti blueprint, §12.5.
@@ -1385,7 +1386,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
   - **Status, pinned (2026-11-19).** Both ran once (`b3e1bd1` declared them). Every iteration ran count → write → delete, and the sequential control was as expected. G8N's fact and Payments were lost in 20 of 20 on FalkorDB and 20 of 20 on Neo4j [measured: repro_g8_held_write.py at `73dc7ef`, main-4ef979c7, commands 7 and 8]. So FalkorDB's 0 of 20 in the unforced runs came from the order those runs happened to take, not from FalkorDB avoiding the loss. The per-iteration order is in the Graphiti blueprint, §12.5. The #2159 draft leads with these counts and is not sent.
   - **Upstream since (recorded 2026-11-23).** The maintainer sent the #2159 reply and opened getzep/graphiti#2177, which re-checks mentions and fact episodes in the statements that delete; it is open, with review required, at head `9100d39` [gh: getzep/graphiti#2177]. What it covers and what it leaves to the add side are in the Graphiti blueprint, §12.5. Its numbers are the PR's own tests, not runs of this harness.
 - **Omnigraph trigger (recorded 2026-11-23).** Omnigraph v0.16.0 (tag object `d311919d`, source commit `00b8cca8`, published 2026-11-20) is the first numbered release after v0.15.0, and it contains #1426: the compare from `4570bac7` to `v0.16.0` is 28 ahead and 0 behind [gh: compare]. The trigger has fired. The declaration is above.
-- [x] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open. G8 ran. Omnigraph O2a is carried forward in the M6 review below, with its trigger fired and the run not started.
+- [x] **Exit criterion.** Each item ran, or the M6 review carries it forward with its trigger still open. G8 and Omnigraph O2a both ran.
 
 #### Rules for all phases
 
@@ -1400,7 +1401,7 @@ Purpose: replace "seen through Graphiti's monitor" (§13, G6-F1) with a reproduc
 - Reviewed: Phases A to D, commits `cc2a2c0` to `561bdfa`, checked read-only on 2026-11-19, and the merge of the published `main` into `m6` (`2e6d657`) on 2026-11-23. At `2e6d657`: sole authorship and no attribution lines since `eda0681`; every declared run committed before it ran; selftest 287 OK; all 21 committed reports regenerate byte for byte from a fresh clone (`python wm.py report`, `--calibration` for M1, `--memory` with each report's title and batch for the others, compared with `cmp`); no file under `evidence/` changed since `eda0681`; the privacy and clean-room scan of the diff clean.
 - Accepted as recorded: Phase B's two choices (the sufficiency field added from the finished manifest, and INVALID kept below half); the Phase C repro counts and the G8 repro counts as declared exceptions to the run-id rule, with their console output outside `evidence/`; commands 2 and 4 as harness-bug runs that are not results.
 - Findings carried forward as possible upstream defects, not conclusions: G8-F1, now measured on both backends when the count → write → delete order occurs, with getzep/graphiti#2177 open; FalkorDB's fulltext answers while an index is `UNDER CONSTRUCTION`, now with a standalone repro (FalkorDB/FalkorDB#3931).
-- Carried forward, trigger fired: Omnigraph O2a on v0.16.0. It runs as a new declared run with the maintainer's go-ahead.
+- Carried forward at review: Omnigraph O2a on v0.16.0 ran on 2026-11-23 [measured: batch `m6o-20261122T2102Z`]. See Omnigraph blueprint §15.
 - Pushing the merged `main` is the maintainer's decision, given on 2026-11-23. This lifts "No push" above for that push only.
 
 ## 13. Open questions
